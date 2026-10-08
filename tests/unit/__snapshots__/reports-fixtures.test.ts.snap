@@ -165,6 +165,7 @@ exports[`rapports de détection sur chaque fixture > sample.pptx 1`] = `
 ## Avertissements
 
 - Métadonnées vidées : auteur, dernier modificateur, titre, sujet, société (dates de création et de modification neutralisées).
+- Propriétés du document (docProps/app.xml) : 5 titres recopiés (noms de feuilles, titres de diapositives…), conservés tels quels.
 - 1 image ou média présent : le texte contenu dans les images n'est pas traité.
 
 > **Le mapping contient les données en clair. Ne pas transmettre.**
@@ -242,6 +243,7 @@ exports[`rapports de détection sur chaque fixture > sample.xlsx 1`] = `
 ## Avertissements
 
 - Métadonnées vidées : auteur, dernier modificateur (dates de création et de modification neutralisées).
+- Propriétés du document (docProps/app.xml) : 2 titres recopiés (noms de feuilles, titres de diapositives…), conservés tels quels.
 - 1 chaîne partagée des colonnes anonymisées est utilisée dans plusieurs colonnes : toutes les cellules qui les utilisent sont remplacées.
 
 > **Le mapping contient les données en clair. Ne pas transmettre.**

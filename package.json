@@ -19,7 +19,8 @@
     "test:e2e": "playwright test",
     "check": "npm run lint && npm run typecheck && npm run test",
     "fixtures": "TZ=UTC tsx scripts/make-fixtures.ts",
-    "test:e2e:slow": "E2E_SLOW=1 playwright test --grep @slow"
+    "test:e2e:slow": "E2E_SLOW=1 playwright test --grep @slow",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@huggingface/transformers": "^4.3.1",

@@ -13,6 +13,12 @@ export default defineConfig({
     include: ["tests/unit/**/*.test.ts", "tests/unit/**/*.test.tsx"],
     environment: "node",
     setupFiles: ["tests/unit/setup.ts"],
-    coverage: { provider: "v8", include: ["src/engine/**", "src/adapters/**"] },
+    coverage: {
+      provider: "v8",
+      include: ["src/engine/**", "src/adapters/**"],
+      // Fichier propre au navigateur (URL des fichiers WASM servis par Vite).
+      exclude: ["src/engine/detectors/ortAssets.ts"],
+      thresholds: { statements: 85, lines: 85 },
+    },
   },
 });

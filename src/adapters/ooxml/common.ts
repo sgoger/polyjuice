@@ -48,6 +48,20 @@ export async function metadataToClear(pkg: OoxmlPackage): Promise<string[]> {
   return out;
 }
 
+/** Titres recopiés dans docProps/app.xml (noms de feuilles, titres de diapositives…), conservés tels quels. */
+export async function titlesWarning(pkg: OoxmlPackage): Promise<string[]> {
+  const app = await tryParse(pkg, APP);
+  if (!app) return [];
+  const titles = elementsNS(app.doc, NS.ep, "TitlesOfParts").flatMap((t) =>
+    Array.from(t.getElementsByTagName("vt:lpstr")).filter((e) => (e.textContent ?? "").trim() !== ""),
+  );
+  return titles.length
+    ? [
+        `Propriétés du document (docProps/app.xml) : ${pl(titles.length, "titre recopié", "titres recopiés")} (noms de feuilles, titres de diapositives…), conservés tels quels.`,
+      ]
+    : [];
+}
+
 export function metadataWarning(labels: readonly string[]): string[] {
   return labels.length
     ? [`Métadonnées vidées : ${labels.join(", ")} (dates de création et de modification neutralisées).`]
@@ -189,7 +203,7 @@ export async function readParagraphParts(
       segments.push({ locator, text, kind: spec.kindOf?.(p) ?? spec.kind });
     });
   }
-  warnings.push(...metadataWarning(state.metadata));
+  warnings.push(...metadataWarning(state.metadata), ...(await titlesWarning(pkg)));
   return { segments, state };
 }
 
