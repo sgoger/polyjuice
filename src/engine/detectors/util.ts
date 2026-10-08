@@ -7,8 +7,8 @@ export const B = String.raw`(?<![\p{L}\p{N}])`;
 /** Pas de lettre ni de chiffre (Unicode) juste après. */
 export const E = String.raw`(?![\p{L}\p{N}])`;
 /** Pour les numéros : pas de chiffre ni de séparateur + chiffre de part et d'autre. */
-export const NB = String.raw`(?<![\p{L}\p{N}]|\d[ .\- ])`;
-export const NE = String.raw`(?![\p{L}\p{N}]|[ .\- ]\d)`;
+export const NB = String.raw`(?<![\p{L}\p{N}]|\d[ .\-\u00A0])`;
+export const NE = String.raw`(?![\p{L}\p{N}]|[ .\-\u00A0]\d)`;
 
 export interface RegexRule {
   type: EntityType;

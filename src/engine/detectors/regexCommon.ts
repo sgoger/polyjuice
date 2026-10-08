@@ -44,7 +44,7 @@ export function isIPv6(s: string): boolean {
 }
 
 // IBAN : 2 lettres, 2 chiffres de contrôle, 11 à 30 caractères, groupés par des espaces optionnels.
-const IBAN = new RegExp(String.raw`${B}[A-Z]{2}\d{2}(?:[  ]?[A-Z0-9]){11,30}${E}`, "gu");
+const IBAN = new RegExp(String.raw`${B}[A-Z]{2}\d{2}(?:[ \u00A0]?[A-Z0-9]){11,30}${E}`, "gu");
 
 export function ibanChecksumOk(compact: string): boolean {
   if (!/^[A-Z]{2}\d{2}[A-Z0-9]{11,30}$/.test(compact)) return false;
@@ -60,14 +60,14 @@ export function ibanChecksumOk(compact: string): boolean {
 /** Plus longue troncature (à une frontière de groupe) dont la clé est valide. */
 function validateIban(m: string): number | null {
   const ends = [m.length];
-  for (let i = m.length - 1; i > 0; i--) if (m[i] === " " || m[i] === " ") ends.push(i);
+  for (let i = m.length - 1; i > 0; i--) if (m[i] === " " || m[i] === "\u00A0") ends.push(i);
   for (const end of ends) {
-    if (ibanChecksumOk(m.slice(0, end).replace(/[  ]/g, ""))) return end;
+    if (ibanChecksumOk(m.slice(0, end).replace(/[ \u00A0]/g, ""))) return end;
   }
   return null;
 }
 
-const CARD = new RegExp(String.raw`${NB}\d(?:[ \- ]?\d){12,18}${NE}`, "gu");
+const CARD = new RegExp(String.raw`${NB}\d(?:[ \-\u00A0]?\d){12,18}${NE}`, "gu");
 
 export function luhnOk(digits: string): boolean {
   let sum = 0;
@@ -89,7 +89,7 @@ const validateCard = (m: string) => {
 
 // Téléphone international : +CC ou 00CC, « (0) » optionnel, groupes séparés par espace, point ou tiret.
 const PHONE_INTL = new RegExp(
-  String.raw`(?<![\p{L}\p{N}+]|\d[ .\- ])(?:\+|00)[1-9]\d{0,2}(?:[ .\- ]?\(0\))?(?:[ .\- ]?\d{1,4}){2,7}${NE}`,
+  String.raw`(?<![\p{L}\p{N}+]|\d[ .\-\u00A0])(?:\+|00)[1-9]\d{0,2}(?:[ .\-\u00A0]?\(0\))?(?:[ .\-\u00A0]?\d{1,4}){2,7}${NE}`,
   "gu",
 );
 
