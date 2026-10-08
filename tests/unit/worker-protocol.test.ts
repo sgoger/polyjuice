@@ -29,18 +29,28 @@ class FakeWorker implements WorkerLike {
 const txt = () => new TextEncoder().encode("Bonjour").buffer;
 
 describe("protocole du Worker", () => {
-  it("renvoie une erreur NotImplemented typée pour anonymize", async () => {
+  it("renvoie une erreur typée pour un format non pris en charge", async () => {
     const client = new WorkerClient(() => new FakeWorker());
     const call = client.call("anonymize", {
       file: txt(),
-      fileName: "a.txt",
+      fileName: "a.odt",
       names: "",
       ner: false,
       columns: [],
       mapping: null,
     });
     await expect(call.promise).rejects.toBeInstanceOf(EngineError);
-    await expect(call.promise).rejects.toMatchObject({ code: "NotImplemented" });
+    await expect(call.promise).rejects.toMatchObject({ code: "UnsupportedFormat" });
+  });
+
+  it("anonymise un .txt de bout en bout", async () => {
+    const client = new WorkerClient(() => new FakeWorker());
+    const file = new TextEncoder().encode("Écrire à jean@example.org").buffer;
+    const params = { file, fileName: "a.txt", names: "", ner: false, columns: [], mapping: null };
+    const r = await client.call("anonymize", params).promise;
+    expect(new TextDecoder().decode(r.document.data)).toMatch(/^Écrire à ⟦E-[A-Z0-9]{5}⟧$/);
+    expect(r.document.name).toBe("a.anonymise.txt");
+    expect(r.mapping.name).toBe("a.json");
   });
 
   it("transmet la progression et le résultat", async () => {
@@ -49,7 +59,11 @@ describe("protocole du Worker", () => {
       check: (params, ctx) => {
         ctx.progress(1, 2);
         ctx.progress(2, 2);
-        return Promise.resolve({ findings: [], notices: [], warnings: [params.fileName], reportMarkdown: "" });
+        return Promise.resolve({
+          report: { fileName: params.fileName, rows: [], notices: [], warnings: [] },
+          warnings: [params.fileName],
+          reportMarkdown: "",
+        });
       },
     };
     const client = new WorkerClient(() => new FakeWorker(handlers));
@@ -107,7 +121,7 @@ describe("protocole du Worker", () => {
       check: async (_p, ctx) => {
         await gate;
         ctx.checkCancelled();
-        return { findings: [], notices: [], warnings: [], reportMarkdown: "" };
+        return { report: { fileName: "", rows: [], notices: [], warnings: [] }, warnings: [], reportMarkdown: "" };
       },
     };
     const posted: FromWorker[] = [];
