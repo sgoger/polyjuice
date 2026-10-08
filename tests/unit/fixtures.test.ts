@@ -10,7 +10,7 @@ describe("fixtures", () => {
   it("sont reproductibles et à jour", () => {
     const out = mkdtempSync(join(tmpdir(), "polyjuice-fixtures-"));
     execFileSync("npx", ["tsx", "scripts/make-fixtures.ts"], {
-      env: { ...process.env, FIXTURES_OUT: out },
+      env: { ...process.env, FIXTURES_OUT: out, TZ: "UTC" },
       stdio: "ignore",
     });
     const files = readdirSync(out).sort();
