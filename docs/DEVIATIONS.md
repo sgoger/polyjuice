@@ -128,7 +128,8 @@ The prompt plans native `DOMParser` / `XMLSerializer` in the browser and xmldom 
 ### NER in the UI (6.1)
 
 - **ONNX runtime served locally.** By default, transformers.js downloads the onnxruntime WASM files from `cdn.jsdelivr.net`. They are now served by the application (`src/engine/detectors/ortAssets.ts`, `?url` imports of `onnxruntime-web`, a dependency of transformers.js). Only bodiless `GET` requests to `huggingface.co` / `*.hf.co` (weights and tokenizer) leave the browser: verified by the Playwright test `tests/e2e/ner.slow.spec.ts` (nightly).
-- **WebGPU → WASM fallback.** WebGPU is only attempted if `navigator.gpu.requestAdapter()` returns an adapter: in headless Chromium, the API exists without an adapter and the WebGPU failure then prevented the WASM fallback.
+- **WASM first, WebGPU as fallback** (changed after 6.1). In Firefox on macOS, WebGPU processed 25 paragraphs in more than 4 minutes, versus about 6 per second in multi-threaded WASM: our inferences are many and short (one per paragraph), so the fixed cost of each WebGPU call dominates. WebKit, which used to pick WebGPU, now uses WASM with 7 threads (42k-word document: 194 s).
+- **WebGPU → WASM fallback** (original behavior, now reversed). WebGPU is only attempted if `navigator.gpu.requestAdapter()` returns an adapter: in headless Chromium, the API exists without an adapter and the WebGPU failure then prevented the WASM fallback.
 - **Load failure (offline).** The checkbox is unchecked and the error displayed; pattern and list detection remain usable (test `tests/e2e/ner-offline.spec.ts`). The download can be cancelled (the Worker is terminated). After a processing cancellation, the model is reloaded on demand (from the browser cache).
 
 ### Multi-threaded NER (cross-origin isolation)
