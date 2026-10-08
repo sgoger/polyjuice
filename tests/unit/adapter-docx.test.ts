@@ -136,10 +136,9 @@ describe("DOCX : restauration après découpage des tokens par un traducteur", (
     expect(r.unknownTokens).toEqual([]);
     expect(r.summary.missing).toEqual([]);
     expect(r.summary.found.reduce((a, f) => a + f.occurrences, 0)).toBe(
-      Object.values(JSON.parse(text(anon.mapping.data)).entities as Record<string, { occurrences: number }>).reduce(
-        (a, e) => a + e.occurrences,
-        0,
-      ),
+      Object.values(
+        (JSON.parse(text(anon.mapping.data)) as { entities: Record<string, { occurrences: number }> }).entities,
+      ).reduce((a, e) => a + e.occurrences, 0),
     );
   });
 });

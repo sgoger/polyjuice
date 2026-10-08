@@ -13,7 +13,7 @@ const ctx: PipelineContext = { progress: () => undefined, checkCancelled: () => 
 
 for (const name of ["sample.docx", "sample.pptx", "sample.xlsx"]) {
   const b = readFileSync(join(FIX, name));
-  const file = b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength) as ArrayBuffer;
+  const file = b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength);
   let anon;
   try {
     anon = await anonymize({ file, fileName: name, names, ner: false, columns: ["Nom", "Prénom"], mapping: null }, ctx);

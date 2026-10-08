@@ -22,7 +22,8 @@ export async function changedParts(a: ArrayBuffer, b: ArrayBuffer): Promise<stri
   return [...names].filter((n) => {
     const x = pa.get(n);
     const y = pb.get(n);
-    return !x || !y || x.length !== y.length || x.some((v, i) => v !== y[i]);
+    if (!x || !y) return true;
+    return x.length !== y.length || x.some((v, i) => v !== y[i]);
   });
 }
 
