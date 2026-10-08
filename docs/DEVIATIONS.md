@@ -94,3 +94,7 @@ De même, `Adapter.read` accepte un second argument optionnel `{ columns }` (en-
 ### Rapports
 
 - Les extraits de contexte (±40 caractères) du rapport de détection sont pris dans le **texte anonymisé**, autour du token : le rapport téléchargeable ne contient ainsi aucune valeur d'origine et seul le mapping est sensible, conformément au rappel « Le mapping contient les données en clair ». Les valeurs d'origine restent consultables dans le mapping.
+
+### XML : `@xmldom/xmldom` en dépendance d'exécution
+
+Le prompt prévoit `DOMParser` / `XMLSerializer` natifs dans le navigateur et xmldom pour les tests Node. Or **`DOMParser` et `XMLSerializer` n'existent pas dans un Web Worker**, où tournent les adaptateurs et le moteur. Plutôt que de renvoyer l'analyse XML sur le thread principal (l'interface ne ferait plus seulement de l'orchestration), `@xmldom/xmldom` est utilisé partout, Worker comme tests. Justification supplémentaire : le spike 0.3 a montré que xmldom conserve exactement l'ordre des attributs et la déclaration, alors que Chromium réordonne les déclarations d'espaces de noms ; le même code produit donc les mêmes octets dans tous les navigateurs et dans les tests. Coût : ~60 Ko non compressés dans le bundle du Worker.
