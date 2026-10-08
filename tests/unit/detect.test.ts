@@ -123,10 +123,18 @@ describe("orchestration de la détection", () => {
       text: "",
       source: "ner",
     });
-    expect(resolveOverlaps([d(0, 5, 0.9), d(0, 10, 0.6), d(8, 12, 1)])).toEqual([d(0, 10, 0.6)]);
-    expect(resolveOverlaps([d(0, 5, 0.6, "LOCATION"), d(0, 5, 0.9), d(5, 7, 0.5)])).toEqual([
+    const t = "x".repeat(20);
+    expect(resolveOverlaps(t, [d(0, 5, 0.9), d(0, 10, 0.6), d(2, 6, 1)])).toEqual([d(0, 10, 0.6)]);
+    expect(resolveOverlaps(t, [d(0, 5, 0.6, "LOCATION"), d(0, 5, 0.9), d(5, 7, 0.5)])).toEqual([
       d(0, 5, 0.9),
       d(5, 7, 0.5),
     ]);
+  });
+
+  it("un chevauchement partiel étend la détection retenue (pas de fragment en clair)", async () => {
+    const text = "+49 30 12345678 06 12 34 56 78";
+    const found = await detectSegment(seg(text), {});
+    expect(found.map((d) => d.text).join("")).toBe(text);
+    expect(found.every((d) => d.type === "PHONE_NUMBER")).toBe(true);
   });
 });

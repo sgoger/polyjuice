@@ -1,6 +1,6 @@
 // Détecteurs indépendants de la langue : e-mail, IBAN, URL, IP, carte bancaire, téléphone international.
 import type { Detection } from "../types.ts";
-import { B, digitsOf, E, excludeTokens, NB, NE, runRules, type RegexRule } from "./util.ts";
+import { B, digitsOf, E, excludeTokens, longestValidPrefix, NB, NE, runRules, type RegexRule } from "./util.ts";
 
 const EMAIL = new RegExp(
   String.raw`${B}[\p{L}\p{N}._%+\-]+@(?:[\p{L}\p{N}](?:[\p{L}\p{N}\-]*[\p{L}\p{N}])?\.)+\p{L}{2,}${E}`,
@@ -57,15 +57,7 @@ export function ibanChecksumOk(compact: string): boolean {
   return rest === 1;
 }
 
-/** Plus longue troncature (à une frontière de groupe) dont la clé est valide. */
-function validateIban(m: string): number | null {
-  const ends = [m.length];
-  for (let i = m.length - 1; i > 0; i--) if (m[i] === " " || m[i] === "\u00A0") ends.push(i);
-  for (const end of ends) {
-    if (ibanChecksumOk(m.slice(0, end).replace(/[ \u00A0]/g, ""))) return end;
-  }
-  return null;
-}
+const validateIban = (m: string) => longestValidPrefix(m, (c) => ibanChecksumOk(c.replace(/[ \u00A0]/g, "")));
 
 const CARD = new RegExp(String.raw`${NB}\d(?:[ \-\u00A0]?\d){12,18}${NE}`, "gu");
 
@@ -82,21 +74,33 @@ export function luhnOk(digits: string): boolean {
   return sum % 10 === 0;
 }
 
-const validateCard = (m: string) => {
-  const d = digitsOf(m);
-  return /^[2-6]/.test(d) && luhnOk(d) ? m.length : null;
-};
+/** Groupement d'une carte : sans séparateur, par 4 (dernier groupe libre), ou 4-6-5 / 4-6-4 (Amex, Diners). */
+function cardGrouping(c: string): boolean {
+  const groups = c.split(/[ \-\u00A0]/);
+  if (groups.length === 1) return true;
+  const sizes = groups.map((g) => g.length).join("-");
+  if (sizes === "4-6-5" || sizes === "4-6-4") return true;
+  return groups.slice(0, -1).every((g) => g.length === 4) && (groups.at(-1)?.length ?? 0) <= 4;
+}
+
+const validateCard = (m: string) =>
+  longestValidPrefix(m, (c) => {
+    const d = digitsOf(c);
+    return d.length >= 13 && d.length <= 19 && /^[2-6]/.test(d) && cardGrouping(c) && luhnOk(d);
+  });
 
 // Téléphone international : +CC ou 00CC, « (0) » optionnel, groupes séparés par espace, point ou tiret.
 const PHONE_INTL = new RegExp(
-  String.raw`(?<![\p{L}\p{N}+]|\d[ .\-\u00A0])(?:\+|00)[1-9]\d{0,2}(?:[ .\-\u00A0]?\(0\))?(?:[ .\-\u00A0]?\d{1,4}){2,7}${NE}`,
+  String.raw`(?<![\p{L}\p{N}+])(?:\+|00)[1-9]\d{0,2}(?:[ .\-\u00A0]?\(0\))?(?:[ .\-\u00A0]?\d{1,4}){2,7}${NE}`,
   "gu",
 );
 
-const validatePhoneIntl = (m: string) => {
-  const d = digitsOf(m.replace(/^00/, "").replace(/\(0\)/, ""));
-  return d.length >= 8 && d.length <= 15 ? m.length : null;
-};
+/** E.164 : 8 à 15 chiffres hors préfixe 00 et « (0) ». */
+const validatePhoneIntl = (m: string) =>
+  longestValidPrefix(m, (c) => {
+    const n = digitsOf(c.replace(/^00/, "").replace(/\(0\)/, "")).length;
+    return n >= 8 && n <= 15;
+  });
 
 export const COMMON_RULES: readonly RegexRule[] = [
   { type: "EMAIL_ADDRESS", re: EMAIL },

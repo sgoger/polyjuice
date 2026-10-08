@@ -21,12 +21,8 @@ export async function detectSegment(segment: Segment, options: DetectOptions): P
   const found: Detection[] = [...detectCommon(text), ...detectFr(text)];
   if (options.names) found.push(...options.names.detect(text));
   if (options.ner) found.push(...(await options.ner.detect(text)));
-  return resolveOverlaps(
-    excludeTokens(
-      text,
-      found.flatMap((d) => normalize(text, d)),
-    ),
-  );
+  const normalized = found.flatMap((d) => normalize(text, d));
+  return resolveOverlaps(text, excludeTokens(text, normalized));
 }
 
 function wholeCell(text: string): Detection[] {
@@ -56,14 +52,28 @@ function normalize(text: string, d: Detection): Detection[] {
   return out;
 }
 
-/** Garde la plus longue, puis la plus confiante ; à égalité, la première. Résultat trié par position. */
-export function resolveOverlaps(detections: readonly Detection[]): Detection[] {
+/**
+ * Garde la plus longue, puis la plus confiante ; à égalité, la première. Une détection écartée qui
+ * déborde de celle retenue l'étend (union des plages) : un chevauchement partiel ne laisse jamais
+ * de fragment en clair. Résultat trié par position.
+ */
+export function resolveOverlaps(text: string, detections: readonly Detection[]): Detection[] {
   const ranked = [...detections].sort(
     (a, b) => b.end - b.start - (a.end - a.start) || b.score - a.score || a.start - b.start,
   );
-  const kept: Detection[] = [];
+  let kept: Detection[] = [];
   for (const d of ranked) {
-    if (!kept.some((k) => d.start < k.end && k.start < d.end)) kept.push(d);
+    const hits = kept.filter((k) => d.start < k.end && k.start < d.end);
+    const winner = hits[0];
+    if (!winner) {
+      kept.push(d);
+      continue;
+    }
+    if (hits.length === 1 && winner.start <= d.start && d.end <= winner.end) continue;
+    const start = Math.min(d.start, ...hits.map((h) => h.start));
+    const end = Math.max(d.end, ...hits.map((h) => h.end));
+    kept = kept.filter((k) => !hits.includes(k));
+    kept.push({ ...winner, start, end, text: text.slice(start, end) });
   }
   return kept.sort((a, b) => a.start - b.start);
 }

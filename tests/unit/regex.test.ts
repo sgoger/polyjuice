@@ -79,8 +79,12 @@ describe("carte bancaire", () => {
     ["carte 4111 1111 1111 1111.", "4111 1111 1111 1111"],
     ["5555-5555-5555-4444", "5555-5555-5555-4444"],
     ["Amex 378282246310005", "378282246310005"],
+    ["Amex 3782 822463 10005", "3782 822463 10005"],
   ])("%s", (text, want) => {
     expect(found(text, "CREDIT_CARD")).toEqual([want]);
+  });
+  it("rejette un groupement qui n'est pas celui d'une carte", () => {
+    expect(found("+49 30 12345678 06 12 34 56 78", "CREDIT_CARD")).toEqual([]);
   });
   it("rejette un numéro qui échoue à Luhn", () => {
     expect(found("4111 1111 1111 1112", "CREDIT_CARD")).toEqual([]);
