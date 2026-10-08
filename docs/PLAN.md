@@ -1,100 +1,105 @@
-# Plan de réalisation — `polyjuice`
+# Plan de réalisation — `polyjuice` (version web)
 
-À placer dans le dépôt sous `docs/PLAN.md`. Chaque sous-étape est conçue pour être confiée à un agent autonome (sous-agent Claude Code), avec une entrée, une sortie vérifiable et des critères d'acceptation. Les phases sont séquentielles ; à l'intérieur d'une phase, les sous-étapes marquées ∥ peuvent tourner en parallèle.
+À placer sous `docs/PLAN.md`. Chaque sous-étape est conçue pour un agent autonome, avec une sortie vérifiable et des critères d'acceptation. Phases séquentielles ; ∥ = sous-étapes parallélisables au sein d'une phase.
 
-Légende modèle/effort :
-
-- **Haiku** : tâches mécaniques, à spécification complète, sans arbitrage.
-- **Sonnet** : implémentation standard, un peu de conception locale.
-- **Opus** : conception, cas limites nombreux, revue.
-- Effort : `low` / `medium` / `high` / `max` (paramètre d'effort de Claude Code).
-
-Le modèle est choisi pour la difficulté réelle de la sous-étape, pas pour son volume de code.
+Modèles : **Haiku** (mécanique, spécification complète), **Sonnet** (implémentation standard), **Opus** (conception, cas limites nombreux, revue). Effort : `low` / `medium` / `high` / `max`.
 
 ---
 
-## Phase 0 — Validation des hypothèses (humain + agent, avant tout code de production)
+## Phase 0 — Validation des hypothèses
 
-Ces deux spikes conditionnent des décisions du prompt. S'ils échouent, le prompt est corrigé avant la phase 1.
+Ces trois spikes conditionnent des décisions du prompt. Résultats consignés dans `docs/DEVIATIONS.md` section « Spikes ». Aucun code de production.
 
 ### 0.1 Spike : survie des tokens dans l'outil de traduction — *Sonnet, medium*
 
-- Écrire `spikes/token_survival.py` : génère un `.docx` et un `.md` contenant 20 phrases en FR/DE/EN avec des tokens `⟦P-K7M2X⟧`, `⟦O-R4N8Q⟧`, `⟦E-W3X9Z⟧` placés en début, milieu, fin de phrase, dans un tableau, dans une note de bas de page.
-- Fournir un script `spikes/token_survival_check.py` qui, étant donné le fichier traduit, liste les tokens attendus, retrouvés intacts, retrouvés déformés (regex permissive), absents.
-- **L'humain** passe les fichiers dans l'outil de traduction réel et lance le check.
-- Acceptation : 100 % des tokens retrouvés intacts. Sinon : rapport des déformations observées, et décision humaine sur le format de token avant la phase 1.
+- `spikes/token-survival/make.ts` : génère un `.docx` et un `.md` avec 20 phrases FR/DE/EN contenant `⟦P-K7M2X⟧`, `⟦O-R4N8Q⟧`, `⟦E-W3X9Z⟧` en début, milieu, fin de phrase, dans un tableau, dans une note.
+- `spikes/token-survival/check.ts` : lit le fichier traduit et classe chaque token attendu en intact / déformé (regex permissive) / absent.
+- L'humain passe les fichiers dans l'outil de traduction réel.
+- Acceptation : 100 % intacts. Sinon, décision humaine sur le format avant la phase 1.
 
-### 0.2 Spike : qualité et temps de la NER spaCy `md` — *Sonnet, medium*
+### 0.2 Spike : NER dans le navigateur — *Sonnet, high*
 
-- `spikes/ner_bench.py` : charge `fr_core_news_md`, `de_core_news_md`, `en_core_web_md`, mesure le temps de chargement et le temps d'analyse d'un texte de 2 000 mots par langue, et affiche les entités `PERSON`/`ORG`/`LOC` détectées sur un échantillon fictif fourni dans le script (10 phrases par langue, avec des noms français, allemands, polonais, turcs, et des pièges : noms communs avec majuscule en allemand, prénoms seuls).
-- Acceptation : chiffres réels consignés dans `docs/DEVIATIONS.md` section « Benchmarks », et liste des faux négatifs observés. Pas de seuil bloquant ; c'est de l'information pour calibrer les attentes et la liste de noms.
+- Page Vite minimale `spikes/ner-browser/` qui charge `Xenova/bert-base-multilingual-cased-ner-hrl` (quantifié) via transformers.js dans un Worker, affiche : taille téléchargée, temps de chargement à froid et à chaud (cache), temps d'analyse d'un texte de 2 000 mots, pic mémoire (`performance.memory` si disponible), et les entités détectées sur 10 phrases par langue avec des pièges (noms polonais, turcs, noms communs allemands avec majuscule, prénoms seuls, noms dans un tableau).
+- Tester WASM mono-thread et WebGPU si disponible. Tester sur Chrome, Firefox, Safari.
+- Comparer avec au moins un modèle alternatif (portage ONNX de GLiNER si disponible sur le Hub, ou un modèle NER multilingue plus petit).
+- Acceptation : un tableau comparatif et une recommandation de modèle. Le nom retenu devient la constante de `ner.ts`. Si aucun modèle n'est utilisable (temps > 2 min à froid sur un portable standard, ou qualité inacceptable), le remonter : c'est le premier signal de passage au plan B.
+
+### 0.3 Spike : réécriture OOXML sans perte — *Sonnet, high*
+
+- `spikes/ooxml-roundtrip/` : ouvrir un `.docx` complexe (styles, images, tableaux, en-têtes) avec JSZip, parser `document.xml` avec DOMParser, modifier un seul `w:t`, re-sérialiser, réécrire le zip. Vérifier : le fichier s'ouvre dans Word/LibreOffice sans réparation ; toutes les autres parties sont identiques octet pour octet ; les namespaces et `mc:Ignorable` sont préservés ; `xml:space="preserve"` est respecté.
+- Même chose sur un `.pptx` et un `.xlsx`.
+- Acceptation : procédure validée et pièges listés (ordre des attributs, déclaration XML, entités, CRLF) dans `DEVIATIONS.md`. Ce spike fixe les règles de `ooxml/xml.ts`.
 
 ---
 
-## Phase 1 — Squelette du dépôt
+## Phase 1 — Squelette
 
 ### 1.1 Initialisation — *Haiku, low*
 
-- `uv init`, `pyproject.toml` complet (nom, version 0.1.0, Python 3.12, dépendances du §8 du prompt, scripts `polyjuice = "polyjuice.cli:app"`), `uv.lock`.
-- Modèles spaCy déclarés comme dépendances pip via URL de release.
-- `ruff.toml`, `mypy.ini` (strict), `pytest.ini`, `Makefile` (`lint`, `typecheck`, `test`, `all`), `.gitignore`, `LICENSE` (MIT), `README.md` minimal.
-- Arborescence des paquets vides avec `__init__.py` selon l'architecture du prompt.
-- Acceptation : `uv sync` réussit, `make all` vert sur un dépôt vide, `polyjuice --help` affiche les trois commandes (stubs qui lèvent `NotImplementedError`).
+- Vite + React + TypeScript strict + Tailwind, ESLint (typescript-eslint strict), Prettier, Vitest, Playwright, scripts npm (`lint`, `typecheck`, `test`, `test:e2e`, `build`, `check`), `.gitignore` (dont `names*.txt`, `tests/real/`), `LICENSE` MIT, `README.md` minimal, arborescence vide selon §2 du prompt.
+- CI GitHub Actions : `check` + `build` sur push ; déploiement GitHub Pages sur `main` ; `base` Vite configuré.
+- Acceptation : `npm run check` et `npm run build` verts sur un projet vide ; la page vide est déployée et accessible.
 
-### 1.2 Fixtures de test — *Haiku, medium*
+### 1.2 Fixtures — *Haiku, medium*
 
-- `tests/make_fixtures.py` qui génère, de manière reproductible, un document par format (`.docx`, `.pptx`, `.xlsx`, `.pdf`, `.md`, `.txt`) contenant des données **fictives** en FR, DE et EN : noms, e-mails, téléphones FR et internationaux, un NIR valide fictif, un IBAN valide fictif, une URL, une IP.
-- Le DOCX doit contenir : un tableau, un en-tête, un pied de page, une note de bas de page, un commentaire, une zone de texte, une image, et au moins un nom **volontairement coupé sur deux runs** (mise en forme partielle).
-- Le PPTX : un groupe de formes imbriqué, un tableau, des notes du présentateur, une image.
-- Le XLSX : colonnes `Nom`, `Prénom`, `Email`, `Téléphone`, `Montant` (numérique), une formule, une cellule date.
-- Le PDF : généré avec PyMuPDF à partir de texte (avec couche texte), plus un second PDF « scanné » constitué d'une page image sans texte.
-- `tests/fixtures/expected.json` : pour chaque fixture, la liste des entités attendues (texte, type) servant de vérité terrain aux tests.
-- Acceptation : `python tests/make_fixtures.py` régénère des fichiers identiques (seed fixe) ; les fixtures s'ouvrent dans leurs applications respectives.
+- `scripts/make-fixtures.ts` (seed fixe) générant `.docx` (`docx`), `.pptx` (`pptxgenjs`), `.xlsx` (`exceljs`), `.pdf` texte et `.pdf` « scanné » (page image, `pdf-lib`), `.md`, `.txt`, avec données fictives FR/DE/EN : noms, e-mails, téléphones FR et internationaux, NIR valide fictif, IBAN valide fictif, URL, IP.
+- DOCX : tableau, en-tête, pied de page, note de bas de page, commentaire, zone de texte, image, un nom coupé sur deux runs, un hyperlien contenant un e-mail.
+- PPTX : groupe imbriqué, tableau, notes du présentateur, image.
+- XLSX : colonnes `Nom`, `Prénom`, `Email`, `Téléphone`, `Montant` (numérique), une formule, une date, une chaîne partagée réutilisée dans deux colonnes, une cellule texte riche.
+- `tests/fixtures/expected.json` : vérité terrain (texte, type, kind) par fixture.
+- Acceptation : génération reproductible ; fichiers ouvrables.
+
+### 1.3 Squelette du Worker et protocole — *Sonnet, medium*
+
+- `worker/engine.worker.ts` + `worker/protocol.ts` : messages typés `anonymize`, `check`, `restore`, `loadNer`, `cancel` ; réponses `progress`, `result`, `error`, `nerProgress`. Un `WorkerClient` côté app qui promisifie les appels et expose la progression.
+- Acceptation : test Vitest du protocole avec un Worker factice ; un appel `anonymize` sur un `.txt` renvoie une erreur `NotImplemented` proprement typée.
 
 ---
 
-## Phase 2 — Moteur (indépendant des formats)
+## Phase 2 — Moteur
 
 ### 2.1 Tokens — *Sonnet, medium* ∥
 
-- `engine/tokens.py` : alphabet, dérivation HMAC-SHA256 avec salt, encodage 5 caractères, gestion des collisions par suffixe, regex `TOKEN_RE` d'identification d'un token (type + 5 caractères + suffixe optionnel) utilisée par `restore` et `check`.
-- Tests : déterminisme (même salt + même entrée → même token), unicité sur 100 000 entrées aléatoires (aucune collision non gérée), la regex ne matche pas de faux positifs sur du texte avec crochets ordinaires.
+- `engine/tokens.ts` : alphabet, HMAC-SHA256 via `crypto.subtle` (polyfill Node : `webcrypto` de `node:crypto`), encodage 5 caractères, collisions par suffixe, `TOKEN_RE` (type + 5 caractères + suffixe optionnel).
+- Tests : déterminisme, unicité sur 100 000 entrées, pas de faux positifs de `TOKEN_RE` sur du texte avec crochets ordinaires et sur `⟦` isolé.
 
 ### 2.2 Mapping — *Sonnet, medium* ∥
 
-- `engine/mapping.py` : dataclasses `Mapping`, `Entity`, lecture/écriture JSON conforme au §5, création avec salt aléatoire, `get_or_create_token(original, type, source)`, incrément des occurrences, ajout d'avertissements, sha256 du fichier source.
-- Comportement « réutiliser si existe » : charger un mapping existant conserve salt et entités ; un mapping dont `schema_version` est inconnu lève une erreur explicite.
-- Tests : round-trip JSON, réutilisation, versions.
+- `engine/mapping.ts` : types, schéma `zod`, création avec salt, `getOrCreateToken`, occurrences, avertissements, sha256 du fichier source (`crypto.subtle.digest`), sérialisation stable (clés triées).
+- Réimport d'un mapping existant : conservation du salt et des entités ; `schema_version` inconnu → erreur explicite.
+- Tests : round-trip, réutilisation, validation d'un JSON malformé.
 
-### 2.3 Détection de langue — *Haiku, medium* ∥
+### 2.3 Regex — *Sonnet, high* ∥
 
-- `engine/language.py` : `detect(text) -> "fr"|"de"|"en"|None` avec lingua restreint aux trois langues, seuil de 5 mots ; `dominant(segments) -> str` sur le texte concaténé, repli `en`.
-- Tests sur phrases FR/DE/EN et segments trop courts.
+- `detectors/regexCommon.ts`, `detectors/regexFr.ts` : toutes les regex du §3 du prompt, avec les validations (modulo 97, Luhn, clé NIR). Regex Unicode (`u`), frontières de mots gérées explicitement (`\b` est ASCII en JS : utiliser `(?<![\p{L}\p{N}])` / `(?![\p{L}\p{N}])`).
+- Tests : positifs et négatifs par regex ; 15 chiffres sans clé valide ≠ NIR ; IBAN invalide non détecté ; `+33` et `0033` ; pas de détection à l'intérieur d'un token existant.
 
-### 2.4 Reconnaisseurs regex — *Sonnet, high* ∥
+### 2.4 Liste de noms — *Haiku, medium* ∥
 
-- `recognizers/common.py` : e-mail, IBAN (format + validation modulo 97), URL, IPv4/IPv6, carte bancaire (Luhn), téléphone international. Utiliser les reconnaisseurs Presidio existants quand ils sont corrects, les remplacer sinon.
-- `recognizers/fr.py` : NIR (15 chiffres, clé de contrôle, séparateurs optionnels), téléphone national FR.
-- Liste de noms : `NamesRecognizer(path)` → deny-list, frontières de mots, insensible à la casse, accents respectés.
-- Tests : cas positifs et négatifs pour chaque regex, en particulier : un numéro à 15 chiffres sans clé valide n'est pas un NIR ; un IBAN invalide n'est pas détecté ; `+33` et `0033` ; les noms de la liste ne matchent pas en sous-chaîne (« Martin » ne matche pas « Martinique »).
+- `detectors/names.ts` : parse (`#` commentaires, lignes vides, trim), construction d'une regex alternée échappée, triée par longueur décroissante, insensible à la casse, frontières de mots Unicode.
+- Tests : « Martin » ne matche pas « Martinique » ; accents respectés ; termes multi-mots ; 2 000 termes sans dégradation notable.
 
-### 2.5 Moteur de détection — *Opus, high*
+### 2.5 NER transformers.js — *Sonnet, high*
 
-- `engine/detect.py` : construction de l'`AnalyzerEngine` Presidio avec `NlpEngine` multi-langues (chargement paresseux des modèles md), enregistrement des reconnaisseurs de la 2.4, désactivation des types non retenus, seuil 0.5, résolution des chevauchements (plus long puis plus confiant), mapping des types Presidio vers les lettres de token.
-- `detect(segment_text, language, *, ner: bool, names, columns_mode) -> list[Detection]`.
-- Option `ner=False` pour XLSX.
-- Tests : sur des textes FR/DE/EN avec vérité terrain ; chevauchements (un e-mail contenant un nom ne produit qu'une détection `E`) ; `ner=False` ne retourne que regex et liste ; un token déjà présent dans le texte n'est jamais détecté comme entité.
+- `detectors/ner.ts` : `NerProvider` + implémentation avec le modèle retenu en 0.2, pipeline `token-classification` avec agrégation des sous-tokens (`aggregation_strategy`), mapping `PER/ORG/LOC` → types internes, seuil 0.5, découpage des segments longs en fenêtres chevauchantes (le modèle a une limite de 512 tokens) avec fusion des détections au niveau caractère, progression de téléchargement remontée au Worker.
+- Tests : en Node avec le modèle (test marqué lent, exécuté en CI nightly uniquement) : sur 10 phrases par langue, rappel minimal documenté (pas de seuil bloquant, valeur consignée) ; test unitaire du découpage en fenêtres et de la reconstitution des offsets avec un provider factice.
 
-### 2.6 Remplacement et restauration sur texte — *Sonnet, high*
+### 2.6 Orchestration de la détection — *Opus, high*
 
-- `engine/replace.py` : applique une liste de détections sur un texte en partant de la fin (offsets stables), obtient les tokens via le mapping, retourne le texte modifié et les spans remplacés (pour la fusion des runs dans les adaptateurs).
-- `engine/restore.py` : remplacement strict de tous les tokens du mapping, inventaire des tokens retrouvés / non retrouvés / inconnus (via `TOKEN_RE`).
-- Tests : round-trip pur texte sur 50 cas générés ; tokens inconnus signalés ; une entité apparaissant 4 fois donne 4 occurrences dans le mapping.
+- `engine/detect.ts` : exécute regex + liste (+ NER si activée) sur un segment, fusionne, exclut les tokens existants, résout les chevauchements (plus long, puis plus confiant), produit `Detection[]` triées.
+- Options : `ner: boolean`, `names`, `columnsMode` (pour XLSX, les segments marqués par l'adaptateur sont intégralement remplacés).
+- Tests : vérité terrain FR/DE/EN avec provider NER factice ; un e-mail contenant un nom de la liste ne produit qu'une détection `E` ; `ner:false` ne retourne que regex et liste.
 
-### 2.7 Rapports — *Haiku, medium*
+### 2.7 Remplacement et restauration — *Sonnet, high*
 
-- `engine/report.py` : génération des trois rapports Markdown du §7 à partir de structures de données (pas de logique de détection ici). Extraits de contexte ±40 caractères, affichage console en couleur via `rich`.
-- Tests : snapshot des rapports sur des données fixes.
+- `engine/replace.ts` : application des détections de la fin vers le début, tokens via mapping, retour du texte et des spans (positions dans le texte final) pour la fusion des runs.
+- `engine/restore.ts` : remplacement strict, inventaire retrouvés / non retrouvés / inconnus.
+- Tests : round-trip sur 50 cas générés ; occurrences comptées ; tokens inconnus signalés.
+
+### 2.8 Rapports — *Haiku, medium*
+
+- `engine/report.ts` : trois rapports Markdown (§7), extraits ±40 caractères, et une structure de données parallèle pour l'affichage React.
+- Tests : snapshots.
 
 ---
 
@@ -102,37 +107,40 @@ Ces deux spikes conditionnent des décisions du prompt. S'ils échouent, le prom
 
 ### 3.1 Adaptateur texte/Markdown — *Sonnet, medium*
 
-- `adapters/text.py` : un segment par ligne ; en `.md`, exclusion des blocs de code et des cibles de liens/images ; conservation des fins de ligne.
-- Tests : round-trip sur les fixtures `.md` et `.txt` ; un e-mail dans une cible de lien n'est pas anonymisé, le même e-mail dans le texte du lien l'est ; un bloc de code est intact.
+- `adapters/text.ts` : un segment par ligne, exclusions Markdown (blocs de code, cibles de liens/images), fins de ligne et BOM préservés.
+- Tests : round-trip `.md` et `.txt` ; e-mail dans une cible de lien intact, le même dans le texte du lien anonymisé ; bloc de code intact.
 
-### 3.2 CLI complète — *Sonnet, high*
+### 3.2 Interface minimale — *Sonnet, high*
 
-- `cli.py` avec Typer : les trois commandes et toutes leurs options, résolution du mapping par défaut (`<nom>.json`), chargement/réutilisation, codes de sortie, affichage des avertissements, `--verbose`.
-- Branchement dynamique de l'adaptateur par extension, erreur explicite pour une extension inconnue.
-- Tests d'intégration via `typer.testing.CliRunner` sur `.md` : `anon` → fichiers produits ; `anon` relancé → octets identiques ; `check` sur la sortie → code 0 ; `restore` → texte d'origine ; `restore` avec un token inconnu injecté → code 1.
-- Acceptation : le flux complet fonctionne sur `.md` et `.txt`. **Jalon : MVP texte utilisable.**
+- `app/` : les trois onglets, zone de dépôt, zone liste de noms, case NER (grisée si `.xlsx`), progression, bandeau d'avertissements, rapport affiché, trois boutons de téléchargement, bandeau de pied de page. Branchement sur `WorkerClient`. Pas de polish visuel à ce stade mais structure et accessibilité clavier en place.
+- Playwright : parcours complet sur un `.md` (anonymiser sans NER → télécharger → vérifier → restaurer), vérification que le texte restauré est identique.
+- Acceptation : **MVP texte utilisable en ligne.** Déployé sur Pages.
 
 ---
 
 ## Phase 4 — DOCX (format critique)
 
-### 4.1 Lecture DOCX — *Opus, high*
+### 4.1 Socle OOXML — *Opus, high*
 
-- `adapters/docx.py::read` : parcours des paragraphes du corps, des tableaux (récursif), en-têtes et pieds de page de toutes les sections, notes de bas de page et de fin, commentaires, zones de texte. python-docx n'expose pas tout nativement : accès direct au XML via `lxml` pour les parties manquantes (notes, commentaires, `txbxContent`). Un `locator` doit permettre de retrouver l'élément `w:p` exact.
-- Détection des images, SmartArt, OLE pour les avertissements. Lecture des `core_properties`.
-- Tests : sur la fixture DOCX, toutes les entités attendues de `expected.json` sont présentes dans les segments extraits, chaque zone avec le bon `kind` ; le nom coupé sur deux runs apparaît entier dans son segment.
-- Consigner dans `docs/DEVIATIONS.md` tout accès XML direct.
+- `ooxml/zip.ts` : ouverture, lecture d'une partie en texte, réécriture d'une partie, ré-emballage en conservant l'ordre des entrées, la méthode de compression et les octets de toutes les parties non modifiées. `[Content_Types].xml` et les `.rels` ne sont modifiés que pour la suppression de `custom.xml`.
+- `ooxml/xml.ts` : parse/serialize selon les règles du spike 0.3 (déclaration XML, namespaces, `xml:space`), utilitaires de parcours par nom qualifié.
+- `ooxml/runs.ts` : algorithme générique de fusion des runs, paramétré par les noms d'éléments (`w:r/w:t/w:rPr` ou `a:r/a:t/a:rPr`) et la liste des éléments non textuels à préserver. Entrée : un paragraphe DOM, un texte concaténé, des spans remplacés. Sortie : le paragraphe modifié.
+- Tests : round-trip d'un zip sans modification = octets identiques ; fusion de runs sur des paragraphes synthétiques (span dans un run, à cheval sur deux, sur trois, run avec `w:tab` au milieu, run avec `w:drawing`).
 
-### 4.2 Écriture DOCX avec fusion des runs — *Opus, max*
+### 4.2 Lecture DOCX — *Opus, high*
 
-- `adapters/docx.py::write` : pour chaque segment modifié, projeter les spans remplacés sur les runs du paragraphe ; fusionner les runs touchés dans le premier (conserver son `rPr`), vider les suivants ; laisser les runs non touchés intacts ; gérer les runs contenant des éléments non textuels (`w:tab`, `w:br`, `w:drawing`) sans les perdre.
-- Vidage des métadonnées ; neutralisation des horodatages `modified`/`created` pour le test de déterminisme.
-- Tests : round-trip complet sur la fixture (le texte restauré est identique à l'original, zone par zone) ; la mise en forme des runs non touchés est préservée (comparaison XML) ; un remplacement à cheval sur deux runs fonctionne ; deux `anon` successifs produisent le même `.docx` octet pour octet ; le document s'ouvre sans réparation dans LibreOffice (test via `soffice --headless --convert-to pdf` si disponible, sinon validation XML contre la structure attendue).
+- `adapters/docx.ts::read` : toutes les parties et zones du §6 du prompt, `w:tab`/`w:br` dans les offsets, `w:del` ignoré, `mc:AlternateContent` (les deux branches), `kind` par zone, `locator` = (partie, index du `w:p` dans l'ordre du document). Détection images/SmartArt/OLE ; lecture de `core.xml`.
+- Tests : sur la fixture, toutes les entités attendues présentes dans les segments, avec le bon `kind` ; le nom coupé sur deux runs apparaît entier ; l'e-mail dans l'hyperlien est présent.
 
-### 4.3 Flux `restore` DOCX → DOCX — *Sonnet, high*
+### 4.3 Écriture DOCX — *Opus, max*
 
-- Vérifier que `restore` fonctionne sur un DOCX dont les runs ont été redécoupés : écrire un test qui prend la fixture anonymisée, redécoupe artificiellement chaque token sur deux ou trois runs (simulation du traducteur), puis restaure.
-- Acceptation : texte restauré identique à l'original ; rapport de restauration correct. **Jalon : cas d'usage principal couvert.**
+- `adapters/docx.ts::write` : fusion des runs via `ooxml/runs.ts`, métadonnées vidées, horodatages neutralisés, ré-emballage.
+- Tests : round-trip complet (texte restauré identique zone par zone) ; les parties non textuelles sont identiques octet pour octet ; la mise en forme des runs non touchés est préservée (comparaison XML) ; deux anonymisations successives → fichiers identiques ; le document s'ouvre sans réparation dans LibreOffice (`soffice --headless --convert-to pdf` en CI si disponible, sinon validation structurelle).
+
+### 4.4 Restauration DOCX → DOCX — *Sonnet, high*
+
+- Test qui prend la fixture anonymisée, redécoupe artificiellement chaque token sur deux ou trois `w:r` avec des `w:rPr` différents (simulation du traducteur), puis restaure.
+- Acceptation : texte identique à l'original ; rapport correct. **Jalon : cas d'usage principal couvert.** Déployé.
 
 ---
 
@@ -140,91 +148,96 @@ Ces deux spikes conditionnent des décisions du prompt. S'ils échouent, le prom
 
 ### 5.1 PPTX — *Sonnet, high* ∥
 
-- `adapters/pptx.py` : formes texte, groupes récursifs, tableaux, notes du présentateur, masques si texte présent ; même fusion de runs que DOCX (factoriser l'algorithme de fusion dans `adapters/_runs.py` si les structures python-docx/python-pptx le permettent, sinon dupliquer proprement et le dire dans `DEVIATIONS.md`) ; métadonnées ; avertissements images/SmartArt/graphiques/OLE.
-- Tests : round-trip sur la fixture, notes incluses, groupe imbriqué inclus.
+- `adapters/pptx.ts` : slides, groupes récursifs, tableaux, notes, masques/layouts avec texte ; `a:fld` ignorés ; fusion via `ooxml/runs.ts` ; métadonnées ; avertissements.
+- Tests : round-trip ; notes incluses ; groupe imbriqué inclus ; parties non textuelles identiques.
 
-### 5.2 XLSX — *Sonnet, medium* ∥
+### 5.2 XLSX — *Sonnet, high* ∥
 
-- `adapters/xlsx.py` : cellules chaînes uniquement, formules/nombres/dates intacts, `--columns`, NER désactivée, métadonnées, avertissement macros/graphiques.
-- Tests : round-trip ; la formule et la cellule date sont intactes octet pour octet ; `--columns "Nom,Prénom"` anonymise toute la colonne y compris les cellules que les regex ne détecteraient pas ; `check` signale un nom de feuille présent dans la liste.
+- `adapters/xlsx.ts` : `sharedStrings.xml` (simples et riches), `inlineStr`, colonnes à anonymiser (lecture des en-têtes dans chaque feuille, résolution lettre de colonne → références de cellules → index de chaîne partagée), formules/nombres/dates intacts, VBA copié, noms de feuilles signalés par « Vérifier », métadonnées.
+- Tests : round-trip ; formule et date identiques octet pour octet ; colonnes `Nom,Prénom` entièrement anonymisées ; la chaîne partagée réutilisée est anonymisée partout et le rapport le dit.
 
 ### 5.3 PDF — *Sonnet, medium* ∥
 
-- `adapters/pdf.py` : lecture seule via PyMuPDF, blocs → Markdown, séparateur de page, heuristique « scanné » (< 200 caractères/page), avertissement images.
-- Sortie `.md` passée ensuite à l'adaptateur texte pour la réécriture.
-- Tests : la fixture PDF texte produit un `.md` contenant toutes les entités attendues ; la fixture « scannée » produit l'avertissement et un `.md` quasi vide, sans erreur ; `restore` d'un PDF lève une erreur explicite indiquant de restaurer le `.md`.
+- `adapters/pdf.ts` : pdf.js en Worker, `getTextContent`, regroupement en paragraphes, Markdown, heuristique scanné, images.
+- Tests : fixture texte → `.md` avec toutes les entités ; fixture scannée → avertissement et `.md` quasi vide sans erreur ; « Restaurer » refuse un `.pdf`.
 
-### 5.4 Rapports et avertissements finaux — *Haiku, medium*
+### 5.4 Avertissements et rapports intégrés — *Haiku, medium*
 
-- Brancher tous les avertissements des adaptateurs dans le rapport et le mapping ; vérifier l'affichage console ; vérifier le rappel « ne pas transmettre le mapping ».
+- Tous les avertissements des adaptateurs remontent au bandeau, au rapport et au mapping ; textes en français relus.
 - Tests snapshot des rapports sur chaque fixture.
 
 ---
 
-## Phase 6 — Multilingue
+## Phase 6 — NER intégrée et calibration
 
-### 6.1 Détection de langue par segment dans le flux complet — *Sonnet, medium*
+### 6.1 Intégration NER dans l'interface — *Sonnet, medium*
 
-- Brancher `language.py` dans le moteur : langue par segment, repli sur la langue dominante, repli `en` ; activation des regex FR uniquement sur segments FR ; mapping `languages` renseigné.
-- Fixture mixte : un DOCX FR avec un paragraphe DE et un tableau EN.
-- Tests : les trois modèles sont chargés paresseusement (un document purement FR ne charge pas `de_core_news_md`) ; les entités de chaque langue sont détectées ; un téléphone au format national FR dans un paragraphe DE n'est pas détecté comme FR (mais l'est au format international).
+- Case à cocher, barre de progression de téléchargement, message de première utilisation (taille réelle du modèle), repli WebGPU → WASM, gestion de l'échec de téléchargement (hors ligne) sans bloquer le mode regex + liste, annulation.
+- Playwright (test lent, nightly) : anonymiser un `.docx` avec NER activée dans Chromium.
 
 ### 6.2 Calibration sur documents réels — *humain + Sonnet, medium*
 
-- L'humain passe 5 à 10 documents internes réels (hors dépôt, jamais commités) ; l'agent fournit `spikes/calibrate.py` qui agrège les rapports et liste les faux positifs/négatifs signalés manuellement dans un CSV.
-- Sortie : ajustements du seuil, de la liste de noms, ou des regex, consignés dans `DEVIATIONS.md`. Aucune nouvelle fonctionnalité.
+- L'humain traite 5 à 10 documents internes (jamais commités) avec et sans NER ; l'agent fournit `scripts/calibrate.ts` qui agrège les rapports et un CSV de faux positifs/négatifs saisis à la main.
+- Sortie : ajustements du seuil, des regex ou du modèle, consignés dans `DEVIATIONS.md`. **C'est ici que se décide le passage éventuel au plan B** : si la NER navigateur est trop lente ou trop mauvaise pour les usages réels, le rapport de calibration le documente avec chiffres.
 
 ---
 
 ## Phase 7 — Finition
 
-### 7.1 Documentation — *Haiku, medium* ∥
+### 7.1 Interface : finition et accessibilité — *Sonnet, medium* ∥
 
-- `README.md` complet selon §8 du prompt (installation via `uv tool install`, exemples des trois commandes pour chaque format, tokens, hors périmètre, avertissement mapping, paragraphe Conformité).
-- `docs/FORMATS.md` : ce qui est traité et non traité, format par format.
+- États vides, erreurs, responsive, navigation clavier complète, contrastes, libellés `aria`, focus visible. Aucun ajout fonctionnel.
 
-### 7.2 Tests de bout en bout et déterminisme global — *Sonnet, medium* ∥
+### 7.2 Documentation — *Haiku, medium* ∥
 
-- Test paramétré sur tous les formats : `anon` → `check` (code 0) → `restore` → égalité texte ; `anon` ×2 → identité des sorties.
-- Test de non-fuite : aucune entité de `expected.json` n'apparaît en clair dans un document anonymisé, ni dans un rapport (hors contexte tronqué autorisé), ni dans les logs `INFO`.
-- Couverture minimale 85 % sur `polyjuice/engine`.
+- `README.md` complet, `docs/FORMATS.md` (traité / non traité par format), `docs/PRIVACY.md` (ce qui transite ou non, y compris le téléchargement du modèle depuis le Hub : poids seulement, aucune donnée utilisateur).
 
-### 7.3 Revue finale — *Opus, high*
+### 7.3 Tests de bout en bout et non-fuite — *Sonnet, medium* ∥
 
-- Relecture complète du code contre le prompt : chaque décision fermée est-elle respectée ? Rien d'ajouté hors périmètre ? Les écarts sont-ils tous dans `DEVIATIONS.md` ?
-- Revue de sécurité ciblée : aucune donnée personnelle dans les logs, le mapping n'est jamais écrit ailleurs que là où demandé, aucun appel réseau à l'exécution (vérifier avec un test qui bloque les sockets).
-- Sortie : liste de corrections, chacune traitée par un agent **Sonnet, medium**, puis nouvelle passe de revue jusqu'à liste vide.
-- Tag `v0.1.0`.
+- Test paramétré tous formats : anonymiser → vérifier (rien) → restaurer → égalité ; anonymiser ×2 → identité.
+- Non-fuite : aucune entité de `expected.json` en clair dans un document anonymisé ni dans un rapport (hors contexte tronqué).
+- Test réseau : pendant un traitement sans NER, aucune requête sortante (Playwright `page.route` qui échoue sur tout). Avec NER : seules les requêtes vers le Hub pour les poids, aucune avec un corps.
+- Couverture minimale 85 % sur `src/engine` et `src/adapters`.
+
+### 7.4 Revue finale — *Opus, high*
+
+- Relecture complète contre le prompt : décisions respectées, rien hors périmètre, écarts documentés.
+- Revue confidentialité : aucun stockage persistant hors cache du modèle, aucune requête réseau non prévue, mapping jamais envoyé, liste de noms jamais stockée.
+- Sortie : liste de corrections traitées par des agents **Sonnet, medium**, nouvelle passe jusqu'à liste vide. Tag `v0.1.0`.
 
 ---
 
-## Récapitulatif des affectations
+## Récapitulatif
 
-| Sous-étape | Modèle | Effort | Parallélisable |
+| Sous-étape | Modèle | Effort | ∥ |
 |---|---|---|---|
 | 0.1 Spike tokens | Sonnet | medium | |
-| 0.2 Spike NER | Sonnet | medium | |
-| 1.1 Init dépôt | Haiku | low | |
+| 0.2 Spike NER navigateur | Sonnet | high | |
+| 0.3 Spike OOXML | Sonnet | high | |
+| 1.1 Init | Haiku | low | |
 | 1.2 Fixtures | Haiku | medium | |
+| 1.3 Worker/protocole | Sonnet | medium | |
 | 2.1 Tokens | Sonnet | medium | ∥ |
 | 2.2 Mapping | Sonnet | medium | ∥ |
-| 2.3 Langue | Haiku | medium | ∥ |
-| 2.4 Regex | Sonnet | high | ∥ |
-| 2.5 Moteur détection | Opus | high | |
-| 2.6 Replace/restore | Sonnet | high | |
-| 2.7 Rapports | Haiku | medium | |
+| 2.3 Regex | Sonnet | high | ∥ |
+| 2.4 Liste de noms | Haiku | medium | ∥ |
+| 2.5 NER | Sonnet | high | |
+| 2.6 Orchestration | Opus | high | |
+| 2.7 Replace/restore | Sonnet | high | |
+| 2.8 Rapports | Haiku | medium | |
 | 3.1 Adaptateur texte | Sonnet | medium | |
-| 3.2 CLI | Sonnet | high | |
-| 4.1 Lecture DOCX | Opus | high | |
-| 4.2 Écriture DOCX | Opus | max | |
-| 4.3 Restore DOCX | Sonnet | high | |
+| 3.2 Interface minimale | Sonnet | high | |
+| 4.1 Socle OOXML | Opus | high | |
+| 4.2 Lecture DOCX | Opus | high | |
+| 4.3 Écriture DOCX | Opus | max | |
+| 4.4 Restore DOCX | Sonnet | high | |
 | 5.1 PPTX | Sonnet | high | ∥ |
-| 5.2 XLSX | Sonnet | medium | ∥ |
+| 5.2 XLSX | Sonnet | high | ∥ |
 | 5.3 PDF | Sonnet | medium | ∥ |
-| 5.4 Rapports finaux | Haiku | medium | |
-| 6.1 Multilingue | Sonnet | medium | |
+| 5.4 Avertissements | Haiku | medium | |
+| 6.1 NER dans l'UI | Sonnet | medium | |
 | 6.2 Calibration | Sonnet | medium | |
-| 7.1 Documentation | Haiku | medium | ∥ |
-| 7.2 Tests E2E | Sonnet | medium | ∥ |
-| 7.3 Revue finale | Opus | high | |
-
+| 7.1 UI finition | Sonnet | medium | ∥ |
+| 7.2 Documentation | Haiku | medium | ∥ |
+| 7.3 E2E / non-fuite | Sonnet | medium | ∥ |
+| 7.4 Revue finale | Opus | high | |
