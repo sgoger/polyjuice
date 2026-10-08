@@ -1,0 +1,271 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`rapports de détection sur chaque fixture > sample.docx 1`] = `
+"# Rapport de détection — sample.docx
+
+- Fichier : \`sample.docx\`
+- Format : docx
+- Détection par IA (NER) : désactivée
+- Entités distinctes remplacées : 24
+  - Personne : 7
+  - E-mail : 4
+  - Téléphone : 5
+  - IBAN : 3
+  - Carte bancaire : 1
+  - URL : 1
+  - Adresse IP : 2
+  - NIR : 1
+
+## Remplacements
+
+| Token | Type | Source | Occurrences | Contexte (première occurrence) |
+|---|---|---|---:|---|
+| ⟦P-6C9DV⟧ | Personne | liste de noms | 2 | **⟦P-6C9DV⟧** |
+| ⟦P-8NDVV⟧ | Personne | liste de noms | 1 | **⟦P-8NDVV⟧**, NIR ⟦N-NM9SB⟧, joignable au ⟦T-TNG68⟧ … |
+| ⟦P-F2DHM⟧ | Personne | liste de noms | 1 | **⟦P-F2DHM⟧** |
+| ⟦P-FQWG4⟧ | Personne | liste de noms | 2 | Rédigé par **⟦P-FQWG4⟧** le 3 mars 2026. |
+| ⟦P-TFH9N⟧ | Personne | liste de noms | 1 | Source : entretien avec **⟦P-TFH9N⟧**, ⟦T-FCCSA⟧. |
+| ⟦P-UG9GZ⟧ | Personne | liste de noms | 1 | Dossier de **⟦P-UG9GZ⟧** suivi par ⟦P-ZBDVQ⟧. |
+| ⟦P-ZBDVQ⟧ | Personne | liste de noms | 3 | Dossier de ⟦P-UG9GZ⟧ suivi par **⟦P-ZBDVQ⟧**. |
+| ⟦E-4KCW9⟧ | E-mail | motif | 1 | Contact : **⟦E-4KCW9⟧** — ⟦T-EDQG7⟧ |
+| ⟦E-G6ZM2⟧ | E-mail | motif | 1 | **⟦E-G6ZM2⟧** |
+| ⟦E-REZD2⟧ | E-mail | motif | 1 | Écrire à **⟦E-REZD2⟧**. |
+| ⟦E-Z5PRS⟧ | E-mail | motif | 2 | **⟦E-Z5PRS⟧** |
+| ⟦T-7M95F⟧ | Téléphone | motif | 1 | …⟦N-NM9SB⟧, joignable au ⟦T-TNG68⟧ ou au **⟦T-7M95F⟧**. |
+| ⟦T-EDQG7⟧ | Téléphone | motif | 1 | Contact : ⟦E-4KCW9⟧ — **⟦T-EDQG7⟧** |
+| ⟦T-FCCSA⟧ | Téléphone | motif | 2 | **⟦T-FCCSA⟧** |
+| ⟦T-TNG68⟧ | Téléphone | motif | 1 | ⟦P-8NDVV⟧, NIR ⟦N-NM9SB⟧, joignable au **⟦T-TNG68⟧** ou au ⟦T-7M95F⟧. |
+| ⟦T-VFF6G⟧ | Téléphone | motif | 3 | **⟦T-VFF6G⟧** |
+| ⟦I-8W9JP⟧ | IBAN | motif | 1 | Virement sur ⟦I-F4MWW⟧ ou **⟦I-8W9JP⟧**, carte ⟦C-SF4JP⟧. |
+| ⟦I-F4MWW⟧ | IBAN | motif | 1 | Virement sur **⟦I-F4MWW⟧** ou ⟦I-8W9JP⟧, carte ⟦C-SF4JP⟧. |
+| ⟦I-W5SY2⟧ | IBAN | motif | 1 | Contact UK : **⟦I-W5SY2⟧**. |
+| ⟦C-SF4JP⟧ | Carte bancaire | motif | 1 | …ement sur ⟦I-F4MWW⟧ ou ⟦I-8W9JP⟧, carte **⟦C-SF4JP⟧**. |
+| ⟦U-8EZPN⟧ | URL | motif | 1 | Profil : **⟦U-8EZPN⟧** — poste ⟦A-PFH5A⟧ / ⟦A-BE78E⟧. |
+| ⟦A-BE78E⟧ | Adresse IP | motif | 1 | Profil : ⟦U-8EZPN⟧ — poste ⟦A-PFH5A⟧ / **⟦A-BE78E⟧**. |
+| ⟦A-PFH5A⟧ | Adresse IP | motif | 1 | Profil : ⟦U-8EZPN⟧ — poste **⟦A-PFH5A⟧** / ⟦A-BE78E⟧. |
+| ⟦N-NM9SB⟧ | NIR | motif | 1 | ⟦P-8NDVV⟧, NIR **⟦N-NM9SB⟧**, joignable au ⟦T-TNG68⟧ ou au ⟦T-7M95F⟧… |
+
+## Avertissements
+
+- Métadonnées vidées : auteur, dernier modificateur, titre, sujet, mots-clés, description, propriétés personnalisées (dates de création et de modification neutralisées).
+- 1 image ou média présent : le texte contenu dans les images n'est pas traité.
+- 1 nom d'auteur de commentaires ou de révisions conservé tel quel : il n'est pas anonymisé.
+- Cible de lien : 1 élément contient des données personnelles détectées et n'est pas modifié (« Vérifier » les liste).
+
+> **Le mapping contient les données en clair. Ne pas transmettre.**
+"
+`;
+
+exports[`rapports de détection sur chaque fixture > sample.md 1`] = `
+"# Rapport de détection — sample.md
+
+- Fichier : \`sample.md\`
+- Format : md
+- Détection par IA (NER) : désactivée
+- Entités distinctes remplacées : 13
+  - Personne : 5
+  - E-mail : 2
+  - Téléphone : 3
+  - IBAN : 1
+  - Adresse IP : 1
+  - NIR : 1
+
+## Remplacements
+
+| Token | Type | Source | Occurrences | Contexte (première occurrence) |
+|---|---|---|---:|---|
+| ⟦P-6C9DV⟧ | Personne | liste de noms | 1 | - Attendee: **⟦P-6C9DV⟧**, ⟦T-VFF6G⟧ |
+| ⟦P-F2DHM⟧ | Personne | liste de noms | 1 | - Teilnehmer: **⟦P-F2DHM⟧**, ⟦T-FCCSA⟧ |
+| ⟦P-FQWG4⟧ | Personne | liste de noms | 1 | Rédigé par ****⟦P-FQWG4⟧**** (⟦E-4KCW9⟧). |
+| ⟦P-UG9GZ⟧ | Personne | liste de noms | 1 | - Participant : **⟦P-UG9GZ⟧**, ⟦T-TNG68⟧ |
+| ⟦P-ZBDVQ⟧ | Personne | liste de noms | 1 | ![Photo de **⟦P-ZBDVQ⟧**] |
+| ⟦E-4KCW9⟧ | E-mail | motif | 1 | Rédigé par **⟦P-FQWG4⟧** (**⟦E-4KCW9⟧**). |
+| ⟦E-REZD2⟧ | E-mail | motif | 1 | Écrire à [**⟦E-REZD2⟧**] |
+| ⟦T-FCCSA⟧ | Téléphone | motif | 1 | - Teilnehmer: ⟦P-F2DHM⟧, **⟦T-FCCSA⟧** |
+| ⟦T-TNG68⟧ | Téléphone | motif | 1 | - Participant : ⟦P-UG9GZ⟧, **⟦T-TNG68⟧** |
+| ⟦T-VFF6G⟧ | Téléphone | motif | 1 | - Attendee: ⟦P-6C9DV⟧, **⟦T-VFF6G⟧** |
+| ⟦I-W5SY2⟧ | IBAN | motif | 1 | IBAN : **⟦I-W5SY2⟧** — NIR : ⟦N-NM9SB⟧ — IP : ⟦A-BE78E⟧ |
+| ⟦A-BE78E⟧ | Adresse IP | motif | 1 | …AN : ⟦I-W5SY2⟧ — NIR : ⟦N-NM9SB⟧ — IP : **⟦A-BE78E⟧** |
+| ⟦N-NM9SB⟧ | NIR | motif | 1 | IBAN : ⟦I-W5SY2⟧ — NIR : **⟦N-NM9SB⟧** — IP : ⟦A-BE78E⟧ |
+
+## Avertissements
+
+Aucun.
+
+> **Le mapping contient les données en clair. Ne pas transmettre.**
+"
+`;
+
+exports[`rapports de détection sur chaque fixture > sample.pdf 1`] = `
+"# Rapport de détection — sample.pdf
+
+- Fichier : \`sample.pdf\`
+- Format : pdf
+- Détection par IA (NER) : désactivée
+- Entités distinctes remplacées : 11
+  - Personne : 3
+  - E-mail : 2
+  - Téléphone : 2
+  - IBAN : 1
+  - URL : 1
+  - Adresse IP : 1
+  - NIR : 1
+
+## Remplacements
+
+| Token | Type | Source | Occurrences | Contexte (première occurrence) |
+|---|---|---|---:|---|
+| ⟦P-6C9DV⟧ | Personne | liste de noms | 1 | Le dossier de **⟦P-6C9DV⟧** est suivi par l'équipe (⟦E-Z5PRS⟧). |
+| ⟦P-8NDVV⟧ | Personne | liste de noms | 1 | Participants : **⟦P-8NDVV⟧** et ⟦P-F2DHM⟧. |
+| ⟦P-F2DHM⟧ | Personne | liste de noms | 1 | Participants : ⟦P-8NDVV⟧ et **⟦P-F2DHM⟧**. |
+| ⟦E-REZD2⟧ | E-mail | motif | 1 | Contact : **⟦E-REZD2⟧**, téléphone ⟦T-EDQG7⟧. |
+| ⟦E-Z5PRS⟧ | E-mail | motif | 1 | …er de ⟦P-6C9DV⟧ est suivi par l'équipe (**⟦E-Z5PRS⟧**). |
+| ⟦T-EDQG7⟧ | Téléphone | motif | 1 | Contact : ⟦E-REZD2⟧, téléphone **⟦T-EDQG7⟧**. |
+| ⟦T-FCCSA⟧ | Téléphone | motif | 1 | Ligne directe : **⟦T-FCCSA⟧**. |
+| ⟦I-F4MWW⟧ | IBAN | motif | 1 | Virement attendu sur **⟦I-F4MWW⟧**. |
+| ⟦U-8EZPN⟧ | URL | motif | 1 | Accès au portail : **⟦U-8EZPN⟧** depuis ⟦A-PFH5A⟧. |
+| ⟦A-PFH5A⟧ | Adresse IP | motif | 1 | Accès au portail : ⟦U-8EZPN⟧ depuis **⟦A-PFH5A⟧**. |
+| ⟦N-NM9SB⟧ | NIR | motif | 1 | Annexe : NIR **⟦N-NM9SB⟧** |
+
+## Avertissements
+
+- PDF converti en Markdown : la mise en forme d'origine n'est pas conservée, le document produit est un .md.
+
+> **Le mapping contient les données en clair. Ne pas transmettre.**
+"
+`;
+
+exports[`rapports de détection sur chaque fixture > sample.pptx 1`] = `
+"# Rapport de détection — sample.pptx
+
+- Fichier : \`sample.pptx\`
+- Format : pptx
+- Détection par IA (NER) : désactivée
+- Entités distinctes remplacées : 10
+  - Personne : 4
+  - E-mail : 3
+  - Téléphone : 2
+  - IBAN : 1
+
+## Remplacements
+
+| Token | Type | Source | Occurrences | Contexte (première occurrence) |
+|---|---|---|---:|---|
+| ⟦P-8NDVV⟧ | Personne | liste de noms | 1 | **⟦P-8NDVV⟧** |
+| ⟦P-F2DHM⟧ | Personne | liste de noms | 1 | Appeler **⟦P-F2DHM⟧** au ⟦T-FCCSA⟧. |
+| ⟦P-FQWG4⟧ | Personne | liste de noms | 1 | Projet Atlas — **⟦P-FQWG4⟧** |
+| ⟦P-ZBDVQ⟧ | Personne | liste de noms | 1 | Équipe : **⟦P-ZBDVQ⟧** |
+| ⟦E-4KCW9⟧ | E-mail | motif | 1 | Contact : **⟦E-4KCW9⟧**, ⟦T-EDQG7⟧ |
+| ⟦E-REZD2⟧ | E-mail | motif | 1 | **⟦E-REZD2⟧** |
+| ⟦E-Z5PRS⟧ | E-mail | motif | 1 | Écrire à **⟦E-Z5PRS⟧** |
+| ⟦T-EDQG7⟧ | Téléphone | motif | 1 | Contact : ⟦E-4KCW9⟧, **⟦T-EDQG7⟧** |
+| ⟦T-FCCSA⟧ | Téléphone | motif | 1 | Appeler ⟦P-F2DHM⟧ au **⟦T-FCCSA⟧**. |
+| ⟦I-8W9JP⟧ | IBAN | motif | 1 | IBAN : **⟦I-8W9JP⟧** |
+
+## Avertissements
+
+- Métadonnées vidées : auteur, dernier modificateur, titre, sujet, société (dates de création et de modification neutralisées).
+- 1 image ou média présent : le texte contenu dans les images n'est pas traité.
+
+> **Le mapping contient les données en clair. Ne pas transmettre.**
+"
+`;
+
+exports[`rapports de détection sur chaque fixture > sample.txt 1`] = `
+"# Rapport de détection — sample.txt
+
+- Fichier : \`sample.txt\`
+- Format : txt
+- Détection par IA (NER) : désactivée
+- Entités distinctes remplacées : 9
+  - Personne : 3
+  - E-mail : 2
+  - Téléphone : 2
+  - Carte bancaire : 1
+  - Adresse IP : 1
+
+## Remplacements
+
+| Token | Type | Source | Occurrences | Contexte (première occurrence) |
+|---|---|---|---:|---|
+| ⟦P-8NDVV⟧ | Personne | liste de noms | 1 | Merci de rappeler **⟦P-8NDVV⟧** au ⟦T-EDQG7⟧ ou d'écrire à ⟦E-REZD2⟧. |
+| ⟦P-F2DHM⟧ | Personne | liste de noms | 1 | Rückruf: **⟦P-F2DHM⟧**, ⟦T-FCCSA⟧, ⟦E-G6ZM2⟧. |
+| ⟦P-TFH9N⟧ | Personne | liste de noms | 1 | Note interne — **⟦P-TFH9N⟧** |
+| ⟦E-G6ZM2⟧ | E-mail | motif | 1 | Rückruf: ⟦P-F2DHM⟧, ⟦T-FCCSA⟧, **⟦E-G6ZM2⟧**. |
+| ⟦E-REZD2⟧ | E-mail | motif | 1 | …er ⟦P-8NDVV⟧ au ⟦T-EDQG7⟧ ou d'écrire à **⟦E-REZD2⟧**. |
+| ⟦T-EDQG7⟧ | Téléphone | motif | 1 | Merci de rappeler ⟦P-8NDVV⟧ au **⟦T-EDQG7⟧** ou d'écrire à ⟦E-REZD2⟧. |
+| ⟦T-FCCSA⟧ | Téléphone | motif | 1 | Rückruf: ⟦P-F2DHM⟧, **⟦T-FCCSA⟧**, ⟦E-G6ZM2⟧. |
+| ⟦C-SF4JP⟧ | Carte bancaire | motif | 1 | Carte : **⟦C-SF4JP⟧**. Serveur : ⟦A-PFH5A⟧. |
+| ⟦A-PFH5A⟧ | Adresse IP | motif | 1 | Carte : ⟦C-SF4JP⟧. Serveur : **⟦A-PFH5A⟧**. |
+
+## Avertissements
+
+Aucun.
+
+> **Le mapping contient les données en clair. Ne pas transmettre.**
+"
+`;
+
+exports[`rapports de détection sur chaque fixture > sample.xlsx 1`] = `
+"# Rapport de détection — sample.xlsx
+
+- Fichier : \`sample.xlsx\`
+- Format : xlsx
+- Détection par IA (NER) : désactivée
+- Entités distinctes remplacées : 17
+  - Personne : 9
+  - E-mail : 4
+  - Téléphone : 4
+
+## Remplacements
+
+| Token | Type | Source | Occurrences | Contexte (première occurrence) |
+|---|---|---|---:|---|
+| ⟦P-2TG3H⟧ | Personne | colonne | 1 | **⟦P-2TG3H⟧** |
+| ⟦P-56D4X⟧ | Personne | colonne | 1 | **⟦P-56D4X⟧** |
+| ⟦P-7VS6K⟧ | Personne | colonne | 1 | **⟦P-7VS6K⟧** |
+| ⟦P-8DRV2⟧ | Personne | colonne | 1 | **⟦P-8DRV2⟧** |
+| ⟦P-9BRSN⟧ | Personne | colonne | 1 | **⟦P-9BRSN⟧** |
+| ⟦P-BXXKH⟧ | Personne | colonne | 1 | **⟦P-BXXKH⟧** |
+| ⟦P-FQWG4⟧ | Personne | liste de noms | 1 | Voir **⟦P-FQWG4⟧** (référente) |
+| ⟦P-SEXYW⟧ | Personne | colonne | 1 | **⟦P-SEXYW⟧** |
+| ⟦P-TFH9N⟧ | Personne | liste de noms | 1 | Rappeler **⟦P-TFH9N⟧** au ⟦T-FCCSA⟧ |
+| ⟦E-G6ZM2⟧ | E-mail | motif | 1 | **⟦E-G6ZM2⟧** |
+| ⟦E-K7T64⟧ | E-mail | motif | 1 | **⟦E-K7T64⟧** |
+| ⟦E-REZD2⟧ | E-mail | motif | 1 | **⟦E-REZD2⟧** |
+| ⟦E-Z5PRS⟧ | E-mail | motif | 1 | **⟦E-Z5PRS⟧** |
+| ⟦T-EDQG7⟧ | Téléphone | motif | 1 | **⟦T-EDQG7⟧** |
+| ⟦T-FCCSA⟧ | Téléphone | motif | 2 | **⟦T-FCCSA⟧** |
+| ⟦T-TNG68⟧ | Téléphone | motif | 1 | **⟦T-TNG68⟧** |
+| ⟦T-VFF6G⟧ | Téléphone | motif | 1 | **⟦T-VFF6G⟧** |
+
+## Avertissements
+
+- Métadonnées vidées : auteur, dernier modificateur (dates de création et de modification neutralisées).
+- 1 chaîne partagée des colonnes anonymisées est utilisée dans plusieurs colonnes : toutes les cellules qui les utilisent sont remplacées.
+
+> **Le mapping contient les données en clair. Ne pas transmettre.**
+"
+`;
+
+exports[`rapports de détection sur chaque fixture > scanned.pdf 1`] = `
+"# Rapport de détection — scanned.pdf
+
+- Fichier : \`scanned.pdf\`
+- Format : pdf
+- Détection par IA (NER) : désactivée
+- Entités distinctes remplacées : 0
+
+## Remplacements
+
+Aucune entité détectée.
+
+## Avertissements
+
+- PDF converti en Markdown : la mise en forme d'origine n'est pas conservée, le document produit est un .md.
+- PDF probablement scanné (0 caractères par page en moyenne) : le texte contenu dans les images n'est pas extrait (pas d'OCR).
+- 1 page contient des images : le texte contenu dans les images n'est pas traité.
+
+> **Le mapping contient les données en clair. Ne pas transmettre.**
+"
+`;

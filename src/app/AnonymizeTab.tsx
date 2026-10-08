@@ -1,3 +1,4 @@
+import { pl } from "../engine/plural.ts";
 import { useId, useState } from "react";
 import type { AnonymizeResult } from "../worker/protocol.ts";
 import { WarningsBanner, Banner } from "./components/Banner.tsx";
@@ -101,7 +102,7 @@ export function AnonymizeTab({ settings }: { settings: SharedSettings }) {
           <WarningsBanner warnings={result.warnings} />
           <Banner
             tone="success"
-            title={`Document anonymisé : ${result.summary.rows.length} entité(s) distincte(s) remplacée(s).`}
+            title={`Document anonymisé : ${pl(result.summary.rows.length, "entité distincte remplacée", "entités distinctes remplacées")}.`}
           />
           <Downloads
             items={[

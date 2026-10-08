@@ -1,3 +1,4 @@
+import { pl } from "../engine/plural.ts";
 import { useState } from "react";
 import type { CheckResult } from "../worker/protocol.ts";
 import { Banner, WarningsBanner } from "./components/Banner.tsx";
@@ -71,7 +72,7 @@ export function CheckTab({ settings }: { settings: SharedSettings }) {
           ) : (
             <Banner
               tone="warning"
-              title={`${result.report.rows.length + result.report.notices.length} élément(s) ressemblent encore à des données personnelles.`}
+              title={`${pl(result.report.rows.length + result.report.notices.length, "élément ressemble", "éléments ressemblent")} encore à des données personnelles.`}
             />
           )}
           <CheckReportView r={result.report} />

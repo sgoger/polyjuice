@@ -1,6 +1,7 @@
 // Rapports Markdown (§7) et structures parallèles pour l'affichage React.
 // Les rapports ne contiennent jamais de valeur d'origine : les extraits de contexte sont pris dans le
 // texte anonymisé (pour « Vérifier », dans le texte vérifié, qui est censé être déjà anonymisé).
+import { pl } from "./plural.ts";
 import type { Mapping } from "./mapping.ts";
 import { ENTITY_TYPES, type EntityType, type Format, type SegmentKind } from "./types.ts";
 
@@ -164,7 +165,7 @@ export function checkReportMarkdown(r: CheckReport): string {
     "",
     r.rows.length === 0
       ? "Aucune donnée personnelle détectée (les tokens existants sont ignorés)."
-      : `**${r.rows.length} élément(s) ressemblent encore à des données personnelles.**`,
+      : `**${pl(r.rows.length, "élément ressemble", "éléments ressemblent")} encore à des données personnelles.**`,
     "",
     ...(r.rows.length
       ? [
@@ -223,7 +224,7 @@ export function restoreReportMarkdown(r: RestoreReport): string {
       ? [
           "## ⚠ Erreur : tokens inconnus",
           "",
-          `${r.unknown.length} token(s) au format polyjuice sont absents du mapping et ont été laissés tels quels. Vérifiez que le mapping correspond bien à ce document.`,
+          `${pl(r.unknown.length, "token au format polyjuice est absent du mapping et a été laissé tel quel", "tokens au format polyjuice sont absents du mapping et ont été laissés tels quels")}. Vérifiez que le mapping correspond bien à ce document.`,
           "",
           "| Token | Occurrences |",
           "|---|---:|",

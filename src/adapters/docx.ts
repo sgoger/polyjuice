@@ -1,4 +1,5 @@
 // Adaptateur .docx (WordprocessingML brut).
+import { agree, pl } from "../engine/plural.ts";
 import type { Adapter, Doc, SegmentKind } from "../engine/types.ts";
 import {
   contentWarnings,
@@ -73,7 +74,7 @@ async function authorWarnings(pkg: OoxmlPackage): Promise<string[]> {
   const out: string[] = [];
   if (authors.size) {
     out.push(
-      `${authors.size} nom(s) d'auteur de commentaires ou de révisions conservé(s) tel(s) quel(s) : ils ne sont pas anonymisés.`,
+      `${pl(authors.size, "nom d'auteur", "noms d'auteurs")} de commentaires ou de révisions ${agree(authors.size, "conservé tel quel : il n'est pas anonymisé", "conservés tels quels : ils ne sont pas anonymisés")}.`,
     );
   }
   if (pkg.has("word/people.xml"))

@@ -1,3 +1,4 @@
+import { pl } from "../../engine/plural.ts";
 import type { ReactNode } from "react";
 
 type Tone = "warning" | "success" | "error" | "info";
@@ -31,7 +32,10 @@ export function Banner({ tone, title, children }: { tone: Tone; title: string; c
 export function WarningsBanner({ warnings }: { warnings: readonly string[] }) {
   if (warnings.length === 0) return null;
   return (
-    <Banner tone="warning" title={`${warnings.length} avertissement(s) — à lire avant de télécharger`}>
+    <Banner
+      tone="warning"
+      title={`${pl(warnings.length, "avertissement", "avertissements")} — à lire avant de télécharger`}
+    >
       <ul className="list-disc space-y-1 pl-5">
         {warnings.map((w) => (
           <li key={w}>{w}</li>

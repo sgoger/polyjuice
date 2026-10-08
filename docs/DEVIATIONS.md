@@ -107,3 +107,20 @@ Le prompt prévoit `DOMParser` / `XMLSerializer` natifs dans le navigateur et xm
 - **Graphiques** (`word/charts`) signalés comme pour PPTX.
 - **Entités XML.** Dans une partie réécrite, `&apos;` et `&quot;` deviennent `'` et `"` (équivalent, règle 5 du spike 0.3) ; les tests de préservation de mise en forme comparent après normalisation.
 - **Contrôle d'ouverture.** La CI convertit les documents produits en PDF avec LibreOffice (`soffice --headless`) ; un échec de conversion fait échouer la CI. L'absence de demande de réparation dans Word reste à vérifier à la main.
+
+### PPTX
+
+- Tous les `a:p` des diapositives, notes, masques et dispositions sont lus (formes, groupes à toute profondeur, cellules de tableaux) ; seuls ceux qui contiennent du texte deviennent des segments. Les cellules de tableau ont le type `cell`.
+- `xml:space="preserve"` n'est pas posé sur `a:t` (attribut absent du schéma DrawingML, où les espaces sont déjà préservés).
+- Commentaires de diapositives : signalés, non traités.
+
+### XLSX
+
+- « Colonnes à anonymiser » : l'en-tête lui-même n'est pas remplacé ; les cellules formules sont ignorées. Le rapport signale toute chaîne partagée marquée qui est utilisée par des cellules de plusieurs colonnes (sélectionnées ou non), puisque toutes ces cellules changent.
+- Commentaires et notes de cellules : signalés, non traités.
+
+### PDF
+
+- `pdfjs-dist` (build `legacy`) est chargé à la demande dans le Worker du moteur ; il lance son propre Worker, servi par l'application. Aucune ressource externe : polices standard, cMaps et WASM de pdf.js désactivés (inutiles pour l'extraction de texte).
+- Les lignes d'un même paragraphe sont jointes par une espace en une seule ligne Markdown : une entité coupée en fin de ligne dans le PDF reste ainsi détectable.
+- Un avertissement rappelle systématiquement que le PDF est converti en Markdown.
