@@ -1,0 +1,58 @@
+name: Office
+
+# Les fichiers Office produits doivent s'ouvrir dans LibreOffice (conversion PDF sans erreur).
+# Ne tourne que si le code qui produit ces fichiers, ou ses fixtures, a changé.
+on:
+  push:
+    branches: [main]
+    paths:
+      - src/**
+      - tests/fixtures/**
+      - scripts/export-samples.ts
+      - package.json
+      - package-lock.json
+      - .github/workflows/office.yml
+  pull_request:
+    paths:
+      - src/**
+      - tests/fixtures/**
+      - scripts/export-samples.ts
+      - package.json
+      - package-lock.json
+      - .github/workflows/office.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  libreoffice:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx tsx scripts/export-samples.ts samples-out
+      - name: Installation de LibreOffice
+        run: |
+          # Évite la régénération de l'index man-db, qui ralentit fortement apt sur les runners Ubuntu 24.04.
+          sudo rm -f /var/lib/man-db/auto-update
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libreoffice-writer-nogui libreoffice-impress-nogui libreoffice-calc-nogui
+      - name: Conversion PDF
+        run: |
+          cd samples-out
+          for f in *.docx *.pptx *.xlsx; do
+            [ -e "$f" ] || continue
+            soffice --headless --convert-to pdf "$f" >/dev/null 2>&1 || { echo "échec : $f"; exit 1; }
+            [ -s "${f%.*}.pdf" ] || { echo "PDF vide : $f"; exit 1; }
+            echo "ok : $f"
+          done
