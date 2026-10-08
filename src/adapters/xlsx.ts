@@ -84,6 +84,27 @@ async function read(file: ArrayBuffer, options?: ReadOptions): Promise<Doc> {
   }
 
   const notices = await externalTargets(pkg);
+  for (const sheet of sheets) {
+    const part = state.parts.get(sheet);
+    if (!part) continue;
+    for (const c of elementsNS(part.parsed.doc, NS.s, "c")) {
+      // Valeur calculée (en cache) d'une formule texte : jamais modifiée, signalée si sensible.
+      const v = c.getAttribute("t") === "str" ? child(c, "v")?.textContent : null;
+      if (v?.trim()) notices.push({ text: v, where: "Résultat de formule" });
+    }
+    for (const local of ["oddHeader", "oddFooter", "evenHeader", "evenFooter", "firstHeader", "firstFooter"]) {
+      for (const el of elementsNS(part.parsed.doc, NS.s, local)) {
+        const t = el.textContent ?? "";
+        if (t.trim()) notices.push({ text: t, where: "En-tête ou pied de page de feuille" });
+      }
+    }
+  }
+  if (names.some((n) => n.startsWith("xl/pivotCache/"))) {
+    warnings.push("Tableaux croisés dynamiques présents : leur cache (copie des données sources) n'est pas traité.");
+  }
+  if (names.some((n) => n.startsWith("xl/externalLinks/"))) {
+    warnings.push("Liaisons vers d'autres classeurs présentes : leurs valeurs en cache ne sont pas traitées.");
+  }
   try {
     const wb = parseXml(await pkg.readText("xl/workbook.xml"));
     for (const s of elementsNS(wb.doc, NS.s, "sheet")) {

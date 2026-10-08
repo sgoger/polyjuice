@@ -134,3 +134,11 @@ Le prompt prévoit `DOMParser` / `XMLSerializer` natifs dans le navigateur et xm
 ### Calibration (6.2)
 
 **En attente de l'étape humaine.** `scripts/calibrate.ts` agrège les mappings et un fichier `annotations.csv` (faux positifs / faux négatifs saisis à la main) d'un dossier hors dépôt (`tests/real/`) et affiche volumes, FP/FN et précision estimée par source et par type. Les ajustements de seuil, de regex ou de modèle, et la décision éventuelle de passage au plan B, seront consignés ici après traitement de 5 à 10 documents internes.
+
+### Revue finale (7.4)
+
+Une revue de confidentialité a relevé des contenus secondaires copiés sans signalement. Corrigé :
+
+- **Miniature** `docProps/thumbnail.*` (image de la première page ou diapositive) : supprimée avec sa relation, comme `custom.xml` (au-delà de la liste du prompt, même logique que les métadonnées).
+- **Signalés** (avertissement, et listés par « Vérifier » quand une donnée y est détectée) : textes alternatifs des images et formes (DOCX, PPTX), résultats en cache des formules texte et en-têtes/pieds de feuille (XLSX) ; **avertis** : révisions supprimées encore présentes (DOCX), contrôles liés à `customXml/` (DOCX), caches de tableaux croisés dynamiques et liaisons externes (XLSX), bloc de code Markdown non refermé.
+- **PDF** : le texte extrait est désormais traité comme du texte brut (sans règles Markdown) ; une ligne `~~~` ou une séquence `](` issue du PDF masquait le reste du texte.

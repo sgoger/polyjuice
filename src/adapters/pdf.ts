@@ -129,7 +129,8 @@ export const SCANNED_THRESHOLD = 200;
 async function read(file: ArrayBuffer): Promise<Doc> {
   const x = await extractPdf(file);
   const md = new TextEncoder().encode(x.markdown).buffer;
-  const doc = readText(md, true, "md");
+  // Texte brut (pas de règles Markdown) : une ligne « ~~~ » ou « ](… » d'un PDF ne doit rien masquer.
+  const doc = readText(md, false, "md");
   const warnings = [
     "PDF converti en Markdown : la mise en forme d'origine n'est pas conservée, le document produit est un .md.",
   ];
