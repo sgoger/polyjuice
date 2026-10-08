@@ -98,3 +98,12 @@ De même, `Adapter.read` accepte un second argument optionnel `{ columns }` (en-
 ### XML : `@xmldom/xmldom` en dépendance d'exécution
 
 Le prompt prévoit `DOMParser` / `XMLSerializer` natifs dans le navigateur et xmldom pour les tests Node. Or **`DOMParser` et `XMLSerializer` n'existent pas dans un Web Worker**, où tournent les adaptateurs et le moteur. Plutôt que de renvoyer l'analyse XML sur le thread principal (l'interface ne ferait plus seulement de l'orchestration), `@xmldom/xmldom` est utilisé partout, Worker comme tests. Justification supplémentaire : le spike 0.3 a montré que xmldom conserve exactement l'ordre des attributs et la déclaration, alors que Chromium réordonne les déclarations d'espaces de noms ; le même code produit donc les mêmes octets dans tous les navigateurs et dans les tests. Coût : ~60 Ko non compressés dans le bundle du Worker.
+
+### DOCX
+
+- **Fusion des runs.** Seule la plage remplacée est déplacée dans le premier run touché ; la partie non remplacée du dernier run garde son run et sa mise en forme (le prompt dit « fusionner les runs touchés dans le premier run concerné » : on fusionne le texte remplacé, pas le reste du dernier run). Les éléments texte entièrement couverts sont vidés, jamais supprimés.
+- **Révisions.** `w:moveFrom` est ignoré comme `w:del` (texte déplacé, donc supprimé de cet endroit).
+- **Contenus signalés sans être modifiés** (avertissements, et listés par « Vérifier » quand une détection les concerne) : cibles des liens hypertextes (`*.rels`, ex. `mailto:`), codes de champ (`w:instrText`, ex. `HYPERLINK "mailto:…"`), noms d'auteurs des commentaires et révisions (attributs `w:author`), `word/people.xml`. Le prompt ne prévoit pas de les modifier ; les laisser passer en silence aurait été une fuite non signalée. L'anonymisation de ces éléments est notée dans `docs/IDEAS.md`.
+- **Graphiques** (`word/charts`) signalés comme pour PPTX.
+- **Entités XML.** Dans une partie réécrite, `&apos;` et `&quot;` deviennent `'` et `"` (équivalent, règle 5 du spike 0.3) ; les tests de préservation de mise en forme comparent après normalisation.
+- **Contrôle d'ouverture.** La CI convertit les documents produits en PDF avec LibreOffice (`soffice --headless`) ; un échec de conversion fait échouer la CI. L'absence de demande de réparation dans Word reste à vérifier à la main.
