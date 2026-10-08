@@ -68,6 +68,7 @@ Spike limitations: Firefox could not be launched by Playwright in the agent's en
 
 - **TypeScript 6.0** and not the latest version (7.x): `typescript-eslint` requires `typescript < 6.1`.
 - **GitHub Pages base path not hard-coded.** The site is published at `https://sgoger.github.io/polyjuice/`, under `/polyjuice/`. Vite's `base` is not hard-coded: CI takes it from the `base_path` output of `actions/configure-pages` (variable `VITE_BASE`), so the build follows wherever Pages serves the site; locally it is `/`.
+- **npm `overrides` for `image-size` and `uuid`** (in `package.json` and `spikes/package.json`). `pptxgenjs` and `exceljs`, used only to generate test fixtures, pull versions with known vulnerabilities (GHSA-5p2g-fcmc-qvqq, GHSA-w3rx-r6r6-pgpr, GHSA-w5hq-g745-h8pq). Neither ships in the site. The overrides force the patched versions; the regenerated fixtures are byte-identical. Remove them once both libraries depend on patched versions.
 
 ### `Segment` interface
 
