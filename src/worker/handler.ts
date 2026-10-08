@@ -1,4 +1,7 @@
 // Traitement des requêtes, indépendant de l'objet Worker (testable en Node).
+import type { Progress } from "../engine/types.ts";
+import { TransformersNerProvider } from "../engine/detectors/ner.ts";
+import { anonymize, check, restore } from "./pipeline.ts";
 import {
   EngineError,
   type FromWorker,
@@ -23,14 +26,41 @@ export type Handlers = {
   [K in RequestType]: (params: Extract<Request, { type: K }>["params"], ctx: Context) => Promise<ResultMap[K]>;
 };
 
-const notImplemented = (what: string) => () =>
-  Promise.reject(new EngineError("NotImplemented", `${what} : pas encore implémenté`));
+let ner: TransformersNerProvider | null = null;
+let nerLoading: Promise<TransformersNerProvider> | null = null;
+
+/** Charge le modèle NER une seule fois par Worker ; la progression est envoyée à la requête courante. */
+function getNer(ctx: Context): Promise<TransformersNerProvider> {
+  if (ner) return Promise.resolve(ner);
+  nerLoading ??= (async () => {
+    const provider = new TransformersNerProvider();
+    try {
+      await provider.load((progress: Progress) => {
+        ctx.post({ id: ctx.id, type: "nerProgress", progress });
+      });
+    } catch (e) {
+      nerLoading = null;
+      throw new EngineError(
+        "NerUnavailable",
+        `Le modèle de détection par IA n'a pas pu être chargé (${e instanceof Error ? e.message : String(e)}). Vérifiez la connexion, ou décochez l'option : la détection par motifs et par liste fonctionne sans réseau.`,
+      );
+    }
+    ner = provider;
+    return provider;
+  })();
+  return nerLoading;
+}
+
+const withNer = (ctx: Context) => ({ ...ctx, getNer: () => getNer(ctx) });
 
 export const defaultHandlers: Handlers = {
-  anonymize: notImplemented("Anonymiser"),
-  check: notImplemented("Vérifier"),
-  restore: notImplemented("Restaurer"),
-  loadNer: notImplemented("Chargement NER"),
+  anonymize: (params, ctx) => anonymize(params, withNer(ctx)),
+  check: (params, ctx) => check(params, withNer(ctx)),
+  restore: (params, ctx) => restore(params, ctx),
+  loadNer: async (_params, ctx) => {
+    const provider = await getNer(ctx);
+    return { model: provider.model, device: provider.device ?? "?" };
+  },
 };
 
 /** Crée la fonction de réception des messages du Worker. */

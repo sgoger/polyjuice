@@ -1,4 +1,5 @@
 // Protocole de messages typé entre l'interface et le Worker du moteur.
+import type { AnonymizeReport, CheckReport, RestoreReport } from "../engine/report.ts";
 import type { Progress } from "../engine/types.ts";
 
 export interface AnonymizeParams {
@@ -37,28 +38,21 @@ export interface AnonymizeResult {
   mapping: OutputFile;
   report: OutputFile;
   reportMarkdown: string;
+  summary: AnonymizeReport;
   warnings: string[];
-}
-
-export interface CheckFinding {
-  text: string;
-  type: string;
-  source: string;
-  context: string;
-  kind: string;
 }
 
 export interface CheckResult {
-  findings: CheckFinding[];
-  notices: { text: string; where: string }[];
-  warnings: string[];
+  report: CheckReport;
   reportMarkdown: string;
+  warnings: string[];
 }
 
 export interface RestoreResult {
   document: OutputFile;
   report: OutputFile;
   reportMarkdown: string;
+  summary: RestoreReport;
   /** Tokens au format valide présents dans le document mais absents du mapping. */
   unknownTokens: string[];
   warnings: string[];
