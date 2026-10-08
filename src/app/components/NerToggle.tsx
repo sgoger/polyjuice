@@ -5,6 +5,7 @@ import type { Progress } from "../../engine/types.ts";
 interface Props {
   checked: boolean;
   onChange: (checked: boolean) => void;
+  onCancel: () => void;
   disabled: boolean;
   disabledReason?: string;
   progress: Progress | null;
@@ -12,20 +13,23 @@ interface Props {
   error?: string | null;
 }
 
-export function NerToggle({ checked, onChange, disabled, disabledReason, progress, status, error }: Props) {
+export function NerToggle({ checked, onChange, onCancel, disabled, disabledReason, progress, status, error }: Props) {
   const id = useId();
+  const noteId = useId();
   const pct =
     progress?.status === "download" && progress.total
       ? Math.round(((progress.loaded ?? 0) / progress.total) * 100)
       : null;
+  const active = checked && !disabled;
   return (
     <div className="space-y-1">
       <div className="flex items-start gap-2">
         <input
           id={id}
           type="checkbox"
-          checked={checked && !disabled}
+          checked={active}
           disabled={disabled}
+          aria-describedby={noteId}
           onChange={(e) => {
             onChange(e.target.checked);
           }}
@@ -36,7 +40,11 @@ export function NerToggle({ checked, onChange, disabled, disabledReason, progres
           {disabled && disabledReason && <span className="block text-sm">{disabledReason}</span>}
         </label>
       </div>
-      {checked && !disabled && status === "loading" && (
+      <p id={noteId} className="pl-6 text-sm text-slate-600">
+        Le modèle est téléchargé depuis le Hub Hugging Face lors de la première utilisation, puis gardé en cache par le
+        navigateur. Seuls les poids du modèle sont téléchargés : aucune donnée de vos documents n'est envoyée.
+      </p>
+      {active && status === "loading" && (
         <div className="space-y-1 pl-6" aria-live="polite">
           <progress
             className="h-2 w-full"
@@ -44,21 +52,30 @@ export function NerToggle({ checked, onChange, disabled, disabledReason, progres
             value={pct ?? undefined}
             aria-label="Chargement du modèle de détection par IA"
           />
-          <p className="text-sm text-slate-600">
-            {progress?.status === "init"
-              ? "Initialisation du modèle…"
-              : pct !== null
-                ? `Téléchargement du modèle : ${pct} % (${Math.round((progress?.loaded ?? 0) / 1e6)} Mo)`
-                : "Préparation du modèle…"}
-          </p>
+          <div className="flex items-center justify-between gap-4">
+            <p className="text-sm text-slate-600">
+              {progress?.status === "init" || progress?.status === "ready"
+                ? "Initialisation du modèle…"
+                : pct !== null
+                  ? `Téléchargement du modèle : ${pct} % (${Math.round((progress?.loaded ?? 0) / 1e6)} Mo sur ${Math.round((progress?.total ?? 0) / 1e6)} Mo)`
+                  : "Préparation du modèle…"}
+            </p>
+            <button
+              type="button"
+              onClick={onCancel}
+              className="rounded-md border border-slate-400 px-2 py-1 text-sm hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-600"
+            >
+              Annuler le téléchargement
+            </button>
+          </div>
         </div>
       )}
-      {checked && !disabled && status === "ready" && (
-        <p className="pl-6 text-sm text-slate-600" aria-live="polite">
+      {active && status === "ready" && (
+        <p className="pl-6 text-sm text-slate-700" aria-live="polite">
           ✓ Modèle prêt.
         </p>
       )}
-      {checked && !disabled && status === "error" && error && (
+      {status === "error" && error && (
         <p role="alert" className="pl-6 text-sm text-red-700">
           ⚠ {error}
         </p>

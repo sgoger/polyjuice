@@ -57,6 +57,7 @@ export function AnonymizeTab({ settings }: { settings: SharedSettings }) {
       <NerToggle
         checked={settings.ner}
         onChange={settings.setNer}
+        onCancel={settings.cancelNer}
         disabled={xlsx}
         disabledReason="Indisponible pour les classeurs .xlsx : détection par motifs, liste de noms et colonnes uniquement."
         progress={settings.nerProgress}

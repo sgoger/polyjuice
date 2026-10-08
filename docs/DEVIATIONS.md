@@ -124,3 +124,13 @@ Le prompt prévoit `DOMParser` / `XMLSerializer` natifs dans le navigateur et xm
 - `pdfjs-dist` (build `legacy`) est chargé à la demande dans le Worker du moteur ; il lance son propre Worker, servi par l'application. Aucune ressource externe : polices standard, cMaps et WASM de pdf.js désactivés (inutiles pour l'extraction de texte).
 - Les lignes d'un même paragraphe sont jointes par une espace en une seule ligne Markdown : une entité coupée en fin de ligne dans le PDF reste ainsi détectable.
 - Un avertissement rappelle systématiquement que le PDF est converti en Markdown.
+
+### NER dans l'interface (6.1)
+
+- **Runtime ONNX servi localement.** Par défaut, transformers.js télécharge les fichiers WASM d'onnxruntime depuis `cdn.jsdelivr.net`. Ils sont désormais servis par l'application (`src/engine/detectors/ortAssets.ts`, imports `?url` de `onnxruntime-web`, dépendance de transformers.js). Seules des requêtes `GET` sans corps vers `huggingface.co` / `*.hf.co` (poids et tokeniseur) quittent le navigateur : vérifié par le test Playwright `tests/e2e/ner.slow.spec.ts` (nightly).
+- **Repli WebGPU → WASM.** WebGPU n'est tenté que si `navigator.gpu.requestAdapter()` renvoie un adaptateur : dans Chromium headless, l'API existe sans adaptateur et l'échec de WebGPU empêchait ensuite le repli WASM.
+- **Échec de chargement (hors ligne).** La case est décochée et l'erreur affichée ; la détection par motifs et par liste reste utilisable (test `tests/e2e/ner-offline.spec.ts`). Le téléchargement peut être annulé (le Worker est terminé). Après une annulation de traitement, le modèle est rechargé à la demande (depuis le cache du navigateur).
+
+### Calibration (6.2)
+
+**En attente de l'étape humaine.** `scripts/calibrate.ts` agrège les mappings et un fichier `annotations.csv` (faux positifs / faux négatifs saisis à la main) d'un dossier hors dépôt (`tests/real/`) et affiche volumes, FP/FN et précision estimée par source et par type. Les ajustements de seuil, de regex ou de modèle, et la décision éventuelle de passage au plan B, seront consignés ici après traitement de 5 à 10 documents internes.

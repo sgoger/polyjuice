@@ -50,6 +50,7 @@ export function CheckTab({ settings }: { settings: SharedSettings }) {
       <NerToggle
         checked={settings.ner}
         onChange={settings.setNer}
+        onCancel={settings.cancelNer}
         disabled={xlsx}
         disabledReason="Indisponible pour les classeurs .xlsx."
         progress={settings.nerProgress}

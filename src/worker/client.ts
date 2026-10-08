@@ -39,6 +39,7 @@ export class WorkerClient {
   private worker: WorkerLike;
   private nextId = 1;
   private readonly pending = new Map<number, Pending>();
+  private readonly resetListeners = new Set<() => void>();
 
   constructor(private readonly factory: () => WorkerLike = createEngineWorker) {
     this.worker = this.spawn();
@@ -92,6 +93,15 @@ export class WorkerClient {
     for (const [, p] of this.pending) p.reject(new EngineError("Cancelled", "Traitement annulé"));
     this.pending.clear();
     this.worker = this.spawn();
+    for (const l of this.resetListeners) l();
+  }
+
+  /** Prévient quand le Worker est recréé (son état, dont le modèle NER chargé, est perdu). */
+  onReset(listener: () => void): () => void {
+    this.resetListeners.add(listener);
+    return () => {
+      this.resetListeners.delete(listener);
+    };
   }
 
   dispose(): void {
