@@ -1,90 +1,92 @@
 # polyjuice
 
-Application web statique qui **pseudonymise** des documents bureautiques avant leur envoi à un outil externe (LLM, traduction automatique, résumé), puis **restaure** les données d'origine dans le document retourné.
+A static web application that **pseudonymizes** office documents before they are sent to an external tool (LLM, machine translation, summarization), then **restores** the original data in the returned document.
 
-**Tout le traitement se fait dans le navigateur.** Aucun fichier, aucun fragment de texte, aucun mapping ne quitte le poste de l'utilisateur. Il n'y a ni serveur applicatif, ni API, ni base de données : le site est servi tel quel par GitHub Pages.
+**All processing happens in the browser.** No file, no text fragment and no mapping ever leaves the user's machine. There is no application server, no API and no database: the site is served as-is by GitHub Pages.
 
-> **⚠ Le mapping JSON contient les données personnelles en clair. Il ne doit jamais être transmis avec le document anonymisé, ni à l'outil externe. Conservez-le localement le temps de restaurer le document, puis supprimez-le.**
+> **⚠ The JSON mapping contains the personal data in clear text. It must never be sent along with the anonymized document, nor to the external tool. Keep it locally only as long as needed to restore the document, then delete it.**
 
-## Utilisation
+## Usage
 
-La page comporte trois onglets.
+The page has three tabs.
 
 ### Anonymiser
 
-1. Déposez le document (`.docx`, `.pptx`, `.xlsx`, `.pdf`, `.md`, `.txt`).
-2. Facultatif : collez ou chargez une **liste de noms** (un terme par ligne, `#` pour les commentaires). Chaque terme est remplacé partout où il apparaît (correspondance exacte, insensible à la casse, accents respectés, mots entiers). La liste n'est jamais enregistrée : elle est perdue au rechargement de la page.
-3. Facultatif : cochez **« Activer la détection de noms par IA »** pour repérer en plus les personnes, organisations et lieux. Le modèle (~181 Mo) est téléchargé une fois depuis le Hub Hugging Face puis gardé en cache par le navigateur. Indisponible pour les `.xlsx`.
-4. Pour un `.xlsx`, le champ **« Colonnes à anonymiser »** (ex. `Nom, Prénom`) remplace intégralement toutes les cellules texte des colonnes dont l'en-tête (première ligne non vide de chaque feuille) correspond.
-5. Facultatif : redéposez un **mapping existant** pour réutiliser le même salt et les mêmes tokens (le mapping est complété, jamais tronqué).
-6. Lancez le traitement. Lisez le **bandeau d'avertissements** (images, SmartArt, macros, métadonnées vidées…), puis téléchargez le document anonymisé, le mapping et le rapport.
+The « Anonymiser » (anonymize) tab:
+
+1. Drop the document (`.docx`, `.pptx`, `.xlsx`, `.pdf`, `.md`, `.txt`).
+2. Optional: paste or load a **list of names** (one term per line, `#` for comments). Each term is replaced everywhere it appears (exact match, case-insensitive, accent-sensitive, whole words). The list is never saved: it is lost when the page is reloaded.
+3. Optional: check **« Activer la détection de noms par IA »** (enable AI name detection) to also detect people, organizations and places. The model (~181 MB) is downloaded once from the Hugging Face Hub and then cached by the browser. Unavailable for `.xlsx`.
+4. For an `.xlsx`, the **« Colonnes à anonymiser »** (columns to anonymize) field (e.g. `Nom, Prénom`) fully replaces every text cell in the columns whose header (first non-empty row of each sheet) matches.
+5. Optional: drop an **existing mapping** again to reuse the same salt and the same tokens (the mapping is extended, never truncated).
+6. Run the processing. Read the **warnings banner** (images, SmartArt, macros, cleared metadata…), then download the anonymized document, the mapping and the report.
 
 ### Vérifier
 
-Déposez un document déjà anonymisé (et la liste de noms si besoin) : la détection est relancée et tout ce qui ressemble encore à une donnée personnelle est listé, avec son contexte. Rien n'est produit. Les tokens existants sont ignorés.
+The « Vérifier » (verify) tab: drop an already anonymized document (and the list of names if needed). Detection is run again and everything that still looks like personal data is listed, with its context. Nothing is produced. Existing tokens are ignored.
 
 ### Restaurer
 
-Déposez le document retourné par l'outil externe **et** le mapping. Chaque token connu est remplacé par sa valeur d'origine, même si l'outil a découpé le token sur plusieurs mises en forme. Les tokens au format polyjuice absents du mapping sont signalés comme une erreur et laissés tels quels. Le document est traité selon son extension, quelle que soit celle de l'original : un PDF anonymisé revient sous forme de `.md` ou `.txt`.
+The « Restaurer » (restore) tab: drop the document returned by the external tool **and** the mapping. Each known token is replaced by its original value, even if the tool split the token across several formatting runs. Tokens in polyjuice format that are missing from the mapping are reported as an error and left as-is. The document is processed according to its extension, whatever the original's was: an anonymized PDF comes back as `.md` or `.txt`.
 
 ## Formats
 
-| Format  | Sortie de « Anonymiser »    | Entrée de « Restaurer »                   |
-| ------- | --------------------------- | ----------------------------------------- |
-| `.docx` | `.docx`                     | oui                                       |
-| `.pptx` | `.pptx`                     | oui                                       |
-| `.xlsx` | `.xlsx`                     | oui                                       |
-| `.pdf`  | `.md` (extraction du texte) | non (déposez le `.md` ou `.txt` retourné) |
-| `.md`   | `.md`                       | oui                                       |
-| `.txt`  | `.txt`                      | oui                                       |
+| Format  | « Anonymiser » output   | « Restaurer » input                    |
+| ------- | ----------------------- | -------------------------------------- |
+| `.docx` | `.docx`                 | yes                                    |
+| `.pptx` | `.pptx`                 | yes                                    |
+| `.xlsx` | `.xlsx`                 | yes                                    |
+| `.pdf`  | `.md` (text extraction) | no (drop the returned `.md` or `.txt`) |
+| `.md`   | `.md`                   | yes                                    |
+| `.txt`  | `.txt`                  | yes                                    |
 
-Les documents Office sont modifiés directement dans leur XML : seuls les nœuds de texte changent, tout le reste (mise en forme, images, graphiques…) est recopié octet pour octet. Ce qui est traité ou non, format par format : [`docs/FORMATS.md`](docs/FORMATS.md).
+Office documents are modified directly in their XML: only text nodes change, everything else (formatting, images, charts…) is copied byte for byte. What is and is not processed, format by format: [`docs/FORMATS.md`](docs/FORMATS.md).
 
-## Données détectées et tokens
+## Detected data and tokens
 
-| Type                            | Token   | Détection                                |
-| ------------------------------- | ------- | ---------------------------------------- |
-| Personne                        | `⟦P-…⟧` | IA (NER), liste de noms, colonnes (xlsx) |
-| Organisation                    | `⟦O-…⟧` | IA (NER)                                 |
-| Lieu                            | `⟦L-…⟧` | IA (NER)                                 |
-| E-mail                          | `⟦E-…⟧` | motif                                    |
-| Téléphone (FR et international) | `⟦T-…⟧` | motif                                    |
-| IBAN (clé vérifiée)             | `⟦I-…⟧` | motif                                    |
-| Carte bancaire (Luhn)           | `⟦C-…⟧` | motif                                    |
-| URL                             | `⟦U-…⟧` | motif                                    |
-| Adresse IP (v4, v6)             | `⟦A-…⟧` | motif                                    |
-| NIR (clé vérifiée)              | `⟦N-…⟧` | motif                                    |
+| Type                                    | Token   | Detection                               |
+| --------------------------------------- | ------- | --------------------------------------- |
+| Person                                  | `⟦P-…⟧` | AI (NER), list of names, columns (xlsx) |
+| Organization                            | `⟦O-…⟧` | AI (NER)                                |
+| Place                                   | `⟦L-…⟧` | AI (NER)                                |
+| Email                                   | `⟦E-…⟧` | pattern                                 |
+| Phone number (French and international) | `⟦T-…⟧` | pattern                                 |
+| IBAN (check digits verified)            | `⟦I-…⟧` | pattern                                 |
+| Bank card (Luhn)                        | `⟦C-…⟧` | pattern                                 |
+| URL                                     | `⟦U-…⟧` | pattern                                 |
+| IP address (v4, v6)                     | `⟦A-…⟧` | pattern                                 |
+| NIR (check key verified)                | `⟦N-…⟧` | pattern                                 |
 
-Un token a la forme `⟦X-ABCDE⟧` : `X` est la lettre du type, `ABCDE` cinq caractères dérivés par HMAC-SHA256 d'un salt aléatoire propre au mapping. La même valeur reçoit le même token dans tout le document ; réutiliser un mapping redonne exactement le même document ; deux documents anonymisés séparément ont des tokens différents. Les dates ne sont pas anonymisées.
+A token has the form `⟦X-ABCDE⟧`: `X` is the type letter, `ABCDE` is five characters derived by HMAC-SHA256 from a random salt specific to the mapping. The same value gets the same token throughout the document; reusing a mapping yields exactly the same document; two documents anonymized separately have different tokens. Dates are not anonymized.
 
-## Hors périmètre
+## Out of scope
 
-Non traité dans cette version (un avertissement est affiché quand c'est pertinent) : texte contenu dans les images (pas d'OCR), PDF scannés, SmartArt, objets OLE, graphiques ; regroupement des variantes d'un même nom ; mapping partagé entre documents ; restauration de tokens déformés par l'outil externe ; pseudonymes réalistes ; tout stockage persistant ; tout serveur ; identifiants nationaux autres que le NIR français. Ne sont pas non plus modifiés, mais signalés : cibles des liens hypertextes, codes de champ Word, noms d'auteurs de commentaires et de révisions, noms de feuilles de calcul.
+Not handled in this version (a warning is shown when relevant): text inside images (no OCR), scanned PDFs, SmartArt, OLE objects, charts; grouping variants of the same name; mapping shared between documents; restoring tokens altered by the external tool; realistic pseudonyms; any persistent storage; any server; national identifiers other than the French NIR. Also not modified, but reported: hyperlink targets, Word field codes, comment and revision author names, spreadsheet sheet names.
 
-## Conformité
+## Compliance
 
-polyjuice **pseudonymise** : il remplace les données identifiantes par des tokens, réversibles grâce au mapping. Au sens du RGPD et de la CNIL, la pseudonymisation n'est pas une anonymisation : les documents produits restent des **données personnelles**, soumises aux mêmes règles que les originaux, et le mapping permet la réidentification. La détection automatique n'est pas exhaustive : relisez le document anonymisé (onglet « Vérifier ») avant tout envoi.
+polyjuice **pseudonymizes**: it replaces identifying data with tokens, which are reversible thanks to the mapping. Under the GDPR and according to the CNIL, pseudonymization is not anonymization: the documents produced remain **personal data**, subject to the same rules as the originals, and the mapping allows re-identification. Automatic detection is not exhaustive: review the anonymized document (« Vérifier » tab) before sending it anywhere.
 
-Rien ne quitte le navigateur : les fichiers sont lus et produits localement, et les téléchargements sont générés sur le poste. Lorsque la détection par IA est activée, le navigateur télécharge les poids du modèle depuis le Hub Hugging Face ; cette requête ne transmet aucune donnée utilisateur (ni document, ni texte, ni liste de noms). Détails : [`docs/PRIVACY.md`](docs/PRIVACY.md).
+Nothing leaves the browser: files are read and produced locally, and downloads are generated on the user's machine. When AI detection is enabled, the browser downloads the model weights from the Hugging Face Hub; this request sends no user data (no document, no text, no list of names). Details: [`docs/PRIVACY.md`](docs/PRIVACY.md).
 
-## Développement
+## Development
 
-Prérequis : Node.js 22 ou plus récent.
+Prerequisite: Node.js 22 or later.
 
 ```sh
 npm ci
-npm run dev              # serveur de développement
-npm run check            # lint + typecheck + tests unitaires (avec couverture)
-npm run test:e2e         # tests Playwright (Chromium)
-npm run test:e2e:slow    # test Playwright avec téléchargement du modèle NER
-npm run build            # site statique dans dist/
-npm run fixtures         # régénère les fixtures de test (données fictives)
+npm run dev              # development server
+npm run check            # lint + typecheck + unit tests (with coverage)
+npm run test:e2e         # Playwright tests (Chromium)
+npm run test:e2e:slow    # Playwright test with NER model download
+npm run build            # static site in dist/
+npm run fixtures         # regenerates the test fixtures (fictitious data)
 ```
 
-Architecture : un moteur de détection et de remplacement (`src/engine/`) qui ne connaît aucun format, des adaptateurs par format (`src/adapters/`) qui extraient et réécrivent des segments de texte, le tout exécuté dans un Web Worker (`src/worker/`) ; l'interface React (`src/app/`) ne fait qu'orchestrer et afficher. Plan de réalisation : [`docs/PLAN.md`](docs/PLAN.md) ; écarts et décisions techniques : [`docs/DEVIATIONS.md`](docs/DEVIATIONS.md) ; idées hors périmètre : [`docs/IDEAS.md`](docs/IDEAS.md).
+Architecture: a detection and replacement engine (`src/engine/`) that knows nothing about formats, per-format adapters (`src/adapters/`) that extract and rewrite text segments, all running in a Web Worker (`src/worker/`); the React UI (`src/app/`) only orchestrates and displays. Implementation plan: [`docs/PLAN.md`](docs/PLAN.md); deviations and technical decisions: [`docs/DEVIATIONS.md`](docs/DEVIATIONS.md); out-of-scope ideas: [`docs/IDEAS.md`](docs/IDEAS.md).
 
-Aucune liste de noms, aucun document réel et aucun mapping ne doivent être ajoutés au dépôt (`tests/real/` et `names*.txt` sont ignorés par git).
+No list of names, no real document and no mapping may be added to the repository (`tests/real/` and `names*.txt` are ignored by git).
 
-## Licence
+## License
 
 MIT
