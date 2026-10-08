@@ -262,9 +262,9 @@ export class TransformersNerProvider implements NerProvider {
         onProgress({ status: "download", loaded, total, file: raw.file });
       }
     };
-    this.tokenizer = (await tf.AutoTokenizer.from_pretrained(this.model, {
+    this.tokenizer = await tf.AutoTokenizer.from_pretrained(this.model, {
       progress_callback,
-    } as never)) as unknown as Tokenizer;
+    });
     let lastError: unknown = null;
     for (const device of this.devices) {
       try {
