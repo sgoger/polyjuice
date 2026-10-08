@@ -16,7 +16,7 @@ The « Anonymiser » (anonymize) tab:
 
 1. Drop the document (`.docx`, `.pptx`, `.xlsx`, `.pdf`, `.md`, `.txt`).
 2. Optional: paste or load a **list of names** (one term per line, `#` for comments). Each term is replaced everywhere it appears (exact match, case-insensitive, accent-sensitive, whole words). The list is never saved: it is lost when the page is reloaded.
-3. Optional: check **« Activer la détection de noms par IA »** (enable AI name detection) to also detect people, organizations and places. The model (~181 MB) is downloaded once from the Hugging Face Hub and then cached by the browser. Unavailable for `.xlsx`.
+3. Optional: check **« Activer la détection de noms par IA »** (enable AI name detection) to also detect people and places (organizations are not anonymized). The model (~181 MB) is downloaded once from the Hugging Face Hub and then cached by the browser. Unavailable for `.xlsx`.
 4. For an `.xlsx`, the **« Colonnes à anonymiser »** (columns to anonymize) field (e.g. `Nom, Prénom`) fully replaces every text cell in the columns whose header (first non-empty row of each sheet) matches.
 5. Optional: drop an **existing mapping** again to reuse the same salt and the same tokens (the mapping is extended, never truncated).
 6. Run the processing. Read the **warnings banner** (images, SmartArt, macros, cleared metadata…), then download the anonymized document, the mapping and the report.
@@ -47,7 +47,6 @@ Office documents are modified directly in their XML: only text nodes change, eve
 | Type                                    | Token   | Detection                               |
 | --------------------------------------- | ------- | --------------------------------------- |
 | Person                                  | `⟦P-…⟧` | AI (NER), list of names, columns (xlsx) |
-| Organization                            | `⟦O-…⟧` | AI (NER)                                |
 | Place                                   | `⟦L-…⟧` | AI (NER)                                |
 | Email                                   | `⟦E-…⟧` | pattern                                 |
 | Phone number (French and international) | `⟦T-…⟧` | pattern                                 |

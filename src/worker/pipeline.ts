@@ -4,7 +4,7 @@ import { agree, pl } from "../engine/plural.ts";
 import { adapterFor, extensionOf } from "../adapters/index.ts";
 import { detectSegment } from "../engine/detect.ts";
 import { NameMatcher, parseNames } from "../engine/detectors/names.ts";
-import type { NerProvider } from "../engine/detectors/ner.ts";
+import { documentNer, type NerProvider } from "../engine/detectors/ner.ts";
 import { MappingStore, parseMapping, serializeMapping, sha256Hex } from "../engine/mapping.ts";
 import { finalSpans, replaceDetections } from "../engine/replace.ts";
 import {
@@ -78,11 +78,32 @@ async function readDoc(adapter: Adapter, file: ArrayBuffer, columns?: readonly s
   }
 }
 
-async function nerFor(enabled: boolean, format: Format, ctx: PipelineContext): Promise<NerProvider | null> {
+/**
+ * Fournisseur NER pour tout le document : une première passe analyse chaque segment (la progression
+ * couvre alors deux passes), cf. `documentNer` pour le sort des organisations.
+ */
+async function nerFor(enabled: boolean, doc: Doc, format: Format, ctx: PipelineContext): Promise<NerProvider | null> {
   // NER toujours désactivée sur les classeurs (§3).
   if (!enabled || format === "xlsx") return null;
   if (!ctx.getNer) throw new EngineError("NerUnavailable", "Détection par IA indisponible");
-  return ctx.getNer();
+  const ner = await ctx.getNer();
+  const total = doc.segments.length;
+  return documentNer(
+    ner,
+    doc.segments.map((s) => s.text),
+    (i) => {
+      if (i % PROGRESS_EVERY === 0) {
+        ctx.checkCancelled();
+        ctx.progress(i, 2 * total);
+      }
+    },
+  );
+}
+
+/** Progression de la passe de détection, qui suit la passe NER éventuelle. */
+function detectProgress(ctx: PipelineContext, ner: NerProvider | null, i: number, total: number): void {
+  if (ner) ctx.progress(total + i, 2 * total);
+  else ctx.progress(i, total);
 }
 
 /** Éléments signalés par l'adaptateur (cibles de liens, codes de champ, noms de feuilles…) qui contiennent une détection. */
@@ -110,7 +131,7 @@ export async function anonymize(params: AnonymizeParams, ctx: PipelineContext): 
   const { format, adapter } = resolveAdapter(params.fileName);
   const existing = params.mapping ? parseMapping(params.mapping) : null;
   const doc = await readDoc(adapter, params.file, format === "xlsx" ? params.columns : undefined);
-  const ner = await nerFor(params.ner, format, ctx);
+  const ner = await nerFor(params.ner, doc, format, ctx);
   const names = new NameMatcher(parseNames(params.names));
   const source = { name: params.fileName, sha256: await sha256Hex(params.file), format };
   const nerInfo = ner
@@ -123,7 +144,7 @@ export async function anonymize(params: AnonymizeParams, ctx: PipelineContext): 
   for (const [i, segment] of doc.segments.entries()) {
     if (i % PROGRESS_EVERY === 0) {
       ctx.checkCancelled();
-      ctx.progress(i, total);
+      detectProgress(ctx, ner, i, total);
     }
     const detections = await detectSegment(segment, { names, ner });
     if (detections.length === 0) continue;
@@ -158,14 +179,14 @@ export async function anonymize(params: AnonymizeParams, ctx: PipelineContext): 
 export async function check(params: CheckParams, ctx: PipelineContext): Promise<CheckResult> {
   const { format, adapter } = resolveAdapter(params.fileName);
   const doc = await readDoc(adapter, params.file);
-  const ner = await nerFor(params.ner, format, ctx);
+  const ner = await nerFor(params.ner, doc, format, ctx);
   const names = new NameMatcher(parseNames(params.names));
   const rows: CheckRow[] = [];
   const total = doc.segments.length;
   for (const [i, segment] of doc.segments.entries()) {
     if (i % PROGRESS_EVERY === 0) {
       ctx.checkCancelled();
-      ctx.progress(i, total);
+      detectProgress(ctx, ner, i, total);
     }
     for (const d of await detectSegment({ ...segment, wholeCell: false }, { names, ner })) {
       rows.push({

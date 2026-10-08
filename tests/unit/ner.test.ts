@@ -3,7 +3,9 @@ import {
   aggregate,
   alignTokens,
   detectWindowed,
+  documentNer,
   makeWindows,
+  type NerProvider,
   TooLong,
   type TokenPrediction,
 } from "../../src/engine/detectors/ner.ts";
@@ -139,5 +141,44 @@ describe("fenêtres", () => {
     });
     expect(calls).toBeGreaterThan(1);
     expect(found.map((d) => text.slice(d.start, d.end))).toEqual(["Paulina Kowalski"]);
+  });
+});
+
+describe("organisations (passe sur tout le document)", () => {
+  const det = (text: string, value: string, type: Detection["type"]): Detection => {
+    const start = text.indexOf(value);
+    return { start, end: start + value.length, text: value, type, source: "ner", score: 0.9 };
+  };
+  const texts = [
+    "Marysabelle COTE ouvre la séance.",
+    "Marysabelle COTE : le CSE d'ARTE s'est réuni.",
+    "Réponse de MARYSABELLE cote.",
+  ];
+  const fake: NerProvider = {
+    id: "fake",
+    model: "fake",
+    load: () => Promise.resolve(),
+    detect: (text) =>
+      Promise.resolve(
+        text === texts[0]
+          ? [det(text, "Marysabelle COTE", "PERSON")]
+          : text === texts[1]
+            ? [
+                det(text, "Marysabelle COTE", "ORGANIZATION"),
+                det(text, "CSE", "ORGANIZATION"),
+                det(text, "ARTE", "ORGANIZATION"),
+              ]
+            : [det(text, "MARYSABELLE cote", "ORGANIZATION")],
+      ),
+  };
+
+  it("une organisation détectée ailleurs comme personne devient une personne, les autres sont écartées", async () => {
+    const ner = await documentNer(fake, texts);
+    const out = await Promise.all(texts.map((t) => ner.detect(t)));
+    expect(out.map((ds) => ds.map((d) => `${d.text}/${d.type}`))).toEqual([
+      ["Marysabelle COTE/PERSON"],
+      ["Marysabelle COTE/PERSON"],
+      ["MARYSABELLE cote/PERSON"],
+    ]);
   });
 });
