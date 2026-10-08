@@ -22,3 +22,16 @@ jobs:
         run: npx vitest run tests/unit/ner.slow.test.ts --silent=false
         env:
           NER_SLOW: "1"
+
+  ner-e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Anonymiser un .docx avec la NER dans Chromium
+        run: npm run test:e2e:slow

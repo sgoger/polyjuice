@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { Progress } from "../engine/types.ts";
 import { EngineError } from "../worker/protocol.ts";
 import { AnonymizeTab } from "./AnonymizeTab.tsx";
@@ -23,12 +23,20 @@ export function App() {
       if (!checked || nerStatus === "loading" || nerStatus === "ready") return;
       setNerStatus("loading");
       setNerError(null);
+      setNerProgress(null);
       engine()
         .call("loadNer", {}, { onNerProgress: setNerProgress })
         .promise.then(() => {
           setNerStatus("ready");
         })
         .catch((e: unknown) => {
+          // Échec (hors ligne…) ou annulation : la case est décochée, la détection par motifs et
+          // par liste reste disponible.
+          setNerChecked(false);
+          if (e instanceof EngineError && e.code === "Cancelled") {
+            setNerStatus("idle");
+            return;
+          }
           setNerStatus("error");
           setNerError(e instanceof EngineError ? e.message : String(e));
         });
@@ -36,7 +44,20 @@ export function App() {
     [nerStatus],
   );
 
-  const settings: SharedSettings = { names, setNames, ner, setNer, nerStatus, nerProgress, nerError };
+  // Annuler un traitement termine le Worker : le modèle devra être rechargé (à la demande).
+  useEffect(
+    () =>
+      engine().onReset(() => {
+        setNerStatus((s) => (s === "ready" ? "idle" : s));
+      }),
+    [],
+  );
+
+  const cancelNer = useCallback(() => {
+    engine().cancel();
+  }, []);
+
+  const settings: SharedSettings = { names, setNames, ner, setNer, cancelNer, nerStatus, nerProgress, nerError };
 
   return (
     <div className="flex min-h-screen flex-col">

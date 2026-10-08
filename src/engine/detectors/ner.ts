@@ -242,13 +242,20 @@ export class TransformersNerProvider implements NerProvider {
 
   constructor(
     readonly model = NER_MODEL,
-    private readonly devices: readonly Device[] = defaultDevices(),
+    /** Backends à essayer dans l'ordre ; par défaut WebGPU si un adaptateur existe, puis WASM. */
+    private readonly devices: readonly Device[] | null = null,
   ) {}
 
   async load(onProgress: (p: Progress) => void): Promise<void> {
     if (this.classifier) return;
     const tf = await import("@huggingface/transformers");
     tf.env.allowLocalModels = false;
+    const devices = this.devices ?? (await availableDevices());
+    if (!devices.includes("cpu")) {
+      const { wasmPaths } = await import("./ortAssets.ts");
+      const onnx = tf.env.backends.onnx as { wasm?: { wasmPaths?: unknown } };
+      if (onnx.wasm) onnx.wasm.wasmPaths = wasmPaths(devices.includes("webgpu"));
+    }
     const files = new Map<string, { loaded: number; total: number }>();
     const progress_callback = (raw: RawProgress) => {
       if (raw.status === "progress" && raw.file) {
@@ -266,7 +273,7 @@ export class TransformersNerProvider implements NerProvider {
       progress_callback,
     });
     let lastError: unknown = null;
-    for (const device of this.devices) {
+    for (const device of devices) {
       try {
         this.classifier = (await tf.AutoModelForTokenClassification.from_pretrained(this.model, {
           dtype: "q8",
@@ -319,8 +326,13 @@ export class TransformersNerProvider implements NerProvider {
   }
 }
 
-function defaultDevices(): Device[] {
-  const hasGpu = typeof navigator !== "undefined" && "gpu" in navigator;
+/**
+ * WebGPU seulement si le navigateur fournit réellement un adaptateur (l'API peut exister sans GPU
+ * utilisable) ; WASM mono-thread en repli. En Node (tests) : CPU.
+ */
+async function availableDevices(): Promise<Device[]> {
+  const nav = (globalThis as { navigator?: { gpu?: { requestAdapter(): Promise<unknown> } } }).navigator;
   if (typeof window === "undefined" && typeof self === "undefined") return ["cpu"];
-  return hasGpu ? ["webgpu", "wasm"] : ["wasm"];
+  const adapter = await nav?.gpu?.requestAdapter().catch(() => null);
+  return adapter ? ["webgpu", "wasm"] : ["wasm"];
 }

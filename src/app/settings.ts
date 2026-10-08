@@ -6,6 +6,7 @@ export interface SharedSettings {
   setNames: (v: string) => void;
   ner: boolean;
   setNer: (v: boolean) => void;
+  cancelNer: () => void;
   nerStatus: "idle" | "loading" | "ready" | "error";
   nerProgress: Progress | null;
   nerError: string | null;

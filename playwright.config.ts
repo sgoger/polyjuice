@@ -4,6 +4,8 @@ const PORT = 4173;
 
 export default defineConfig({
   testDir: "tests/e2e",
+  // Les tests @slow (téléchargement du modèle NER) ne tournent qu'avec `npm run test:e2e:slow`.
+  ...(process.env.E2E_SLOW ? {} : { grepInvert: /@slow/ }),
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
