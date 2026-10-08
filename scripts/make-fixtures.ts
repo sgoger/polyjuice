@@ -390,8 +390,19 @@ async function makePdfs(): Promise<Expected[]> {
       "",
       `Le dossier de ${D.oliver} est suivi par l'équipe (${D.mailOliver}).`,
       `Virement attendu sur ${D.ibanFr}.`,
+      "",
+      "La séance a porté sur le calendrier du projet et sur la répartition des tâches entre les équipes.",
+      "Les décisions seront confirmées lors de la prochaine réunion du comité de pilotage.",
     ],
-    [`Annexe : NIR ${D.nir}`, "", `Accès au portail : ${D.url} depuis ${D.ipv4}.`, `Ligne directe : ${D.telDe}.`],
+    [
+      `Annexe : NIR ${D.nir}`,
+      "",
+      `Accès au portail : ${D.url} depuis ${D.ipv4}.`,
+      `Ligne directe : ${D.telDe}.`,
+      "",
+      "Les accès sont personnels et ne doivent pas être partagés en dehors de l'équipe projet.",
+      "Toute demande de modification passe par le formulaire habituel du service informatique.",
+    ],
   ];
   for (const lines of pages) {
     const page = pdf.addPage([595, 842]);

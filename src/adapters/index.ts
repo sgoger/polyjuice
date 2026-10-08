@@ -1,10 +1,16 @@
 // Registre des adaptateurs, par extension.
 import type { Adapter, Format } from "../engine/types.ts";
 import { docxAdapter } from "./docx.ts";
+import { pdfAdapter } from "./pdf.ts";
+import { pptxAdapter } from "./pptx.ts";
+import { xlsxAdapter } from "./xlsx.ts";
 import { mdAdapter, txtAdapter } from "./text.ts";
 
 const ADAPTERS: Partial<Record<Format, Adapter>> = {
   docx: docxAdapter,
+  pptx: pptxAdapter,
+  xlsx: xlsxAdapter,
+  pdf: pdfAdapter,
   txt: txtAdapter,
   md: mdAdapter,
 };
