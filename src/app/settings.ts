@@ -10,6 +10,8 @@ export interface SharedSettings {
   nerStatus: "idle" | "loading" | "ready" | "error";
   nerProgress: Progress | null;
   nerError: string | null;
+  /** Moteur de calcul du modèle chargé, ex. « WASM, 4 cœurs ». */
+  nerBackend: string | null;
 }
 
 export const DOC_EXTENSIONS = ["docx", "pptx", "xlsx", "pdf", "md", "txt"] as const;

@@ -15,6 +15,7 @@ export function App() {
   const [nerStatus, setNerStatus] = useState<SharedSettings["nerStatus"]>("idle");
   const [nerProgress, setNerProgress] = useState<Progress | null>(null);
   const [nerError, setNerError] = useState<string | null>(null);
+  const [nerBackend, setNerBackend] = useState<string | null>(null);
 
   // Le modèle n'est téléchargé que lorsque la case est cochée.
   const setNer = useCallback(
@@ -26,7 +27,8 @@ export function App() {
       setNerProgress(null);
       engine()
         .call("loadNer", {}, { onNerProgress: setNerProgress })
-        .promise.then(() => {
+        .promise.then(({ device, threads }) => {
+          setNerBackend(backendLabel(device, threads));
           setNerStatus("ready");
         })
         .catch((e: unknown) => {
@@ -57,7 +59,17 @@ export function App() {
     engine().cancel();
   }, []);
 
-  const settings: SharedSettings = { names, setNames, ner, setNer, cancelNer, nerStatus, nerProgress, nerError };
+  const settings: SharedSettings = {
+    names,
+    setNames,
+    ner,
+    setNer,
+    cancelNer,
+    nerStatus,
+    nerProgress,
+    nerError,
+    nerBackend,
+  };
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -88,4 +100,10 @@ export function App() {
       </footer>
     </div>
   );
+}
+
+function backendLabel(device: string, threads: number): string {
+  if (device === "webgpu") return "WebGPU (carte graphique)";
+  if (device === "wasm") return `WASM, ${threads} ${threads > 1 ? "cœurs" : "cœur"}`;
+  return device;
 }

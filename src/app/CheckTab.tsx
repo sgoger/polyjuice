@@ -8,6 +8,7 @@ import { NerToggle } from "./components/NerToggle.tsx";
 import { PrimaryButton } from "./components/PrimaryButton.tsx";
 import { CheckReportView } from "./components/Reports.tsx";
 import { Running } from "./components/Running.tsx";
+import { Timer } from "./components/Timer.tsx";
 import { DOC_EXTENSIONS, isXlsx, type SharedSettings } from "./settings.ts";
 import { useEngine } from "./useEngine.ts";
 
@@ -56,11 +57,13 @@ export function CheckTab({ settings }: { settings: SharedSettings }) {
         progress={settings.nerProgress}
         status={settings.nerStatus}
         error={settings.nerError}
+        backend={settings.nerBackend}
       />
       <PrimaryButton disabled={!file || state.running} onClick={() => void start()}>
         Vérifier
       </PrimaryButton>
       <Running state={state} onCancel={cancel} />
+      <Timer state={state} />
       {state.error && <Banner tone="error" title={state.error} />}
       {result && (
         <div className="space-y-6">

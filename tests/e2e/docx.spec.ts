@@ -21,6 +21,9 @@ test("parcours .docx sans NER : anonymiser → vérifier → restaurer", async (
   const buttonBox = await panel.getByRole("button", { name: /^⬇ Document anonymisé/ }).boundingBox();
   expect(bannerBox && buttonBox && bannerBox.y < buttonBox.y).toBe(true);
 
+  // Minuteur : durée du traitement affichée une fois terminé.
+  await expect(panel.getByTestId("timer")).toHaveText(/Durée du traitement : \d+ s/);
+
   expect(doc.name).toBe("sample.anonymise.docx");
   const anonText = (await segments(doc.data)).join("\n");
   expect(anonText).not.toContain("Paulina Kowalski");

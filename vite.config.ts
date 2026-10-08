@@ -5,10 +5,19 @@ import { defineConfig } from "vite";
 
 // Le chemin de base est fourni par actions/configure-pages en CI (voir docs/DEVIATIONS.md) ;
 // en local, le site est servi à la racine.
+// Isolation inter-origines (calcul multi-cœur d'ONNX Runtime) ; sur GitHub Pages, ces en-têtes sont
+// ajoutés par le service worker public/coi-sw.js (voir src/app/isolation.ts).
+const isolationHeaders = {
+  "Cross-Origin-Opener-Policy": "same-origin",
+  "Cross-Origin-Embedder-Policy": "require-corp",
+};
+
 export default defineConfig({
   base: process.env.VITE_BASE ?? "/",
   plugins: [react(), tailwindcss()],
   worker: { format: "es" },
+  server: { headers: isolationHeaders },
+  preview: { headers: isolationHeaders },
   test: {
     include: ["tests/unit/**/*.test.ts", "tests/unit/**/*.test.tsx"],
     environment: "node",

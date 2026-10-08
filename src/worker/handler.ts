@@ -59,7 +59,7 @@ export const defaultHandlers: Handlers = {
   restore: (params, ctx) => restore(params, ctx),
   loadNer: async (_params, ctx) => {
     const provider = await getNer(ctx);
-    return { model: provider.model, device: provider.device ?? "?" };
+    return { model: provider.model, device: provider.device ?? "?", threads: provider.threads };
   },
 };
 
