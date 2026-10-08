@@ -11,9 +11,16 @@ export default defineConfig({
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? "github" : "list",
   use: { baseURL: `http://localhost:${PORT}/`, trace: "retain-on-failure" },
-  projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
+  projects: [
+    {
+      name: "chromium",
+      // En CI, le Google Chrome préinstallé sur les runners GitHub évite `playwright install`.
+      use: { ...devices["Desktop Chrome"], ...(process.env.CI ? { channel: "chrome" } : {}) },
+    },
+  ],
   webServer: {
-    command: `npm run build && npx vite preview --port ${PORT} --strictPort`,
+    // En CI, le workflow a déjà construit `dist` : on se contente de le servir.
+    command: `${process.env.CI ? "" : "npm run build && "}npx vite preview --port ${PORT} --strictPort`,
     url: `http://localhost:${PORT}/`,
     reuseExistingServer: !process.env.CI,
     timeout: 180_000,

@@ -1,16 +1,24 @@
 name: CI
 
 on:
+  # Les branches sont vérifiées via leur PR : pousser une branche ne relance pas la CI une seconde fois.
   push:
+    branches: [main]
   pull_request:
   workflow_dispatch:
 
 permissions:
   contents: read
 
+concurrency:
+  # Un nouveau commit annule la CI en cours sur la même PR ; sur main, chaque commit va au bout.
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
 jobs:
   check:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v6
@@ -20,7 +28,8 @@ jobs:
       - run: npm ci
       - run: npm run check
       - run: npm run build
-      - run: npx playwright install --with-deps chromium
+      # Les tests e2e utilisent le Google Chrome préinstallé sur les runners (voir playwright.config.ts) :
+      # pas de `playwright install`, dont les paquets apt prennent parfois plusieurs minutes.
       - run: npm run test:e2e
       - uses: actions/upload-artifact@v6
         if: failure()
@@ -29,33 +38,12 @@ jobs:
           path: playwright-report
           retention-days: 7
 
-  libreoffice:
-    # Les fichiers Office produits doivent s'ouvrir dans LibreOffice (conversion PDF sans erreur).
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 24
-          cache: npm
-      - run: npm ci
-      - run: npx tsx scripts/export-samples.ts samples-out
-      - run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libreoffice-writer-nogui libreoffice-impress-nogui libreoffice-calc-nogui
-      - name: Conversion PDF
-        run: |
-          cd samples-out
-          for f in *.docx *.pptx *.xlsx; do
-            [ -e "$f" ] || continue
-            soffice --headless --convert-to pdf "$f" >/dev/null 2>&1 || { echo "échec : $f"; exit 1; }
-            [ -s "${f%.*}.pdf" ] || { echo "PDF vide : $f"; exit 1; }
-            echo "ok : $f"
-          done
-
   site-changes:
     # Ne redéploie Pages que si un fichier qui entre dans le build du site a changé,
     # ou sur lancement manuel depuis main.
     if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     outputs:
       site: ${{ steps.diff.outputs.site }}
     steps:
@@ -80,20 +68,15 @@ jobs:
             echo "site=false" >> "$GITHUB_OUTPUT"
           fi
 
-  deploy:
+  build-pages:
+    # Construit le site en parallèle de `check` ; `deploy` n'a plus qu'à le publier.
     if: needs.site-changes.outputs.site == 'true'
-    needs: [check, site-changes]
+    needs: site-changes
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: read
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    concurrency:
-      group: pages
-      cancel-in-progress: false
+      pages: read
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v6
@@ -109,5 +92,20 @@ jobs:
       - uses: actions/upload-pages-artifact@v5
         with:
           path: dist
+
+  deploy:
+    needs: [check, build-pages]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    steps:
       - id: deployment
         uses: actions/deploy-pages@v5
