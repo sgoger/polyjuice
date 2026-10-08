@@ -53,5 +53,9 @@
     "typescript-eslint": "^8.71.1",
     "vite": "^8.3.3",
     "vitest": "^5.0.3"
+  },
+  "overrides": {
+    "image-size": "^2.0.3",
+    "uuid": "^11.1.1"
   }
 }
