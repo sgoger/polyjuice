@@ -1,0 +1,8 @@
+dist
+coverage
+spikes
+playwright-report
+test-results
+tests/fixtures
+package-lock.json
+docs/PLAN.md
