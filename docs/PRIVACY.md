@@ -1,36 +1,36 @@
-# Confidentialité : ce qui transite, ce qui ne transite pas
+# Privacy: what goes over the network, what does not
 
-polyjuice est un site statique. Une fois la page chargée, tout le traitement a lieu dans le navigateur, dans un Web Worker.
+polyjuice is a static site. Once the page is loaded, all processing happens in the browser, in a Web Worker.
 
-## Ce qui ne quitte jamais le poste
+## What never leaves the machine
 
-- les documents déposés et les documents produits ;
-- le texte extrait, les détections, les rapports ;
-- la liste de noms ;
-- le mapping (qui contient les données en clair).
+- the uploaded documents and the produced documents;
+- the extracted text, the detections, the reports;
+- the name list;
+- the mapping (which contains the data in clear text).
 
-Les fichiers sont lus avec l'API `File` du navigateur et les téléchargements sont produits localement (`Blob` + lien de téléchargement). Aucune requête n'est émise pendant un traitement sans détection par IA : c'est vérifié par un test automatisé qui bloque toute requête sortante et traite chaque format (`tests/e2e/network.spec.ts`).
+Files are read with the browser's `File` API and downloads are produced locally (`Blob` + download link). No request is sent during processing without AI detection: this is checked by an automated test that blocks every outgoing request and processes each format (`tests/e2e/network.spec.ts`).
 
-## Ce qui est stocké
+## What is stored
 
-Rien, à une exception près. L'application n'utilise ni cookie, ni `localStorage`, ni `sessionStorage`, ni IndexedDB (vérifié par `tests/e2e/network.spec.ts`). La liste de noms et les fichiers déposés sont perdus au rechargement de la page.
+Nothing, with one exception. The application uses no cookies, no `localStorage`, no `sessionStorage` and no IndexedDB (checked by `tests/e2e/network.spec.ts`). The name list and the uploaded files are lost when the page is reloaded.
 
-L'exception : lorsque la détection par IA est activée, **les poids du modèle** sont mis en cache par transformers.js (Cache API du navigateur), pour ne pas être retéléchargés à chaque visite. Ce cache ne contient que des fichiers publics du modèle, jamais de données de l'utilisateur. Il peut être vidé depuis les réglages du navigateur (données du site).
+The exception: when AI detection is enabled, **the model weights** are cached by transformers.js (browser Cache API), so they are not downloaded again on every visit. This cache only contains public model files, never user data. It can be cleared from the browser settings (site data).
 
-## Ce qui transite sur le réseau
+## What goes over the network
 
-| Quand                                      | Vers                                    | Quoi                                                                                                                                                     | Données utilisateur |
-| ------------------------------------------ | --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------- |
-| Ouverture de la page                       | GitHub Pages                            | HTML, JavaScript, CSS, fichiers WASM (runtime ONNX, pdf.js) de l'application                                                                             | aucune              |
-| Première activation de la détection par IA | `huggingface.co` et son CDN (`*.hf.co`) | requêtes `GET` sans corps pour le tokeniseur, la configuration et les poids quantifiés du modèle `Xenova/bert-base-multilingual-cased-ner-hrl` (~181 Mo) | aucune              |
-| Activations suivantes                      | `huggingface.co`                        | requêtes de vérification du cache (`GET`)                                                                                                                | aucune              |
+| When                             | To                                       | What                                                                                                                                                        | User data |
+| -------------------------------- | ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- |
+| Opening the page                 | GitHub Pages                             | The application's HTML, JavaScript, CSS, WASM files (ONNX runtime, pdf.js)                                                                                  | none      |
+| First activation of AI detection | `huggingface.co` and its CDN (`*.hf.co`) | bodyless `GET` requests for the tokenizer, the configuration and the quantized weights of the `Xenova/bert-base-multilingual-cased-ner-hrl` model (~181 MB) | none      |
+| Subsequent activations           | `huggingface.co`                         | cache validation requests (`GET`)                                                                                                                           | none      |
 
-Le runtime ONNX (WASM) est servi par l'application elle-même, et non par un CDN tiers. Le test nightly `tests/e2e/ner.slow.spec.ts` vérifie que, pendant une anonymisation avec détection par IA, seules des requêtes `GET` sans corps vers les hôtes du Hub Hugging Face quittent le navigateur.
+The ONNX runtime (WASM) is served by the application itself, not by a third-party CDN. The nightly test `tests/e2e/ner.slow.spec.ts` checks that, during an anonymization with AI detection, only bodyless `GET` requests to the Hugging Face Hub hosts leave the browser.
 
-Comme toute requête HTTP, le téléchargement du modèle révèle à Hugging Face l'adresse IP du poste et le fait que le modèle est utilisé ; il ne révèle rien des documents traités.
+Like any HTTP request, downloading the model reveals to Hugging Face the machine's IP address and the fact that the model is being used; it reveals nothing about the processed documents.
 
-## Ce que produit l'outil
+## What the tool produces
 
-- Le **document anonymisé** reste une donnée personnelle au sens du RGPD (pseudonymisation, pas anonymisation) : la détection n'est pas exhaustive et le contexte peut suffire à réidentifier.
-- Le **mapping** contient les valeurs d'origine en clair : il ne doit jamais être transmis.
-- Le **rapport** ne contient aucune valeur d'origine : ses extraits de contexte sont pris dans le texte anonymisé.
+- The **anonymized document** is still personal data within the meaning of the GDPR (pseudonymization, not anonymization): detection is not exhaustive and context can be enough to re-identify.
+- The **mapping** contains the original values in clear text: it must never be transmitted.
+- The **report** contains no original value: its context excerpts are taken from the anonymized text.

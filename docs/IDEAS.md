@@ -1,5 +1,5 @@
-# Idées (hors périmètre de cette version)
+# Ideas (out of scope for this version)
 
-- Anonymiser les cibles des liens hypertextes (`mailto:`, URL personnelles) dans les relations OOXML et en Markdown, en cohérence avec le texte du lien.
-- Anonymiser les codes de champ Word (`w:instrText`) et les noms d'auteurs des commentaires et révisions.
-- Traiter le texte des graphiques et des SmartArt.
+- Anonymize hyperlink targets (`mailto:`, personal URLs) in OOXML relationships and in Markdown, consistently with the link text.
+- Anonymize Word field codes (`w:instrText`) and the author names of comments and revisions.
+- Process the text of charts and SmartArt.
