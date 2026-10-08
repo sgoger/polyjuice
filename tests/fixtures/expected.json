@@ -1,0 +1,477 @@
+{
+  "names": [
+    "Paulina Kowalski",
+    "Jean Dupont",
+    "Mehmet Yılmaz",
+    "Klaus Müller",
+    "Sabine Weber",
+    "Oliver Hughes",
+    "Emily Clarke",
+    "Bernard"
+  ],
+  "columns": [
+    "Nom",
+    "Prénom"
+  ],
+  "protected": {
+    "md": [
+      "lien.cible@example.org",
+      "code.bloc@example.org"
+    ]
+  },
+  "fixtures": {
+    "sample.docx": [
+      {
+        "text": "Paulina Kowalski",
+        "type": "PERSON",
+        "kind": "header"
+      },
+      {
+        "text": "p.kowalski@example.org",
+        "type": "EMAIL_ADDRESS",
+        "kind": "footer"
+      },
+      {
+        "text": "06 12 34 56 78",
+        "type": "PHONE_NUMBER",
+        "kind": "footer"
+      },
+      {
+        "text": "Paulina Kowalski",
+        "type": "PERSON",
+        "kind": "body"
+      },
+      {
+        "text": "Jean Dupont",
+        "type": "PERSON",
+        "kind": "body"
+      },
+      {
+        "text": "1 85 05 78 006 084 91",
+        "type": "FR_NIR",
+        "kind": "body"
+      },
+      {
+        "text": "+33 1 23 45 67 89",
+        "type": "PHONE_NUMBER",
+        "kind": "body"
+      },
+      {
+        "text": "0033 6 98 76 54 32",
+        "type": "PHONE_NUMBER",
+        "kind": "body"
+      },
+      {
+        "text": "jean.dupont@example.fr",
+        "type": "EMAIL_ADDRESS",
+        "kind": "body"
+      },
+      {
+        "text": "FR76 3000 6000 0112 3456 7890 189",
+        "type": "IBAN_CODE",
+        "kind": "body"
+      },
+      {
+        "text": "DE89 3704 0044 0532 0130 00",
+        "type": "IBAN_CODE",
+        "kind": "body"
+      },
+      {
+        "text": "4111 1111 1111 1111",
+        "type": "CREDIT_CARD",
+        "kind": "body"
+      },
+      {
+        "text": "https://intranet.example.fr/profil/jdupont",
+        "type": "URL",
+        "kind": "body"
+      },
+      {
+        "text": "192.168.12.34",
+        "type": "IP_ADDRESS",
+        "kind": "body"
+      },
+      {
+        "text": "2001:db8::8a2e:370:7334",
+        "type": "IP_ADDRESS",
+        "kind": "body"
+      },
+      {
+        "text": "Mehmet Yılmaz",
+        "type": "PERSON",
+        "kind": "body"
+      },
+      {
+        "text": "Emily Clarke",
+        "type": "PERSON",
+        "kind": "body"
+      },
+      {
+        "text": "Klaus Müller",
+        "type": "PERSON",
+        "kind": "body"
+      },
+      {
+        "text": "klaus.mueller@example.de",
+        "type": "EMAIL_ADDRESS",
+        "kind": "body"
+      },
+      {
+        "text": "+49 30 12345678",
+        "type": "PHONE_NUMBER",
+        "kind": "body"
+      },
+      {
+        "text": "Oliver Hughes",
+        "type": "PERSON",
+        "kind": "body"
+      },
+      {
+        "text": "o.hughes@example.co.uk",
+        "type": "EMAIL_ADDRESS",
+        "kind": "body"
+      },
+      {
+        "text": "+44 20 7946 0958",
+        "type": "PHONE_NUMBER",
+        "kind": "body"
+      },
+      {
+        "text": "GB82 WEST 1234 5698 7654 32",
+        "type": "IBAN_CODE",
+        "kind": "body"
+      },
+      {
+        "text": "Sabine Weber",
+        "type": "PERSON",
+        "kind": "footnote"
+      },
+      {
+        "text": "+49 30 12345678",
+        "type": "PHONE_NUMBER",
+        "kind": "footnote"
+      },
+      {
+        "text": "Oliver Hughes",
+        "type": "PERSON",
+        "kind": "comment"
+      },
+      {
+        "text": "o.hughes@example.co.uk",
+        "type": "EMAIL_ADDRESS",
+        "kind": "comment"
+      }
+    ],
+    "sample.pptx": [
+      {
+        "text": "Paulina Kowalski",
+        "type": "PERSON",
+        "kind": "body"
+      },
+      {
+        "text": "p.kowalski@example.org",
+        "type": "EMAIL_ADDRESS",
+        "kind": "body"
+      },
+      {
+        "text": "06 12 34 56 78",
+        "type": "PHONE_NUMBER",
+        "kind": "body"
+      },
+      {
+        "text": "Jean Dupont",
+        "type": "PERSON",
+        "kind": "cell"
+      },
+      {
+        "text": "jean.dupont@example.fr",
+        "type": "EMAIL_ADDRESS",
+        "kind": "cell"
+      },
+      {
+        "text": "Klaus Müller",
+        "type": "PERSON",
+        "kind": "notes"
+      },
+      {
+        "text": "+49 30 12345678",
+        "type": "PHONE_NUMBER",
+        "kind": "notes"
+      },
+      {
+        "text": "Emily Clarke",
+        "type": "PERSON",
+        "kind": "body"
+      },
+      {
+        "text": "o.hughes@example.co.uk",
+        "type": "EMAIL_ADDRESS",
+        "kind": "body"
+      },
+      {
+        "text": "DE89 3704 0044 0532 0130 00",
+        "type": "IBAN_CODE",
+        "kind": "body"
+      }
+    ],
+    "sample.xlsx": [
+      {
+        "text": "Dupont",
+        "type": "PERSON",
+        "kind": "cell"
+      },
+      {
+        "text": "Jean",
+        "type": "PERSON",
+        "kind": "cell"
+      },
+      {
+        "text": "Müller",
+        "type": "PERSON",
+        "kind": "cell"
+      },
+      {
+        "text": "Klaus",
+        "type": "PERSON",
+        "kind": "cell"
+      },
+      {
+        "text": "Hughes",
+        "type": "PERSON",
+        "kind": "cell"
+      },
+      {
+        "text": "Oliver",
+        "type": "PERSON",
+        "kind": "cell"
+      },
+      {
+        "text": "Bernard",
+        "type": "PERSON",
+        "kind": "cell"
+      },
+      {
+        "text": "jean.dupont@example.fr",
+        "type": "EMAIL_ADDRESS",
+        "kind": "cell"
+      },
+      {
+        "text": "klaus.mueller@example.de",
+        "type": "EMAIL_ADDRESS",
+        "kind": "cell"
+      },
+      {
+        "text": "o.hughes@example.co.uk",
+        "type": "EMAIL_ADDRESS",
+        "kind": "cell"
+      },
+      {
+        "text": "bernard@example.fr",
+        "type": "EMAIL_ADDRESS",
+        "kind": "cell"
+      },
+      {
+        "text": "06 12 34 56 78",
+        "type": "PHONE_NUMBER",
+        "kind": "cell"
+      },
+      {
+        "text": "+49 30 12345678",
+        "type": "PHONE_NUMBER",
+        "kind": "cell"
+      },
+      {
+        "text": "+44 20 7946 0958",
+        "type": "PHONE_NUMBER",
+        "kind": "cell"
+      },
+      {
+        "text": "+33 1 23 45 67 89",
+        "type": "PHONE_NUMBER",
+        "kind": "cell"
+      },
+      {
+        "text": "Paulina Kowalski",
+        "type": "PERSON",
+        "kind": "cell"
+      },
+      {
+        "text": "Sabine Weber",
+        "type": "PERSON",
+        "kind": "cell"
+      }
+    ],
+    "sample.pdf": [
+      {
+        "text": "Jean Dupont",
+        "type": "PERSON",
+        "kind": "body"
+      },
+      {
+        "text": "Klaus Müller",
+        "type": "PERSON",
+        "kind": "body"
+      },
+      {
+        "text": "jean.dupont@example.fr",
+        "type": "EMAIL_ADDRESS",
+        "kind": "body"
+      },
+      {
+        "text": "06 12 34 56 78",
+        "type": "PHONE_NUMBER",
+        "kind": "body"
+      },
+      {
+        "text": "Oliver Hughes",
+        "type": "PERSON",
+        "kind": "body"
+      },
+      {
+        "text": "o.hughes@example.co.uk",
+        "type": "EMAIL_ADDRESS",
+        "kind": "body"
+      },
+      {
+        "text": "FR76 3000 6000 0112 3456 7890 189",
+        "type": "IBAN_CODE",
+        "kind": "body"
+      },
+      {
+        "text": "1 85 05 78 006 084 91",
+        "type": "FR_NIR",
+        "kind": "body"
+      },
+      {
+        "text": "https://intranet.example.fr/profil/jdupont",
+        "type": "URL",
+        "kind": "body"
+      },
+      {
+        "text": "192.168.12.34",
+        "type": "IP_ADDRESS",
+        "kind": "body"
+      },
+      {
+        "text": "+49 30 12345678",
+        "type": "PHONE_NUMBER",
+        "kind": "body"
+      }
+    ],
+    "scanned.pdf": [],
+    "sample.md": [
+      {
+        "text": "Paulina Kowalski",
+        "type": "PERSON",
+        "kind": "body"
+      },
+      {
+        "text": "p.kowalski@example.org",
+        "type": "EMAIL_ADDRESS",
+        "kind": "body"
+      },
+      {
+        "text": "Mehmet Yılmaz",
+        "type": "PERSON",
+        "kind": "body"
+      },
+      {
+        "text": "+33 1 23 45 67 89",
+        "type": "PHONE_NUMBER",
+        "kind": "body"
+      },
+      {
+        "text": "Klaus Müller",
+        "type": "PERSON",
+        "kind": "body"
+      },
+      {
+        "text": "+49 30 12345678",
+        "type": "PHONE_NUMBER",
+        "kind": "body"
+      },
+      {
+        "text": "Oliver Hughes",
+        "type": "PERSON",
+        "kind": "body"
+      },
+      {
+        "text": "+44 20 7946 0958",
+        "type": "PHONE_NUMBER",
+        "kind": "body"
+      },
+      {
+        "text": "jean.dupont@example.fr",
+        "type": "EMAIL_ADDRESS",
+        "kind": "body"
+      },
+      {
+        "text": "Emily Clarke",
+        "type": "PERSON",
+        "kind": "body"
+      },
+      {
+        "text": "GB82 WEST 1234 5698 7654 32",
+        "type": "IBAN_CODE",
+        "kind": "body"
+      },
+      {
+        "text": "1 85 05 78 006 084 91",
+        "type": "FR_NIR",
+        "kind": "body"
+      },
+      {
+        "text": "2001:db8::8a2e:370:7334",
+        "type": "IP_ADDRESS",
+        "kind": "body"
+      }
+    ],
+    "sample.txt": [
+      {
+        "text": "Sabine Weber",
+        "type": "PERSON",
+        "kind": "body"
+      },
+      {
+        "text": "Jean Dupont",
+        "type": "PERSON",
+        "kind": "body"
+      },
+      {
+        "text": "06 12 34 56 78",
+        "type": "PHONE_NUMBER",
+        "kind": "body"
+      },
+      {
+        "text": "jean.dupont@example.fr",
+        "type": "EMAIL_ADDRESS",
+        "kind": "body"
+      },
+      {
+        "text": "Klaus Müller",
+        "type": "PERSON",
+        "kind": "body"
+      },
+      {
+        "text": "+49 30 12345678",
+        "type": "PHONE_NUMBER",
+        "kind": "body"
+      },
+      {
+        "text": "klaus.mueller@example.de",
+        "type": "EMAIL_ADDRESS",
+        "kind": "body"
+      },
+      {
+        "text": "4111 1111 1111 1111",
+        "type": "CREDIT_CARD",
+        "kind": "body"
+      },
+      {
+        "text": "192.168.12.34",
+        "type": "IP_ADDRESS",
+        "kind": "body"
+      }
+    ]
+  }
+}

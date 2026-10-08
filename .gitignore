@@ -1,0 +1,11 @@
+node_modules/
+dist/
+coverage/
+playwright-report/
+test-results/
+*.tsbuildinfo
+.DS_Store
+# Aucune donnée réelle dans le dépôt
+tests/real/
+tests/real/**/*.json
+names*.txt
