@@ -1,0 +1,72 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`rapports > rapport de détection 1`] = `
+"# Rapport de détection — rapport.docx
+
+- Fichier : \`rapport.docx\`
+- Format : docx
+- Détection par IA (NER) : activée
+- Entités distinctes remplacées : 2
+  - Personne : 1
+  - E-mail : 1
+
+## Remplacements
+
+| Token | Type | Source | Occurrences | Contexte (première occurrence) |
+|---|---|---|---:|---|
+| ⟦P-4WW4X⟧ | Personne | IA (NER) | 2 | Rédigé par **⟦P-4WW4X⟧** \\| le 3 mars. |
+| ⟦E-8CPCA⟧ | E-mail | motif | 1 | Contact : **⟦E-8CPCA⟧** |
+
+## Avertissements
+
+- 1 image présente : texte non traité
+
+> **Le mapping contient les données en clair. Ne pas transmettre.**
+"
+`;
+
+exports[`rapports > rapport de restauration 1`] = `
+"# Rapport de restauration — rapport.docx
+
+## ⚠ Erreur : tokens inconnus
+
+1 token(s) au format polyjuice sont absents du mapping et ont été laissés tels quels. Vérifiez que le mapping correspond bien à ce document.
+
+| Token | Occurrences |
+|---|---:|
+| ⟦P-ZZZZZ⟧ | 1 |
+
+## Tokens restaurés
+
+| Token | Type | Occurrences |
+|---|---|---:|
+| ⟦P-4WW4X⟧ | Personne | 2 |
+
+## Tokens du mapping non retrouvés (information)
+
+- ⟦E-8CPCA⟧ (E-mail)
+
+## Avertissements
+
+Aucun.
+"
+`;
+
+exports[`rapports > rapport de vérification 1`] = `
+"# Vérification — a.md
+
+**1 élément(s) ressemblent encore à des données personnelles.**
+
+| Texte | Type | Source | Emplacement | Contexte |
+|---|---|---|---|---|
+| Jean | Personne | liste de noms | corps | Bonjour **Jean** |
+
+## À signaler
+
+- Nom de feuille : Équipe Dupont
+
+## Avertissements
+
+Aucun.
+"
+`;
