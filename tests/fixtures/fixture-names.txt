@@ -1,0 +1,9 @@
+# Liste de noms fictifs des fixtures
+Paulina Kowalski
+Jean Dupont
+Mehmet Yılmaz
+Klaus Müller
+Sabine Weber
+Oliver Hughes
+Emily Clarke
+Bernard

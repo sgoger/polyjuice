@@ -17,7 +17,8 @@
     "typecheck": "tsc -b --noEmit",
     "test": "vitest run",
     "test:e2e": "playwright test",
-    "check": "npm run lint && npm run typecheck && npm run test"
+    "check": "npm run lint && npm run typecheck && npm run test",
+    "fixtures": "tsx scripts/make-fixtures.ts"
   },
   "dependencies": {
     "@huggingface/transformers": "^4.3.1",
@@ -37,9 +38,13 @@
     "@vitejs/plugin-react": "^6.1.2",
     "@vitest/coverage-v8": "^5.0.3",
     "@xmldom/xmldom": "^0.9.12",
+    "docx": "^9.9.0",
     "eslint": "^10.12.0",
     "eslint-plugin-react-hooks": "^7.1.1",
+    "exceljs": "^4.4.0",
     "globals": "^17.13.0",
+    "pdf-lib": "^1.17.1",
+    "pptxgenjs": "^4.0.1",
     "prettier": "^3.9.9",
     "tailwindcss": "^4.3.3",
     "tsx": "^4.23.15",
