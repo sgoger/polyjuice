@@ -143,6 +143,8 @@ The prompt plans native `DOMParser` / `XMLSerializer` in the browser and xmldom 
 
 **Awaiting the human step.** `scripts/calibrate.ts` aggregates the mappings and an `annotations.csv` file (false positives / false negatives entered by hand) from a folder outside the repository (`tests/real/`) and displays volumes, FP/FN and estimated precision by source and by type. Threshold, regex or model adjustments, and any decision to switch to plan B, will be recorded here after processing 5 to 10 internal documents.
 
+- **Organizations are no longer anonymized** (2026-10-08, first internal documents: a CSE meeting record in DOCX and a CSE newsletter in PDF). The NER replaced 87 distinct organizations in the record (CSE, ARTE, IA, YouTube, ChatGPT, « gouvernement »…), which made it hard to read and protected nobody. Simply ignoring the model's `ORG` labels leaked people, though: it sometimes labels a speaker as an organization (one name stayed in clear 25 times). The NER therefore now runs over the whole document first (`documentNer` in `ner.ts`): an organization whose text is detected as a person elsewhere in the document becomes a person, every other organization is dropped. Progress covers both passes. The `ORGANIZATION` type and its `⟦O-…⟧` tokens remain known to the engine, so mappings produced earlier still restore.
+
 ### Final review (7.4)
 
 A confidentiality review found secondary content copied without being flagged. Fixed:

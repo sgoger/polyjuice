@@ -16,7 +16,7 @@ export interface NerProvider {
   readonly id: string;
   readonly model: string;
   load(onProgress: (p: Progress) => void): Promise<void>;
-  /** Types renvoyés : PERSON | ORGANIZATION | LOCATION. */
+  /** Types renvoyés : PERSON | ORGANIZATION | LOCATION (organisations filtrées par `documentNer`). */
   detect(text: string): Promise<Detection[]>;
 }
 
@@ -209,6 +209,40 @@ export async function detectWindowed(
 }
 
 export class TooLong extends Error {}
+
+/**
+ * Les organisations ne sont pas anonymisées, mais le modèle étiquette parfois une personne comme
+ * organisation (« Marysabelle COTE » dans un procès-verbal). Analyse tout le document d'abord : une
+ * organisation dont le texte est aussi détecté comme personne ailleurs devient une personne, les
+ * autres sont écartées. Le fournisseur renvoyé sert les résultats mis en cache, texte par texte.
+ */
+export async function documentNer(
+  ner: NerProvider,
+  texts: readonly string[],
+  onText: (done: number) => void = () => undefined,
+): Promise<NerProvider> {
+  const cache = new Map<string, Detection[]>();
+  const persons = new Set<string>();
+  const key = (s: string) => s.toLocaleLowerCase("fr").replace(/\s+/g, " ").trim();
+  for (const [i, text] of texts.entries()) {
+    onText(i);
+    if (cache.has(text)) continue;
+    const found = await ner.detect(text);
+    cache.set(text, found);
+    for (const d of found) if (d.type === "PERSON") persons.add(key(d.text));
+  }
+  const filter = (found: readonly Detection[]) =>
+    found.flatMap((d): Detection[] => {
+      if (d.type !== "ORGANIZATION") return [d];
+      return persons.has(key(d.text)) ? [{ ...d, type: "PERSON" }] : [];
+    });
+  return {
+    id: ner.id,
+    model: ner.model,
+    load: (onProgress) => ner.load(onProgress),
+    detect: async (text) => filter(cache.get(text) ?? (await ner.detect(text))),
+  };
+}
 
 // ---------------------------------------------------------------------------
 // Implémentation transformers.js
