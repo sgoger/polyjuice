@@ -25,7 +25,7 @@ describe("liste de noms", () => {
 
   it("gère les termes multi-mots et préfère le plus long", () => {
     const m = new NameMatcher(["Jean", "Jean Dupont"]);
-    expect(texts(m, "Jean Dupont et Jean Dupont puis Jean.")).toEqual(["Jean Dupont", "Jean Dupont", "Jean"]);
+    expect(texts(m, "Jean Dupont et Jean\u00A0Dupont puis Jean.")).toEqual(["Jean Dupont", "Jean\u00A0Dupont", "Jean"]);
   });
 
   it("échappe les caractères spéciaux", () => {

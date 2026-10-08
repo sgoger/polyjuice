@@ -84,6 +84,25 @@ async function nerFor(enabled: boolean, format: Format, ctx: PipelineContext): P
   return ctx.getNer();
 }
 
+/** Éléments signalés par l'adaptateur (cibles de liens, codes de champ, noms de feuilles…) qui contiennent une détection. */
+async function sensitiveNotices(doc: Doc, names: NameMatcher): Promise<{ text: string; where: string }[]> {
+  const out: { text: string; where: string }[] = [];
+  for (const n of doc.notices ?? []) {
+    const found = await detectSegment({ locator: null, text: n.text, kind: "body" }, { names });
+    if (found.length > 0) out.push(n);
+  }
+  return out;
+}
+
+async function noticeWarnings(doc: Doc, names: NameMatcher): Promise<string[]> {
+  const counts = new Map<string, number>();
+  for (const n of await sensitiveNotices(doc, names)) counts.set(n.where, (counts.get(n.where) ?? 0) + 1);
+  return [...counts].map(
+    ([where, n]) =>
+      `${where} : ${n} élément(s) contiennent des données personnelles détectées et ne sont pas modifiés (« Vérifier » les liste).`,
+  );
+}
+
 // ---------------------------------------------------------------------------
 
 export async function anonymize(params: AnonymizeParams, ctx: PipelineContext): Promise<AnonymizeResult> {
@@ -118,7 +137,7 @@ export async function anonymize(params: AnonymizeParams, ctx: PipelineContext): 
   ctx.checkCancelled();
   ctx.progress(total, total);
 
-  const warnings = [...doc.warnings];
+  const warnings = [...doc.warnings, ...(await noticeWarnings(doc, names))];
   store.setWarnings(warnings);
   const mapping = store.toMapping();
   const data = await adapter.write(doc);
@@ -158,7 +177,7 @@ export async function check(params: CheckParams, ctx: PipelineContext): Promise<
     }
   }
   ctx.progress(total, total);
-  const notices = (doc.notices ?? []).filter((n) => names.detect(n.text).length > 0);
+  const notices = await sensitiveNotices(doc, names);
   const report = { fileName: params.fileName, rows, notices, warnings: [...doc.warnings] };
   return { report, reportMarkdown: checkReportMarkdown(report), warnings: report.warnings };
 }

@@ -28,6 +28,28 @@ jobs:
           path: playwright-report
           retention-days: 7
 
+  libreoffice:
+    # Les fichiers Office produits doivent s'ouvrir dans LibreOffice (conversion PDF sans erreur).
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx tsx scripts/export-samples.ts samples-out
+      - run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libreoffice-writer-nogui libreoffice-impress-nogui libreoffice-calc-nogui
+      - name: Conversion PDF
+        run: |
+          cd samples-out
+          for f in *.docx *.pptx *.xlsx; do
+            [ -e "$f" ] || continue
+            soffice --headless --convert-to pdf "$f" >/dev/null 2>&1 || { echo "échec : $f"; exit 1; }
+            [ -s "${f%.*}.pdf" ] || { echo "PDF vide : $f"; exit 1; }
+            echo "ok : $f"
+          done
+
   deploy:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: check
