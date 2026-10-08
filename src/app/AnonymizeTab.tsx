@@ -9,6 +9,7 @@ import { NerToggle } from "./components/NerToggle.tsx";
 import { PrimaryButton } from "./components/PrimaryButton.tsx";
 import { AnonymizeReportView } from "./components/Reports.tsx";
 import { Running } from "./components/Running.tsx";
+import { Timer } from "./components/Timer.tsx";
 import { DOC_EXTENSIONS, isXlsx, type SharedSettings } from "./settings.ts";
 import { useEngine } from "./useEngine.ts";
 
@@ -98,6 +99,7 @@ export function AnonymizeTab({ settings }: { settings: SharedSettings }) {
         Anonymiser
       </PrimaryButton>
       <Running state={state} onCancel={cancel} />
+      <Timer state={state} />
       {state.error && <Banner tone="error" title={state.error} />}
       {result && (
         <div className="space-y-6">
