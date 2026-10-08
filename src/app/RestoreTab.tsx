@@ -1,3 +1,4 @@
+import { agree, pl } from "../engine/plural.ts";
 import { useState } from "react";
 import type { RestoreResult } from "../worker/protocol.ts";
 import { Banner, WarningsBanner } from "./components/Banner.tsx";
@@ -61,7 +62,7 @@ export function RestoreTab() {
           {result.unknownTokens.length > 0 ? (
             <Banner
               tone="error"
-              title={`${result.unknownTokens.length} token(s) absents du mapping : laissés tels quels dans le document restauré.`}
+              title={`${pl(result.unknownTokens.length, "token absent", "tokens absents")} du mapping : ${agree(result.unknownTokens.length, "laissé tel quel", "laissés tels quels")} dans le document restauré.`}
             >
               Vérifiez que le mapping correspond à ce document.
             </Banner>

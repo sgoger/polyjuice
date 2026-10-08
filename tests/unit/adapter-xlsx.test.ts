@@ -33,7 +33,7 @@ describe("XLSX", () => {
 
   it("la chaîne partagée réutilisée dans deux colonnes est anonymisée partout et le rapport le dit", async () => {
     const r = await anonymizeFixture(NAME, { columns });
-    expect(r.warnings.join("\n")).toMatch(/1 chaîne\(s\) partagée\(s\).*plusieurs colonnes/);
+    expect(r.warnings.join("\n")).toMatch(/1 chaîne partagée.*plusieurs colonnes/);
     expect(r.reportMarkdown).toMatch(/plusieurs colonnes/);
     const sheet = await partText(r.document.data, "xl/worksheets/sheet1.xml");
     // A5 et B5 pointent toujours sur le même index de chaîne partagée.

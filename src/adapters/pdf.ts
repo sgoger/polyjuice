@@ -1,5 +1,6 @@
 // Adaptateur .pdf (lecture seule, pdf.js) : extraction du texte en Markdown minimal, ensuite traité
 // par l'adaptateur Markdown. Le document produit est un .md.
+import { pl } from "../engine/plural.ts";
 import type { Adapter, Doc } from "../engine/types.ts";
 import { readText, writeText } from "./text.ts";
 
@@ -139,7 +140,7 @@ async function read(file: ArrayBuffer): Promise<Doc> {
   }
   if (x.pagesWithImages) {
     warnings.push(
-      `${x.pagesWithImages} page(s) contiennent des images : le texte contenu dans les images n'est pas traité.`,
+      `${pl(x.pagesWithImages, "page contient", "pages contiennent")} des images : le texte contenu dans les images n'est pas traité.`,
     );
   }
   return { ...doc, format: "pdf", outputExtension: "md", warnings };

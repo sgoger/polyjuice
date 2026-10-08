@@ -1,4 +1,5 @@
 // Éléments communs aux trois adaptateurs Office : métadonnées, avertissements, cibles de liens.
+import { pl } from "../../engine/plural.ts";
 import { applyEdits, collect, type RunModel } from "./runs.ts";
 import { elementsNS, NS, parseXml, serializeXml, setText, type Element, type ParsedPart } from "./xml.ts";
 import type { OoxmlPackage } from "./zip.ts";
@@ -108,11 +109,17 @@ export function contentWarnings(pkg: OoxmlPackage, root: string, extra: { charts
   const count = (dir: string) => pkg.names().filter((n) => n.startsWith(`${root}/${dir}/`)).length;
   const out: string[] = [];
   const media = count("media");
-  if (media) out.push(`${media} image(s) ou média(s) présent(s) : le texte contenu dans les images n'est pas traité.`);
-  if (count("diagrams")) out.push("SmartArt présent(s) : leur texte n'est pas traité.");
-  if (extra.charts !== false && count("charts")) out.push("Graphique(s) présent(s) : leur texte n'est pas traité.");
+  if (media)
+    out.push(
+      `${pl(media, "image ou média présent", "images ou médias présents")} : le texte contenu dans les images n'est pas traité.`,
+    );
+  if (count("diagrams")) out.push("SmartArt présents : leur texte n'est pas traité.");
+  if (extra.charts !== false && count("charts")) out.push("Graphiques présents : leur texte n'est pas traité.");
   const ole = count("embeddings");
-  if (ole) out.push(`${ole} objet(s) incorporé(s) (OLE) présent(s) : leur contenu n'est pas traité.`);
+  if (ole)
+    out.push(
+      `${pl(ole, "objet incorporé (OLE) présent", "objets incorporés (OLE) présents")} : leur contenu n'est pas traité.`,
+    );
   return out;
 }
 

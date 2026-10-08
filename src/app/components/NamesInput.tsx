@@ -1,3 +1,4 @@
+import { pl } from "../../engine/plural.ts";
 import { useId, useRef } from "react";
 
 interface Props {
@@ -53,7 +54,7 @@ export function NamesInput({ value, onChange }: Props) {
         placeholder={"Paulina Kowalski\nJean Dupont"}
       />
       <p className="text-sm text-slate-600">
-        {count} terme(s). La liste n'est jamais enregistrée : elle est perdue au rechargement de la page.
+        {pl(count, "terme", "termes")}. La liste n'est jamais enregistrée : elle est perdue au rechargement de la page.
       </p>
     </div>
   );

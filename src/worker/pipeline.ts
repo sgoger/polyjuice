@@ -1,5 +1,6 @@
 // Enchaînement adaptateur → moteur → adaptateur pour les trois onglets.
 // Indépendant du Worker : testé directement en Node.
+import { agree, pl } from "../engine/plural.ts";
 import { adapterFor, extensionOf } from "../adapters/index.ts";
 import { detectSegment } from "../engine/detect.ts";
 import { NameMatcher, parseNames } from "../engine/detectors/names.ts";
@@ -99,7 +100,7 @@ async function noticeWarnings(doc: Doc, names: NameMatcher): Promise<string[]> {
   for (const n of await sensitiveNotices(doc, names)) counts.set(n.where, (counts.get(n.where) ?? 0) + 1);
   return [...counts].map(
     ([where, n]) =>
-      `${where} : ${n} élément(s) contiennent des données personnelles détectées et ne sont pas modifiés (« Vérifier » les liste).`,
+      `${where} : ${pl(n, "élément contient", "éléments contiennent")} des données personnelles détectées et ${agree(n, "n'est pas modifié", "ne sont pas modifiés")} (« Vérifier » les liste).`,
   );
 }
 

@@ -31,7 +31,7 @@ test("parcours .docx sans NER : anonymiser → vérifier → restaurer", async (
   await upload(page, "check-file", doc.name, doc.data);
   await check.getByRole("button", { name: "Vérifier", exact: true }).click();
   // Seule la cible mailto: de l'hyperlien (non modifiée) est signalée.
-  await expect(check.getByText(/1 élément\(s\) ressemblent encore/)).toBeVisible();
+  await expect(check.getByText(/1 élément ressemble encore/)).toBeVisible();
   await expect(check.getByText("mailto:jean.dupont@example.fr")).toBeVisible();
 
   await page.getByRole("tab", { name: "Restaurer" }).click();

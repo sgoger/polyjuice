@@ -1,3 +1,4 @@
+import { pl } from "../../engine/plural.ts";
 import {
   KIND_LABELS,
   MAPPING_REMINDER,
@@ -144,12 +145,19 @@ export function RestoreReportView({ r }: { r: RestoreReport }) {
         </div>
       )}
       <p className="text-sm">
-        {r.found.length} token(s) restauré(s) ({r.found.reduce((a, f) => a + f.occurrences, 0)} occurrence(s)).
+        {pl(r.found.length, "token restauré", "tokens restaurés")} (
+        {pl(
+          r.found.reduce((a, f) => a + f.occurrences, 0),
+          "occurrence",
+          "occurrences",
+        )}
+        ).
       </p>
       {r.missing.length > 0 && (
         <details className="text-sm">
           <summary className="cursor-pointer">
-            {r.missing.length} token(s) du mapping non retrouvé(s) dans ce document (information)
+            {pl(r.missing.length, "token du mapping non retrouvé", "tokens du mapping non retrouvés")} dans ce document
+            (information)
           </summary>
           <ul className="list-disc pl-5 font-mono">
             {r.missing.map((m) => (

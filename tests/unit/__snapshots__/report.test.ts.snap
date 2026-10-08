@@ -30,7 +30,7 @@ exports[`rapports > rapport de restauration 1`] = `
 
 ## ⚠ Erreur : tokens inconnus
 
-1 token(s) au format polyjuice sont absents du mapping et ont été laissés tels quels. Vérifiez que le mapping correspond bien à ce document.
+1 token au format polyjuice est absent du mapping et a été laissé tel quel. Vérifiez que le mapping correspond bien à ce document.
 
 | Token | Occurrences |
 |---|---:|
@@ -55,7 +55,7 @@ Aucun.
 exports[`rapports > rapport de vérification 1`] = `
 "# Vérification — a.md
 
-**1 élément(s) ressemblent encore à des données personnelles.**
+**1 élément ressemble encore à des données personnelles.**
 
 | Texte | Type | Source | Emplacement | Contexte |
 |---|---|---|---|---|

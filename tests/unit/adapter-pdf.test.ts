@@ -23,7 +23,7 @@ describe("PDF", () => {
   it("PDF scanné : avertissement et .md quasi vide, sans erreur", async () => {
     const r = await anonymizeFixture("scanned.pdf");
     expect(r.warnings.join("\n")).toMatch(/probablement scanné/);
-    expect(r.warnings.join("\n")).toMatch(/1 page\(s\) contiennent des images/);
+    expect(r.warnings.join("\n")).toMatch(/1 page contient des images/);
     expect(text(r.document.data).trim()).toBe("");
   }, 30_000);
 

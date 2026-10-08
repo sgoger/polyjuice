@@ -1,5 +1,6 @@
 // Adaptateur .xlsx (SpreadsheetML brut) : chaînes partagées et chaînes inline uniquement.
 // Formules, nombres, dates, booléens, noms de feuilles, styles, graphiques et macros ne sont jamais touchés.
+import { pl } from "../engine/plural.ts";
 import type { Adapter, Doc, ReadOptions } from "../engine/types.ts";
 import {
   contentWarnings,
@@ -147,7 +148,7 @@ function markColumns(
   const shared = [...marked].filter((i) => (usage.get(i)?.size ?? 0) > 1).length;
   return shared
     ? [
-        `${shared} chaîne(s) partagée(s) des colonnes anonymisées sont utilisées dans plusieurs colonnes : toutes les cellules qui les utilisent sont remplacées.`,
+        `${pl(shared, "chaîne partagée des colonnes anonymisées est utilisée", "chaînes partagées des colonnes anonymisées sont utilisées")} dans plusieurs colonnes : toutes les cellules qui les utilisent sont remplacées.`,
       ]
     : [];
 }
