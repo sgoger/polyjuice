@@ -10,7 +10,7 @@ export function Running({ state, onCancel }: { state: RunState; onCancel: () => 
         ? "Initialisation du modèle…"
         : null;
   return (
-    <div className="space-y-2 rounded-lg border border-slate-300 bg-white p-4" aria-live="polite">
+    <div className="space-y-2 rounded-lg border border-slate-300 bg-white p-4" aria-live="polite" aria-busy="true">
       <div className="flex items-center justify-between gap-4">
         <p>
           {ner ?? (progress ? `Traitement : ${progress.done} / ${progress.total} segments` : "Lecture du document…")}

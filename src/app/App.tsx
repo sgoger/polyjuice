@@ -80,7 +80,7 @@ export function App() {
           ]}
         />
       </main>
-      <footer className="sticky bottom-0 border-t border-slate-300 bg-slate-800 text-white">
+      <footer className="sm:sticky bottom-0 border-t border-slate-300 bg-slate-800 text-white">
         <p className="mx-auto max-w-5xl px-6 py-3 text-sm">
           🔒 Aucune donnée ne quitte votre navigateur. Cet outil pseudonymise ; les documents produits restent des
           données personnelles au sens du RGPD.
