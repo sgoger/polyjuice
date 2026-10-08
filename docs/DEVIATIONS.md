@@ -67,7 +67,7 @@ Spike limitations: Firefox could not be launched by Playwright in the agent's en
 ### Tooling
 
 - **TypeScript 6.0** and not the latest version (7.x): `typescript-eslint` requires `typescript < 6.1`.
-- **GitHub Pages at the root of a subdomain.** Since the repository is private, Pages publishes the site on a dedicated domain (`https://literate-spoon-okyq591.pages.github.io/`) and not under `/<repo>/`. Vite's `base` is therefore not hard-coded: CI takes it from the `base_path` output of `actions/configure-pages` (variable `VITE_BASE`); locally it is `/`.
+- **GitHub Pages base path not hard-coded.** The site is published at `https://sgoger.github.io/polyjuice/`, under `/polyjuice/`. Vite's `base` is not hard-coded: CI takes it from the `base_path` output of `actions/configure-pages` (variable `VITE_BASE`), so the build follows wherever Pages serves the site; locally it is `/`.
 
 ### `Segment` interface
 
