@@ -3,9 +3,10 @@ import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 
-// GitHub Pages sert le site sous /<nom du dépôt>/.
+// Le chemin de base est fourni par actions/configure-pages en CI (voir docs/DEVIATIONS.md) ;
+// en local, le site est servi à la racine.
 export default defineConfig({
-  base: process.env.VITE_BASE ?? "/polyjuice/",
+  base: process.env.VITE_BASE ?? "/",
   plugins: [react(), tailwindcss()],
   worker: { format: "es" },
   test: {
