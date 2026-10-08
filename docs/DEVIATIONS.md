@@ -90,3 +90,7 @@ De même, `Adapter.read` accepte un second argument optionnel `{ columns }` (en-
 - **Numéros collés.** Les regex de numéros (IBAN, carte, téléphone international) sont gourmandes ; quand la validation échoue, la plus longue troncature valide à une frontière de groupe est retenue, puis la recherche reprend juste après. Deux numéros séparés par un simple espace restent ainsi deux détections.
 - **Carte bancaire.** En plus de Luhn, le premier chiffre doit être 2 à 6 et le groupement celui d'une carte (sans séparateur, groupes de 4, ou 4-6-5 / 4-6-4), pour éviter les faux positifs sur des suites de numéros de téléphone ; score 0,95 pour qu'à longueur égale un IBAN ou un NIR l'emporte.
 - **Tabulations et sauts de ligne.** Une détection NER ou de liste qui contient une tabulation ou un saut de ligne (éléments `w:tab`, `w:br` des documents) est coupée à ces caractères : les éléments non textuels ne sont jamais remplacés.
+
+### Rapports
+
+- Les extraits de contexte (±40 caractères) du rapport de détection sont pris dans le **texte anonymisé**, autour du token : le rapport téléchargeable ne contient ainsi aucune valeur d'origine et seul le mapping est sensible, conformément au rappel « Le mapping contient les données en clair ». Les valeurs d'origine restent consultables dans le mapping.
