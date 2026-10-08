@@ -63,6 +63,7 @@ export function AnonymizeTab({ settings }: { settings: SharedSettings }) {
         progress={settings.nerProgress}
         status={settings.nerStatus}
         error={settings.nerError}
+        backend={settings.nerBackend}
       />
       {xlsx && (
         <div className="space-y-1">

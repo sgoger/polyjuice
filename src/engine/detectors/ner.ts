@@ -233,10 +233,13 @@ interface RawProgress {
 }
 
 const MAX_TOKENS = 512;
+const MAX_THREADS = 8;
 
 export class TransformersNerProvider implements NerProvider {
   readonly id = NER_PROVIDER_ID;
   device: Device | null = null;
+  /** Fils de calcul WASM (1 si la page n'est pas isolée, cf. src/app/isolation.ts). */
+  threads = 1;
   private tokenizer: Tokenizer | null = null;
   private classifier: TokenClassifier | null = null;
 
@@ -253,8 +256,11 @@ export class TransformersNerProvider implements NerProvider {
     const devices = this.devices ?? (await availableDevices());
     if (!devices.includes("cpu")) {
       const { wasmPaths } = await import("./ortAssets.ts");
-      const onnx = tf.env.backends.onnx as { wasm?: { wasmPaths?: unknown } };
-      if (onnx.wasm) onnx.wasm.wasmPaths = wasmPaths(devices.includes("webgpu"));
+      const onnx = tf.env.backends.onnx as { wasm?: { wasmPaths?: unknown; numThreads?: number } };
+      if (onnx.wasm) {
+        onnx.wasm.wasmPaths = wasmPaths(devices.includes("webgpu"));
+        onnx.wasm.numThreads = this.threads = wasmThreads();
+      }
     }
     const files = new Map<string, { loaded: number; total: number }>();
     const progress_callback = (raw: RawProgress) => {
@@ -324,6 +330,16 @@ export class TransformersNerProvider implements NerProvider {
     });
     return aggregate(text, preds);
   }
+}
+
+/**
+ * Le calcul multi-cœur exige SharedArrayBuffer, donc une page isolée (crossOriginIsolated).
+ * Un cœur est laissé libre pour l'interface ; ONNX Runtime se limite par défaut à 4 fils.
+ */
+function wasmThreads(): number {
+  if (!(globalThis as { crossOriginIsolated?: boolean }).crossOriginIsolated) return 1;
+  const cores = (globalThis as { navigator?: { hardwareConcurrency?: number } }).navigator?.hardwareConcurrency ?? 1;
+  return Math.max(1, Math.min(MAX_THREADS, cores - 1));
 }
 
 /**

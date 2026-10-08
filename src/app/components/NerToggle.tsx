@@ -11,9 +11,20 @@ interface Props {
   progress: Progress | null;
   status: "idle" | "loading" | "ready" | "error";
   error?: string | null;
+  backend?: string | null;
 }
 
-export function NerToggle({ checked, onChange, onCancel, disabled, disabledReason, progress, status, error }: Props) {
+export function NerToggle({
+  checked,
+  onChange,
+  onCancel,
+  disabled,
+  disabledReason,
+  progress,
+  status,
+  error,
+  backend,
+}: Props) {
   const id = useId();
   const noteId = useId();
   const pct =
@@ -72,7 +83,7 @@ export function NerToggle({ checked, onChange, onCancel, disabled, disabledReaso
       )}
       {active && status === "ready" && (
         <p className="pl-6 text-sm text-slate-700" aria-live="polite">
-          ✓ Modèle prêt.
+          ✓ Modèle prêt.{backend && ` Calcul : ${backend}.`}
         </p>
       )}
       {status === "error" && error && (

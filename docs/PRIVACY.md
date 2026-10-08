@@ -17,6 +17,8 @@ Nothing, with one exception. The application uses no cookies, no `localStorage`,
 
 The exception: when AI detection is enabled, **the model weights** are cached by transformers.js (browser Cache API), so they are not downloaded again on every visit. This cache only contains public model files, never user data. It can be cleared from the browser settings (site data).
 
+The application also registers a **service worker** (`coi-sw.js`) when the server does not send the cross-origin isolation headers, which is the case on GitHub Pages. Its only role is to add these headers (`Cross-Origin-Opener-Policy`, `Cross-Origin-Embedder-Policy`) to the application's own responses, so that the AI model can compute on several processor cores. It stores nothing, caches nothing and does not touch requests to other sites. It can be removed from the browser settings (site data) like the model cache.
+
 ## What goes over the network
 
 | When                             | To                                       | What                                                                                                                                                        | User data |

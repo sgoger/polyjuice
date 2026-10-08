@@ -56,6 +56,7 @@ export function CheckTab({ settings }: { settings: SharedSettings }) {
         progress={settings.nerProgress}
         status={settings.nerStatus}
         error={settings.nerError}
+        backend={settings.nerBackend}
       />
       <PrimaryButton disabled={!file || state.running} onClick={() => void start()}>
         Vérifier

@@ -61,6 +61,8 @@ export interface RestoreResult {
 export interface NerLoadResult {
   model: string;
   device: string;
+  /** Fils de calcul WASM. */
+  threads: number;
 }
 
 /** Requêtes : type → paramètres. */
