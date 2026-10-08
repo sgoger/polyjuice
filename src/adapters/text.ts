@@ -71,16 +71,16 @@ export function readText(file: ArrayBuffer, markdown: boolean, format: "txt" | "
   const { lines, seps } = splitLines(text);
   const segments: Segment[] = [];
   let fence: string | null = null;
-  lines.forEach((line, n) => {
+  for (const [n, line] of lines.entries()) {
     if (markdown) {
       const f = FENCE.exec(line);
       if (fence) {
         if (f?.[1]?.startsWith(fence.charAt(0)) && f[1].length >= fence.length && line.trim() === f[1]) fence = null;
-        return;
+        continue;
       }
       if (f?.[1]) {
         fence = f[1];
-        return;
+        continue;
       }
     }
     const ranges = markdown ? protectedRanges(line) : [];
@@ -92,9 +92,12 @@ export function readText(file: ArrayBuffer, markdown: boolean, format: "txt" | "
       }
       pos = e;
     }
-  });
+  }
   const state: State = { bom, lines, seps };
-  return { format, outputExtension: format, segments, warnings: [], state };
+  const warnings = fence
+    ? ["Bloc de code Markdown non refermé : tout le texte qui suit l'ouverture du bloc n'est pas traité."]
+    : [];
+  return { format, outputExtension: format, segments, warnings, state };
 }
 
 export function writeText(doc: Doc): ArrayBuffer {

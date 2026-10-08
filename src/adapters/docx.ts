@@ -2,6 +2,7 @@
 import { agree, pl } from "../engine/plural.ts";
 import type { Adapter, Doc, SegmentKind } from "../engine/types.ts";
 import {
+  altTexts,
   contentWarnings,
   externalTargets,
   readParagraphParts,
@@ -42,6 +43,8 @@ async function read(file: ArrayBuffer): Promise<Doc> {
   warnings.push(...(await authorWarnings(pkg)));
 
   const notices = await externalTargets(pkg);
+  let deleted = false;
+  let bound = false;
   for (const spec of specs) {
     const part = state.parts.get(spec.name);
     if (!part) continue;
@@ -49,6 +52,19 @@ async function read(file: ArrayBuffer): Promise<Doc> {
       const code = (instr.textContent ?? "").trim();
       if (code) notices.push({ text: code, where: "Code de champ" });
     }
+    notices.push(...altTexts(part.parsed.doc));
+    if (elementsNS(part.parsed.doc, NS.w, "delText").length) deleted = true;
+    if (elementsNS(part.parsed.doc, NS.w, "dataBinding").length) bound = true;
+  }
+  if (deleted) {
+    warnings.push(
+      "Révisions supprimées (suivi des modifications) présentes : leur texte reste dans le fichier sans être traité. Acceptez ou rejetez les révisions avant d'anonymiser.",
+    );
+  }
+  if (bound && names.some((n) => n.startsWith("customXml/"))) {
+    warnings.push(
+      "Contrôles de contenu liés à des données XML (customXml) : ces données ne sont pas traitées et Word peut les réafficher à l'ouverture.",
+    );
   }
   return { format: "docx", outputExtension: "docx", segments, warnings, notices, state };
 }

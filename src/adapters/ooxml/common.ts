@@ -45,6 +45,7 @@ export async function metadataToClear(pkg: OoxmlPackage): Promise<string[]> {
   const app = await tryParse(pkg, APP);
   if (app) for (const [local, label] of APP_FIELDS) if (filled(elementsNS(app.doc, NS.ep, local))) out.push(label);
   if (pkg.has(CUSTOM)) out.push("propriétés personnalisées");
+  if (thumbnails(pkg).length) out.push("miniature d'aperçu");
   return out;
 }
 
@@ -94,6 +95,30 @@ export async function clearMetadata(pkg: OoxmlPackage): Promise<void> {
     pkg.remove(CUSTOM);
     await removeReferences(pkg, CUSTOM);
   }
+  // Miniature : image de la première page ou diapositive, souvent porteuse de noms.
+  for (const name of thumbnails(pkg)) {
+    pkg.remove(name);
+    await removeReferences(pkg, name);
+  }
+}
+
+const thumbnails = (pkg: OoxmlPackage) => pkg.names().filter((n) => /^docProps\/thumbnail\.[a-z]+$/i.test(n));
+
+/** Textes alternatifs des images et formes (attributs descr/title), signalés sans être modifiés. */
+export function altTexts(doc: ParsedPart["doc"]): { text: string; where: string }[] {
+  const out: { text: string; where: string }[] = [];
+  for (const [ns, local] of [
+    ["http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing", "docPr"],
+    [NS.p, "cNvPr"],
+  ] as const) {
+    for (const el of elementsNS(doc, ns, local)) {
+      for (const attr of ["descr", "title"]) {
+        const v = el.getAttribute(attr);
+        if (v?.trim()) out.push({ text: v, where: "Texte alternatif" });
+      }
+    }
+  }
+  return out;
 }
 
 /** Retire la relation (racine) et la déclaration de type de contenu d'une partie supprimée. */

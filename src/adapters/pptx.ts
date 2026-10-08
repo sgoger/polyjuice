@@ -1,6 +1,7 @@
 // Adaptateur .pptx (PresentationML / DrawingML brut).
 import type { Adapter, Doc, SegmentKind } from "../engine/types.ts";
 import {
+  altTexts,
   contentWarnings,
   externalTargets,
   readParagraphParts,
@@ -46,6 +47,7 @@ async function read(file: ArrayBuffer): Promise<Doc> {
     warnings.push("Commentaires de diapositives présents : leur texte et leurs auteurs ne sont pas traités.");
   }
   const notices = await externalTargets(pkg);
+  for (const part of state.parts.values()) notices.push(...altTexts(part.parsed.doc));
   return { format: "pptx", outputExtension: "pptx", segments, warnings, notices, state };
 }
 
