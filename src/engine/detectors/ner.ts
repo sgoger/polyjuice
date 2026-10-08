@@ -245,7 +245,7 @@ export class TransformersNerProvider implements NerProvider {
 
   constructor(
     readonly model = NER_MODEL,
-    /** Backends à essayer dans l'ordre ; par défaut WebGPU si un adaptateur existe, puis WASM. */
+    /** Backends à essayer dans l'ordre ; par défaut WASM, puis WebGPU si un adaptateur existe. */
     private readonly devices: readonly Device[] | null = null,
   ) {}
 
@@ -343,12 +343,15 @@ function wasmThreads(): number {
 }
 
 /**
- * WebGPU seulement si le navigateur fournit réellement un adaptateur (l'API peut exister sans GPU
- * utilisable) ; WASM mono-thread en repli. En Node (tests) : CPU.
+ * WASM d'abord : nos inférences sont nombreuses et courtes (un paragraphe chacune), le coût fixe de
+ * chaque appel WebGPU domine (Firefox/macOS : 25 paragraphes en plus de 4 minutes, contre ~6 par
+ * seconde en WASM multi-cœur). WebGPU n'est qu'un repli si WASM échoue, et seulement si le
+ * navigateur fournit réellement un adaptateur (l'API peut exister sans GPU utilisable).
+ * En Node (tests) : CPU.
  */
 async function availableDevices(): Promise<Device[]> {
   const nav = (globalThis as { navigator?: { gpu?: { requestAdapter(): Promise<unknown> } } }).navigator;
   if (typeof window === "undefined" && typeof self === "undefined") return ["cpu"];
   const adapter = await nav?.gpu?.requestAdapter().catch(() => null);
-  return adapter ? ["webgpu", "wasm"] : ["wasm"];
+  return adapter ? ["wasm", "webgpu"] : ["wasm"];
 }
