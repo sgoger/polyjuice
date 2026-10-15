@@ -12,14 +12,14 @@
   "devDependencies": {
     "@huggingface/transformers": "^4.3.1",
     "@xmldom/xmldom": "^0.9.12",
-    "docx": "^9.9.0",
+    "docx": "^9.10.0",
     "exceljs": "^4.4.0",
     "jszip": "^3.10.2",
     "playwright": "^1.64.0",
     "pptxgenjs": "^4.0.1",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",
-    "vite": "^8.3.3"
+    "vite": "^8.3.4"
   },
   "overrides": {
     "image-size": "^2.0.3",
