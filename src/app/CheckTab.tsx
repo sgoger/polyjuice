@@ -5,6 +5,7 @@ import { Banner, WarningsBanner } from "./components/Banner.tsx";
 import { FileDrop } from "./components/FileDrop.tsx";
 import { NamesInput } from "./components/NamesInput.tsx";
 import { NerToggle } from "./components/NerToggle.tsx";
+import { Preflight } from "./components/Preflight.tsx";
 import { PrimaryButton } from "./components/PrimaryButton.tsx";
 import { Recap } from "./components/Recap.tsx";
 import { CheckReportView } from "./components/Reports.tsx";
@@ -92,6 +93,7 @@ export function CheckTab({ settings }: { settings: SharedSettings }) {
           }}
           testId="check-file"
         />
+        <Preflight file={file} />
       </Step>
       <Step n={2} title="Options">
         {xlsx ? (

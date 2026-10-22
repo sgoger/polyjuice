@@ -7,6 +7,7 @@ import { FileDrop } from "./components/FileDrop.tsx";
 import { More } from "./components/More.tsx";
 import { NamesInput } from "./components/NamesInput.tsx";
 import { NerToggle } from "./components/NerToggle.tsx";
+import { Preflight } from "./components/Preflight.tsx";
 import { PrimaryButton } from "./components/PrimaryButton.tsx";
 import { Recap } from "./components/Recap.tsx";
 import { AnonymizeReportView } from "./components/Reports.tsx";
@@ -105,6 +106,7 @@ export function AnonymizeTab({ settings }: { settings: SharedSettings }) {
           hint="Formats : .docx, .pptx, .xlsx, .pdf (converti en .md), .md, .txt."
           testId="anonymize-file"
         />
+        <Preflight file={file} />
       </Step>
 
       <Step n={2} title="Options">

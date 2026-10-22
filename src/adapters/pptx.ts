@@ -1,5 +1,7 @@
 // Adaptateur .pptx (PresentationML / DrawingML brut).
+import { pl } from "../engine/plural.ts";
 import type { Adapter, Doc, SegmentKind } from "../engine/types.ts";
+import { inspectPptx } from "./inspect.ts";
 import {
   altTexts,
   contentWarnings,
@@ -43,8 +45,13 @@ async function read(file: ArrayBuffer): Promise<Doc> {
   }
   const { segments, state } = await readParagraphParts(pkg, DRAWING, specs, warnings);
   warnings.push(...contentWarnings(pkg, "ppt"));
-  if (names.some((n) => /^ppt\/(comments\/|commentAuthors\.xml|authors\.xml)/.test(n))) {
-    warnings.push("Commentaires de diapositives présents : leur texte et leurs auteurs ne sont pas traités.");
+  const { comments, peopleList } = await inspectPptx(pkg);
+  if (comments) {
+    warnings.push(
+      `${pl(comments, "commentaire de diapositive", "commentaires de diapositives")} : texte et noms des auteurs restent en clair (non traités). Supprimez les commentaires dans PowerPoint, puis anonymisez à nouveau.`,
+    );
+  } else if (peopleList) {
+    warnings.push("Liste des auteurs de commentaires conservée telle quelle (noms en clair).");
   }
   const notices = await externalTargets(pkg);
   for (const part of state.parts.values()) notices.push(...altTexts(part.parsed.doc));

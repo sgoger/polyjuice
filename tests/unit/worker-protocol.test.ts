@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { WorkerClient, type WorkerLike } from "../../src/worker/client.ts";
 import { createDispatcher, defaultHandlers, type Handlers } from "../../src/worker/handler.ts";
 import { EngineError, type FromWorker, type ToWorker } from "../../src/worker/protocol.ts";
+import { fixture } from "./helpers.ts";
 
 /** Worker factice : relie le client au dispatcher dans le même thread. */
 class FakeWorker implements WorkerLike {
@@ -53,6 +54,17 @@ describe("protocole du Worker", () => {
     expect(r.mapping.name).toBe("a.json");
     expect(r.archive.name).toBe("a.polyjuice.zip");
     expect(r.archive.data.byteLength).toBeGreaterThan(0);
+  });
+
+  it("inspecte un document au dépôt : comptes seulement, aucun nom d'auteur", async () => {
+    const client = new WorkerClient(() => new FakeWorker());
+    const i = await client.call("inspect", { file: fixture("revisions.docx"), fileName: "r.docx" }).promise;
+    expect(i).toMatchObject({ format: "docx", comments: 2, revisions: 4, authors: 3, trackRevisions: true });
+    expect(JSON.stringify(i)).not.toMatch(/Weber|Clarke|Müller/);
+    expect(await client.call("inspect", { file: txt(), fileName: "a.md" }).promise).toBeNull();
+    await expect(client.call("inspect", { file: txt(), fileName: "a.xlsx" }).promise).rejects.toMatchObject({
+      code: "Internal",
+    });
   });
 
   it("transmet la progression et le résultat", async () => {

@@ -49,7 +49,7 @@ exports[`rapports de détection sur chaque fixture > sample.docx 1`] = `
 
 - Métadonnées vidées : auteur, dernier modificateur, titre, sujet, mots-clés, description, propriétés personnalisées (dates de création et de modification neutralisées).
 - 1 image ou média présent : le texte contenu dans les images n'est pas traité.
-- 1 nom d'auteur de commentaires ou de révisions conservé tel quel : il n'est pas anonymisé.
+- 1 nom d'auteur de commentaires ou de révisions reste en clair : il n'est pas anonymisé. Pour le retirer, acceptez toutes les modifications et supprimez tous les commentaires dans Word, puis anonymisez à nouveau.
 - Cible de lien : 1 élément contient des données personnelles détectées et n'est pas modifié (« Vérifier » les liste).
 
 > **Le mapping contient les données en clair. Ne pas transmettre.**

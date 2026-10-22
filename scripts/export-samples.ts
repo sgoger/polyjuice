@@ -11,7 +11,7 @@ const FIX = join(import.meta.dirname, "../tests/fixtures");
 const names = readFileSync(join(FIX, "fixture-names.txt"), "utf8");
 const ctx: PipelineContext = { progress: () => undefined, checkCancelled: () => undefined };
 
-for (const name of ["sample.docx", "sample.pptx", "sample.xlsx"]) {
+for (const name of ["sample.docx", "revisions.docx", "sample.pptx", "sample.xlsx"]) {
   const b = readFileSync(join(FIX, name));
   const file = b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength);
   let anon;
