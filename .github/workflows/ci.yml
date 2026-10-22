@@ -21,7 +21,7 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: npm
@@ -31,7 +31,7 @@ jobs:
       # Les tests e2e utilisent le Google Chrome préinstallé sur les runners (voir playwright.config.ts) :
       # pas de `playwright install`, dont les paquets apt prennent parfois plusieurs minutes.
       - run: npm run test:e2e
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: playwright-report
@@ -79,7 +79,7 @@ jobs:
       pages: read
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: npm
