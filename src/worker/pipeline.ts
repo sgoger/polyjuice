@@ -1,5 +1,6 @@
 // Enchaînement adaptateur → moteur → adaptateur pour les trois onglets.
 // Indépendant du Worker : testé directement en Node.
+import JSZip from "jszip";
 import { agree, pl } from "../engine/plural.ts";
 import { adapterFor, extensionOf } from "../adapters/index.ts";
 import { detectSegment } from "../engine/detect.ts";
@@ -44,6 +45,7 @@ const MIME: Record<string, string> = {
   md: "text/markdown;charset=utf-8",
   txt: "text/plain;charset=utf-8",
   json: "application/json",
+  zip: "application/zip",
 };
 
 /** Nombre de segments entre deux messages de progression. */
@@ -55,6 +57,14 @@ const encode = (s: string): ArrayBuffer => new TextEncoder().encode(s).buffer;
 
 function output(name: string, data: ArrayBuffer): OutputFile {
   return { name, mime: MIME[extensionOf(name)] ?? "application/octet-stream", data };
+}
+
+/** Archive ZIP (à plat) des fichiers produits, construite localement dans le Worker. */
+async function archive(name: string, files: readonly OutputFile[]): Promise<OutputFile> {
+  const zip = new JSZip();
+  for (const f of files) zip.file(f.name, f.data, { createFolders: false });
+  const out = await zip.generateAsync({ type: "uint8array", compression: "DEFLATE" });
+  return output(name, out.buffer.slice(out.byteOffset, out.byteOffset + out.byteLength) as ArrayBuffer);
 }
 
 function resolveAdapter(fileName: string): { format: Format; adapter: Adapter } {
@@ -166,10 +176,14 @@ export async function anonymize(params: AnonymizeParams, ctx: PipelineContext): 
   const report = buildAnonymizeReport(params.fileName, format, mapping, contexts, warnings);
   const reportMarkdown = anonymizeReportMarkdown(report);
   const base = baseName(params.fileName);
+  const document = output(`${base}.anonymise.${doc.outputExtension}`, data);
+  const mappingFile = output(`${base}.json`, encode(serializeMapping(mapping)));
+  const reportFile = output(`${base}.report.md`, encode(reportMarkdown));
   return {
-    document: output(`${base}.anonymise.${doc.outputExtension}`, data),
-    mapping: output(`${base}.json`, encode(serializeMapping(mapping))),
-    report: output(`${base}.report.md`, encode(reportMarkdown)),
+    document,
+    mapping: mappingFile,
+    report: reportFile,
+    archive: await archive(`${base}.polyjuice.zip`, [document, mappingFile, reportFile]),
     reportMarkdown,
     summary: report,
     warnings,

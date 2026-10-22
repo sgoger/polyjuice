@@ -51,6 +51,8 @@ describe("protocole du Worker", () => {
     expect(new TextDecoder().decode(r.document.data)).toMatch(/^Écrire à ⟦E-[A-Z0-9]{5}⟧$/);
     expect(r.document.name).toBe("a.anonymise.txt");
     expect(r.mapping.name).toBe("a.json");
+    expect(r.archive.name).toBe("a.polyjuice.zip");
+    expect(r.archive.data.byteLength).toBeGreaterThan(0);
   });
 
   it("transmet la progression et le résultat", async () => {
