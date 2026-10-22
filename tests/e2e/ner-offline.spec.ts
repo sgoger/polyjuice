@@ -14,7 +14,7 @@ test("hors ligne : l'échec du chargement du modèle ne bloque pas le mode motif
   await expect(panel.getByRole("alert")).toContainText("n'a pas pu être chargé");
   await expect(box).not.toBeChecked();
 
-  await panel.getByRole("textbox", { name: /Liste de noms/ }).fill(NAMES);
+  await panel.getByRole("textbox", { name: /Glossaire de noms/ }).fill(NAMES);
   await panel.getByRole("button", { name: "Anonymiser", exact: true }).click();
   await expect(panel.getByText(/Document anonymisé :/)).toBeVisible();
 });

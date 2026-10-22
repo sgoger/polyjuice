@@ -19,7 +19,7 @@ test("aucune requête sortante pendant les traitements sans NER", async ({ page,
   const panel = page.getByRole("tabpanel", { name: "Anonymiser" });
   // Détection par IA cochée par défaut : décochée avant tout dépôt (le modèle ne se charge qu'au dépôt).
   await nerBox(page).uncheck();
-  await panel.getByRole("textbox", { name: /Liste de noms/ }).fill(NAMES);
+  await panel.getByRole("textbox", { name: /Glossaire de noms/ }).fill(NAMES);
   for (const name of FILES) {
     await restart(panel);
     await upload(page, "anonymize-file", name, readFileSync(join(FIXTURES, name)));
@@ -59,7 +59,7 @@ test("aucun stockage persistant : ni localStorage, ni sessionStorage, ni Indexed
   await page.goto("./");
   const panel = page.getByRole("tabpanel", { name: "Anonymiser" });
   await nerBox(page).uncheck();
-  await panel.getByRole("textbox", { name: /Liste de noms/ }).fill(NAMES);
+  await panel.getByRole("textbox", { name: /Glossaire de noms/ }).fill(NAMES);
   await upload(page, "anonymize-file", "sample.md", readFileSync(join(FIXTURES, "sample.md")));
   await panel.getByRole("button", { name: "Anonymiser", exact: true }).click();
   await expect(panel.getByText(/Document anonymisé :/)).toBeVisible();
@@ -71,9 +71,9 @@ test("aucun stockage persistant : ni localStorage, ni sessionStorage, ni Indexed
   }));
   expect(storage).toEqual({ local: 0, session: 0, idb: [], caches: [] });
   expect(await context.cookies()).toEqual([]);
-  // La liste de noms est perdue au rechargement.
+  // Case « Mémoriser » décochée par défaut : le glossaire est perdu au rechargement.
   await page.reload();
   await expect(
-    page.getByRole("tabpanel", { name: "Anonymiser" }).getByRole("textbox", { name: /Liste de noms/ }),
+    page.getByRole("tabpanel", { name: "Anonymiser" }).getByRole("textbox", { name: /Glossaire de noms/ }),
   ).toHaveValue("");
 });
