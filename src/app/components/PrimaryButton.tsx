@@ -9,3 +9,13 @@ export function PrimaryButton(props: ButtonHTMLAttributes<HTMLButtonElement>) {
     />
   );
 }
+
+export function SecondaryButton(props: ButtonHTMLAttributes<HTMLButtonElement>) {
+  return (
+    <button
+      type="button"
+      {...props}
+      className="rounded-md border border-slate-400 bg-white px-3 py-1.5 text-sm font-medium hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+    />
+  );
+}

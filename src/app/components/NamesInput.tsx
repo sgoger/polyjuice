@@ -1,5 +1,6 @@
 import { pl } from "../../engine/plural.ts";
 import { useId, useRef } from "react";
+import { countNames } from "../settings.ts";
 
 interface Props {
   value: string;
@@ -10,7 +11,7 @@ interface Props {
 export function NamesInput({ value, onChange }: Props) {
   const id = useId();
   const input = useRef<HTMLInputElement>(null);
-  const count = value.split(/\r?\n/).filter((l) => l.replace(/#.*$/, "").trim()).length;
+  const count = countNames(value);
   return (
     <div className="space-y-1">
       <div className="flex flex-wrap items-baseline justify-between gap-2">

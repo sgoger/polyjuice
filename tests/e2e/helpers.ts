@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { expect, type Page } from "@playwright/test";
+import { expect, type Locator, type Page } from "@playwright/test";
 import JSZip from "jszip";
 
 export const FIXTURES = join(import.meta.dirname, "../fixtures");
@@ -29,6 +29,17 @@ export async function unzip(data: Buffer): Promise<Downloaded[]> {
   return Promise.all(
     Object.values(zip.files).map(async (f) => ({ name: f.name, data: Buffer.from(await f.async("uint8array")) })),
   );
+}
+
+/** Après un traitement, l'onglet n'affiche plus qu'un récapitulatif : « Recommencer » ramène aux étapes. */
+export async function restart(panel: Locator) {
+  const button = panel.getByRole("button", { name: /Recommencer/ });
+  if (await button.isVisible()) await button.click();
+}
+
+/** Ouvre la zone repliée « Télécharger à nouveau… » du résultat. */
+export async function openMore(panel: Locator) {
+  await panel.locator("summary", { hasText: "Télécharger à nouveau" }).click();
 }
 
 /** Case « détection de noms par IA » (cochée par défaut). */

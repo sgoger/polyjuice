@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { expect, test } from "@playwright/test";
 import { docxAdapter } from "../../src/adapters/docx.ts";
-import { FIXTURES, runAnonymize, upload } from "./helpers.ts";
+import { FIXTURES, openMore, runAnonymize, upload } from "./helpers.ts";
 
 test("anonymiser un .docx avec la NER activée (Chromium) @slow", async ({ page }) => {
   test.setTimeout(600_000);
@@ -31,6 +31,7 @@ test("anonymiser un .docx avec la NER activée (Chromium) @slow", async ({ page 
 
   // Sans liste de noms : les personnes doivent être trouvées par la NER.
   const { doc } = await runAnonymize(page);
+  await openMore(panel);
   await expect(panel.getByRole("cell", { name: "IA (NER)" }).first()).toBeVisible();
   const text = (
     await docxAdapter.read(

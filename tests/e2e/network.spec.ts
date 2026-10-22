@@ -2,7 +2,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { expect, test } from "@playwright/test";
-import { FIXTURES, NAMES, nerBox, runAnonymize, runRestore, upload } from "./helpers.ts";
+import { FIXTURES, NAMES, nerBox, restart, runAnonymize, runRestore, upload } from "./helpers.ts";
 
 const FILES = ["sample.docx", "sample.pptx", "sample.xlsx", "sample.pdf", "sample.md", "sample.txt"];
 
@@ -21,10 +21,12 @@ test("aucune requête sortante pendant les traitements sans NER", async ({ page,
   await nerBox(page).uncheck();
   await panel.getByRole("textbox", { name: /Liste de noms/ }).fill(NAMES);
   for (const name of FILES) {
+    await restart(panel);
     await upload(page, "anonymize-file", name, readFileSync(join(FIXTURES, name)));
     const { doc, mapping } = await runAnonymize(page);
 
     await page.getByRole("tab", { name: "Vérifier" }).click();
+    await restart(page.getByRole("tabpanel", { name: "Vérifier" }));
     await upload(page, "check-file", doc.name, doc.data);
     await page
       .getByRole("tabpanel", { name: "Vérifier" })
@@ -40,6 +42,7 @@ test("aucune requête sortante pendant les traitements sans NER", async ({ page,
 
     await page.getByRole("tab", { name: "Restaurer" }).click();
     const restorePanel = page.getByRole("tabpanel", { name: "Restaurer" });
+    await restart(restorePanel);
     await upload(page, "restore-file", doc.name, doc.data);
     await upload(page, "restore-mapping", mapping.name, mapping.data, "application/json");
     await runRestore(page);

@@ -52,10 +52,8 @@ export function NerToggle({
         </label>
       </div>
       <p id={noteId} className="pl-6 text-sm text-slate-600">
-        Repère les noms de personnes et de lieux. Le modèle est téléchargé depuis le Hub Hugging Face dès que vous
-        déposez un document, une seule fois : il est ensuite gardé en cache par le navigateur. Seuls les poids du modèle
-        sont téléchargés : aucune donnée de vos documents n'est envoyée. Sans cette option, la détection par motifs
-        (e-mails, téléphones, IBAN…) et la liste de noms restent actives.
+        Repère les noms de personnes et de lieux. Le modèle est téléchargé une fois, au premier document déposé, puis
+        gardé en cache par le navigateur ; aucune donnée de vos documents n'est envoyée.
       </p>
       {active && status === "loading" && (
         <div className="space-y-1 pl-6" aria-live="polite">

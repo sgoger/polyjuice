@@ -62,8 +62,11 @@ test("« Anonymiser » pendant le chargement du modèle : le traitement l'attend
   await panel.getByRole("button", { name: "Anonymiser", exact: true }).click();
   const running = panel.locator("[aria-busy=true]");
   await expect(running).toContainText("modèle de détection par IA");
-  // Les options sont figées pendant le traitement.
-  await expect(nerBox(page)).toBeDisabled();
+  // Les étapes laissent place au récapitulatif pendant le traitement.
+  await expect(nerBox(page)).toHaveCount(0);
+  await expect(panel.getByText("Détection IA", { exact: true })).toBeVisible();
   await running.getByRole("button", { name: "Annuler" }).click();
+  // Annulé : retour aux étapes, document conservé.
   await expect(panel.getByText("Traitement annulé.")).toBeVisible();
+  await expect(panel.getByText("sample.md", { exact: true })).toBeVisible();
 });

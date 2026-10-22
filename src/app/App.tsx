@@ -97,8 +97,13 @@ export function App() {
           onChange={setTab}
           tabs={[
             { id: "anonymize", label: "Anonymiser", content: <AnonymizeTab settings={settings} /> },
-            { id: "check", label: "Vérifier", content: <CheckTab settings={settings} /> },
             { id: "restore", label: "Restaurer", content: <RestoreTab /> },
+            {
+              id: "check",
+              label: "Vérifier (facultatif)",
+              content: <CheckTab settings={settings} />,
+              secondary: true,
+            },
           ]}
         />
       </main>

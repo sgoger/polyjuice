@@ -13,13 +13,13 @@ test("parcours .docx sans NER : anonymiser → vérifier → restaurer", async (
   const original = readFileSync(join(FIXTURES, "sample.docx"));
   const { panel, doc, mapping } = await anonymizeFile(page, "sample.docx");
 
-  // Les avertissements sont visibles avant les boutons de téléchargement.
+  // Les avertissements sont visibles avant le bandeau de succès.
   const banner = panel.getByRole("alert").filter({ hasText: "avertissement" });
   await expect(banner).toContainText("image");
   await expect(banner).toContainText("Métadonnées vidées");
   const bannerBox = await banner.boundingBox();
-  const buttonBox = await panel.getByRole("button", { name: /^⬇ Document anonymisé/ }).boundingBox();
-  expect(bannerBox && buttonBox && bannerBox.y < buttonBox.y).toBe(true);
+  const successBox = await panel.getByRole("status").filter({ hasText: "Document anonymisé :" }).boundingBox();
+  expect(bannerBox && successBox && bannerBox.y < successBox.y).toBe(true);
 
   // Minuteur : durée du traitement affichée une fois terminé.
   await expect(panel.getByTestId("timer")).toHaveText(/Durée du traitement : \d+ s/);

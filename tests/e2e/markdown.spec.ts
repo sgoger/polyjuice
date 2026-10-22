@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { expect, test } from "@playwright/test";
-import { anonymizeFile, download, FIXTURES, runRestore, upload } from "./helpers.ts";
+import { anonymizeFile, download, FIXTURES, openMore, runRestore, upload } from "./helpers.ts";
 
 test("parcours complet .md : anonymiser → vérifier → restaurer", async ({ page }) => {
   const original = readFileSync(join(FIXTURES, "sample.md"));
@@ -14,12 +14,16 @@ test("parcours complet .md : anonymiser → vérifier → restaurer", async ({ p
   expect(report.name).toBe("sample.report.md");
   // L'étape « Résultat » dit quoi envoyer et quoi garder, avec les vrais noms de fichiers.
   await expect(panel.getByRole("status").filter({ hasText: "Document anonymisé :" })).toContainText(
-    "L'archive sample.polyjuice.zip a été téléchargée",
+    "Archive téléchargée : sample.polyjuice.zip",
   );
-  await expect(panel.getByRole("listitem").filter({ hasText: "À envoyer" })).toContainText("sample.anonymise.md");
-  await expect(panel.getByRole("listitem").filter({ hasText: "À garder, ne jamais transmettre" })).toContainText(
+  await expect(panel.getByRole("listitem").filter({ hasText: /^\W*Envoyer/ })).toContainText("sample.anonymise.md");
+  await expect(panel.getByRole("listitem").filter({ hasText: "Garder, ne jamais envoyer" })).toContainText(
     "sample.json",
   );
+  // Étapes remplacées par un récapitulatif ; boutons de secours et rapport repliés.
+  await expect(panel.getByTestId("anonymize-file")).toHaveCount(0);
+  await expect(panel.getByRole("table")).toBeHidden();
+  await openMore(panel);
   // Boutons de secours : mêmes octets que l'archive.
   expect((await download(page, /^⬇ Archive/)).data.equals(archive.data)).toBe(true);
   expect((await download(page, /^⬇ Document anonymisé/)).data.equals(doc.data)).toBe(true);
@@ -48,6 +52,7 @@ test("parcours complet .md : anonymiser → vérifier → restaurer", async ({ p
   await expect(restorePanel.getByText("Document restauré.")).toBeVisible();
   expect(restored.name).toBe("sample.restaure.md");
   expect(restored.data.equals(original)).toBe(true);
+  await openMore(restorePanel);
   expect((await download(page, /^⬇ Document restauré/)).data.equals(original)).toBe(true);
 });
 
@@ -63,6 +68,8 @@ test("le bandeau de pied de page est présent et les onglets se pilotent au clav
   await expect(page.getByText("Aucune donnée ne quitte votre navigateur.", { exact: false })).toBeVisible();
   await page.getByRole("tab", { name: "Anonymiser" }).focus();
   await page.keyboard.press("ArrowRight");
-  await expect(page.getByRole("tab", { name: "Vérifier" })).toBeFocused();
-  await expect(page.getByRole("tab", { name: "Vérifier" })).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByRole("tab", { name: "Restaurer" })).toBeFocused();
+  await expect(page.getByRole("tab", { name: "Restaurer" })).toHaveAttribute("aria-selected", "true");
+  await page.keyboard.press("End");
+  await expect(page.getByRole("tab", { name: "Vérifier (facultatif)" })).toBeFocused();
 });

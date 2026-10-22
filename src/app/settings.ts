@@ -19,6 +19,10 @@ export interface SharedSettings {
 
 export const DOC_EXTENSIONS = ["docx", "pptx", "xlsx", "pdf", "md", "txt"] as const;
 export const RESTORE_EXTENSIONS = ["docx", "pptx", "xlsx", "md", "txt"] as const;
+/** Nombre de termes d'une liste de noms (lignes non vides, hors commentaires `#`). */
+export const countNames = (text: string): number =>
+  text.split(/\r?\n/).filter((l) => l.replace(/#.*$/, "").trim()).length;
+
 export const isXlsx = (f: File | null) => !!f && /\.xlsx$/i.test(f.name);
 
 /** Le modèle se charge dès le dépôt d'un document qui en a besoin (jamais pour un .xlsx). */
