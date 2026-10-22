@@ -2,7 +2,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { expect, test } from "@playwright/test";
-import { download, FIXTURES, NAMES, upload } from "./helpers.ts";
+import { FIXTURES, NAMES, nerBox, restart, runAnonymize, runRestore, upload } from "./helpers.ts";
 
 const FILES = ["sample.docx", "sample.pptx", "sample.xlsx", "sample.pdf", "sample.md", "sample.txt"];
 
@@ -17,15 +17,16 @@ test("aucune requête sortante pendant les traitements sans NER", async ({ page,
   );
   await page.goto("./");
   const panel = page.getByRole("tabpanel", { name: "Anonymiser" });
+  // Détection par IA cochée par défaut : décochée avant tout dépôt (le modèle ne se charge qu'au dépôt).
+  await nerBox(page).uncheck();
   await panel.getByRole("textbox", { name: /Liste de noms/ }).fill(NAMES);
   for (const name of FILES) {
+    await restart(panel);
     await upload(page, "anonymize-file", name, readFileSync(join(FIXTURES, name)));
-    await panel.getByRole("button", { name: "Anonymiser", exact: true }).click();
-    await expect(panel.getByText(/Document anonymisé :/)).toBeVisible();
-    const doc = await download(page, /^⬇ Document anonymisé/);
-    const mapping = await download(page, /^⬇ Mapping/);
+    const { doc, mapping } = await runAnonymize(page);
 
     await page.getByRole("tab", { name: "Vérifier" }).click();
+    await restart(page.getByRole("tabpanel", { name: "Vérifier" }));
     await upload(page, "check-file", doc.name, doc.data);
     await page
       .getByRole("tabpanel", { name: "Vérifier" })
@@ -41,9 +42,10 @@ test("aucune requête sortante pendant les traitements sans NER", async ({ page,
 
     await page.getByRole("tab", { name: "Restaurer" }).click();
     const restorePanel = page.getByRole("tabpanel", { name: "Restaurer" });
+    await restart(restorePanel);
     await upload(page, "restore-file", doc.name, doc.data);
     await upload(page, "restore-mapping", mapping.name, mapping.data, "application/json");
-    await restorePanel.getByRole("button", { name: "Restaurer", exact: true }).click();
+    await runRestore(page);
     await expect(restorePanel.getByText("Document restauré.")).toBeVisible();
     await page.getByRole("tab", { name: "Anonymiser" }).click();
   }
@@ -56,6 +58,7 @@ test("aucun stockage persistant : ni localStorage, ni sessionStorage, ni Indexed
 }) => {
   await page.goto("./");
   const panel = page.getByRole("tabpanel", { name: "Anonymiser" });
+  await nerBox(page).uncheck();
   await panel.getByRole("textbox", { name: /Liste de noms/ }).fill(NAMES);
   await upload(page, "anonymize-file", "sample.md", readFileSync(join(FIXTURES, "sample.md")));
   await panel.getByRole("button", { name: "Anonymiser", exact: true }).click();

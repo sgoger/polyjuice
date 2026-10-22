@@ -52,8 +52,8 @@ export function NerToggle({
         </label>
       </div>
       <p id={noteId} className="pl-6 text-sm text-slate-600">
-        Le modèle est téléchargé depuis le Hub Hugging Face lors de la première utilisation, puis gardé en cache par le
-        navigateur. Seuls les poids du modèle sont téléchargés : aucune donnée de vos documents n'est envoyée.
+        Repère les noms de personnes et de lieux. Le modèle est téléchargé une fois, au premier document déposé, puis
+        gardé en cache par le navigateur ; aucune donnée de vos documents n'est envoyée.
       </p>
       {active && status === "loading" && (
         <div className="space-y-1 pl-6" aria-live="polite">

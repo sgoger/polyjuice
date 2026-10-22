@@ -4,30 +4,35 @@ A static web application that **pseudonymizes** office documents before they are
 
 **All processing happens in the browser.** No file, no text fragment and no mapping ever leaves the user's machine. There is no application server, no API and no database: the site is served as-is by GitHub Pages.
 
-> **⚠ The JSON mapping contains the personal data in clear text. It must never be sent along with the anonymized document, nor to the external tool. Keep it locally only as long as needed to restore the document, then delete it.**
+> **⚠ The JSON mapping contains the personal data in clear text.** To make it easy to keep everything together, the ZIP archive downloaded after anonymization contains both the anonymized document **and** the mapping. You are responsible for never sending them together: send only the anonymized document to the external tool, never the archive, never the mapping. Keep the mapping locally only as long as needed to restore the document, then delete it (and the archive).
 
 ## Usage
 
-The page has three tabs.
+The page has two main tabs, « Anonymiser » and « Restaurer », and an optional one, « Vérifier (facultatif) », set apart on the right. Each tab is a short sequence of numbered steps; once processing starts, the steps fold into a one-line summary (file, settings) with « Modifier les réglages » (change settings, same file) and « ↺ Recommencer » (start over) buttons.
 
 ### Anonymiser
 
-The « Anonymiser » (anonymize) tab:
+The « Anonymiser » (anonymize) tab guides you through three numbered steps, then shows the result. The full cycle is: anonymize the document here → send the anonymized document to the external tool → restore the document it returns in the « Restaurer » tab, with the mapping.
 
-1. Drop the document (`.docx`, `.pptx`, `.xlsx`, `.pdf`, `.md`, `.txt`).
-2. Optional: paste or load a **list of names** (one term per line, `#` for comments). Each term is replaced everywhere it appears (exact match, case-insensitive, accent-sensitive, whole words). The list is never saved: it is lost when the page is reloaded.
-3. Optional: check **« Activer la détection de noms par IA »** (enable AI name detection) to also detect people and places (organizations are not anonymized). The model (~181 MB) is downloaded once from the Hugging Face Hub and then cached by the browser. Unavailable for `.xlsx`.
-4. For an `.xlsx`, the **« Colonnes à anonymiser »** (columns to anonymize) field (e.g. `Nom, Prénom`) fully replaces every text cell in the columns whose header (first non-empty row of each sheet) matches.
-5. Optional: drop an **existing mapping** again to reuse the same salt and the same tokens (the mapping is extended, never truncated).
-6. Run the processing. Read the **warnings banner** (images, SmartArt, macros, cleared metadata…), then download the anonymized document, the mapping and the report.
-
-### Vérifier
-
-The « Vérifier » (verify) tab: drop an already anonymized document (and the list of names if needed). Detection is run again and everything that still looks like personal data is listed, with its context. Nothing is produced. Existing tokens are ignored.
+1. **« Déposer le document »** (drop the document): `.docx`, `.pptx`, `.xlsx`, `.pdf`, `.md`, `.txt`.
+2. **« Options »**:
+   - **« Activer la détection de noms par IA »** (enable AI name detection) is **checked by default**. It detects people and places (organizations are not anonymized). The model (~181 MB) is downloaded from the Hugging Face Hub as soon as a document is dropped (never when the page opens), once: the browser then caches it. Unchecking the box cancels the download. If the model cannot be loaded (offline…), the box is unchecked and processing still works with pattern detection and the list of names. Not offered for `.xlsx`.
+   - **List of names**, optional: one term per line, `#` for comments, or load a `.txt`. Each term is replaced everywhere it appears (exact match, case-insensitive, accent-sensitive, whole words). The list is never saved: it is lost when the page is reloaded.
+   - For an `.xlsx` only, **« Colonnes à anonymiser »** (columns to anonymize, e.g. `Nom, Prénom`) fully replaces every text cell in the columns whose header (first non-empty row of each sheet) matches.
+   - **« Options avancées »** (advanced options, folded by default): drop an **existing mapping** again to reuse the same salt and the same tokens (the mapping is extended, never truncated).
+3. **« Anonymiser »**: click the button. If the AI model is still downloading, processing waits for it and shows its progress. Processing can be cancelled.
+4. **Result** (the steps are folded into a summary): a ZIP archive `<name>.polyjuice.zip` is **downloaded automatically**. The screen then shows, in short:
+   - the **warnings banner** (images, SmartArt, macros, cleared metadata…), to read before sending the document;
+   - the two files of the archive and what to do with each: `<name>.anonymise.<ext>` (**send**: the only file to give to the external tool) and `<name>.json`, the mapping (**keep, never send**: it contains the original data in clear text and is required to restore);
+   - a folded « Télécharger à nouveau, rapport de détection » (download again, detection report) section, with a button per file in case the browser blocked the automatic download, the detection report (`<name>.report.md`, only available there) and its detailed view.
 
 ### Restaurer
 
-The « Restaurer » (restore) tab: drop the document returned by the external tool **and** the mapping. Each known token is replaced by its original value, even if the tool split the token across several formatting runs. Tokens in polyjuice format that are missing from the mapping are reported as an error and left as-is. The document is processed according to its extension, whatever the original's was: an anonymized PDF comes back as `.md` or `.txt`.
+The « Restaurer » (restore) tab: drop the document returned by the external tool **and** the mapping (the `.json` file of the archive), then click « Restaurer ». The restored document is downloaded automatically; the restoration report is in a folded section. Each known token is replaced by its original value, even if the tool split the token across several formatting runs. Tokens in polyjuice format that are missing from the mapping are reported as an error and left as-is. The document is processed according to its extension, whatever the original's was: an anonymized PDF comes back as `.md` or `.txt`.
+
+### Vérifier (optional)
+
+The « Vérifier (facultatif) » (verify, optional) tab: drop an already anonymized document (and the list of names if needed). Detection is run again and everything that still looks like personal data is listed, with its context. Nothing is produced. Existing tokens are ignored. Right after an anonymization it adds little (the same detections run again); it is useful when the anonymized document was edited before being sent, or to check with a longer list of names. Nothing is loaded until a document is dropped.
 
 ## Formats
 
@@ -66,7 +71,7 @@ Not handled in this version (a warning is shown when relevant): text inside imag
 
 polyjuice **pseudonymizes**: it replaces identifying data with tokens, which are reversible thanks to the mapping. Under the GDPR and according to the CNIL, pseudonymization is not anonymization: the documents produced remain **personal data**, subject to the same rules as the originals, and the mapping allows re-identification. Automatic detection is not exhaustive: review the anonymized document (« Vérifier » tab) before sending it anywhere.
 
-Nothing leaves the browser: files are read and produced locally, and downloads are generated on the user's machine. When AI detection is enabled, the browser downloads the model weights from the Hugging Face Hub; this request sends no user data (no document, no text, no list of names). Details: [`docs/PRIVACY.md`](docs/PRIVACY.md).
+Nothing leaves the browser: files are read and produced locally, and downloads are generated on the user's machine. When AI detection is enabled (the default) and a document other than `.xlsx` is dropped, the browser downloads the model weights from the Hugging Face Hub; this request sends no user data (no document, no text, no list of names). Details: [`docs/PRIVACY.md`](docs/PRIVACY.md).
 
 ## Development
 

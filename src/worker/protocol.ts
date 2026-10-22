@@ -37,6 +37,8 @@ export interface AnonymizeResult {
   document: OutputFile;
   mapping: OutputFile;
   report: OutputFile;
+  /** Archive ZIP du document anonymisé et du mapping (sans le rapport), téléchargée automatiquement par l'interface. */
+  archive: OutputFile;
   reportMarkdown: string;
   summary: AnonymizeReport;
   warnings: string[];

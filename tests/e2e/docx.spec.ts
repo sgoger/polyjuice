@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { expect, test } from "@playwright/test";
 import { docxAdapter } from "../../src/adapters/docx.ts";
-import { anonymizeFile, download, FIXTURES, upload } from "./helpers.ts";
+import { anonymizeFile, FIXTURES, runRestore, upload } from "./helpers.ts";
 
 const segments = async (data: Buffer) =>
   (
@@ -13,13 +13,13 @@ test("parcours .docx sans NER : anonymiser → vérifier → restaurer", async (
   const original = readFileSync(join(FIXTURES, "sample.docx"));
   const { panel, doc, mapping } = await anonymizeFile(page, "sample.docx");
 
-  // Les avertissements sont visibles avant les boutons de téléchargement.
+  // Les avertissements sont visibles avant le bandeau de succès.
   const banner = panel.getByRole("alert").filter({ hasText: "avertissement" });
   await expect(banner).toContainText("image");
   await expect(banner).toContainText("Métadonnées vidées");
   const bannerBox = await banner.boundingBox();
-  const buttonBox = await panel.getByRole("button", { name: /^⬇ Document anonymisé/ }).boundingBox();
-  expect(bannerBox && buttonBox && bannerBox.y < buttonBox.y).toBe(true);
+  const successBox = await panel.getByRole("status").filter({ hasText: "Document anonymisé :" }).boundingBox();
+  expect(bannerBox && successBox && bannerBox.y < successBox.y).toBe(true);
 
   // Minuteur : durée du traitement affichée une fois terminé.
   await expect(panel.getByTestId("timer")).toHaveText(/Durée du traitement : \d+ s/);
@@ -41,8 +41,7 @@ test("parcours .docx sans NER : anonymiser → vérifier → restaurer", async (
   const restorePanel = page.getByRole("tabpanel", { name: "Restaurer" });
   await upload(page, "restore-file", doc.name, doc.data);
   await upload(page, "restore-mapping", mapping.name, mapping.data, "application/json");
-  await restorePanel.getByRole("button", { name: "Restaurer", exact: true }).click();
+  const restored = await runRestore(page);
   await expect(restorePanel.getByText("Document restauré.")).toBeVisible();
-  const restored = await download(page, /^⬇ Document restauré/);
   expect(await segments(restored.data)).toEqual(await segments(original));
 });

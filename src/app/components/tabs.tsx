@@ -4,6 +4,8 @@ export interface TabDef {
   id: string;
   label: string;
   content: ReactNode;
+  /** Onglet d'usage occasionnel : placé à droite, en retrait visuel. */
+  secondary?: boolean;
 }
 
 /** Onglets accessibles (motif WAI-ARIA) : flèches gauche/droite, Début, Fin. */
@@ -49,7 +51,7 @@ export function Tabs({ tabs, active, onChange }: { tabs: TabDef[]; active: strin
             onKeyDown={(e) => {
               onKey(e, i);
             }}
-            className={`-mb-px rounded-t-md border px-4 py-2 font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-600 ${
+            className={`-mb-px rounded-t-md border px-4 py-2 font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-600 ${t.secondary ? "ml-auto text-sm" : ""} ${
               active === t.id
                 ? "border-slate-300 border-b-slate-50 bg-slate-50 text-slate-900 underline decoration-2 underline-offset-8"
                 : "border-transparent text-slate-600 hover:text-slate-900"
