@@ -9,7 +9,7 @@ polyjuice is a static site. Once the page is loaded, all processing happens in t
 - the name list;
 - the mapping (which contains the data in clear text).
 
-Files are read with the browser's `File` API and downloads are produced locally (`Blob` + download link). No request is sent during processing without AI detection: this is checked by an automated test that blocks every outgoing request and processes each format (`tests/e2e/network.spec.ts`).
+Files are read with the browser's `File` API and downloads are produced locally (`Blob` + download link). The ZIP archive downloaded after anonymization (anonymized document, mapping, report) is built in the Web Worker with JSZip, already used for Office files: building it sends nothing over the network. No request is sent during processing without AI detection: this is checked by an automated test that blocks every outgoing request and processes each format (`tests/e2e/network.spec.ts`). AI detection is enabled by default, but the model is only requested once a document other than `.xlsx` is dropped: opening the page, or dropping a workbook, sends no request (`tests/e2e/ner-loading.spec.ts`).
 
 ## What is stored
 
@@ -21,11 +21,11 @@ The application also registers a **service worker** (`coi-sw.js`) when the serve
 
 ## What goes over the network
 
-| When                             | To                                       | What                                                                                                                                                        | User data |
-| -------------------------------- | ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- |
-| Opening the page                 | GitHub Pages                             | The application's HTML, JavaScript, CSS, WASM files (ONNX runtime, pdf.js)                                                                                  | none      |
-| First activation of AI detection | `huggingface.co` and its CDN (`*.hf.co`) | bodyless `GET` requests for the tokenizer, the configuration and the quantized weights of the `Xenova/bert-base-multilingual-cased-ner-hrl` model (~181 MB) | none      |
-| Subsequent activations           | `huggingface.co`                         | cache validation requests (`GET`)                                                                                                                           | none      |
+| When                                                                              | To                                       | What                                                                                                                                                        | User data |
+| --------------------------------------------------------------------------------- | ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- |
+| Opening the page                                                                  | GitHub Pages                             | The application's HTML, JavaScript, CSS, WASM files (ONNX runtime, pdf.js)                                                                                  | none      |
+| First document dropped with AI detection enabled (the default; never for `.xlsx`) | `huggingface.co` and its CDN (`*.hf.co`) | bodyless `GET` requests for the tokenizer, the configuration and the quantized weights of the `Xenova/bert-base-multilingual-cased-ner-hrl` model (~181 MB) | none      |
+| Subsequent uses                                                                   | `huggingface.co`                         | cache validation requests (`GET`)                                                                                                                           | none      |
 
 The ONNX runtime (WASM) is served by the application itself, not by a third-party CDN. The nightly test `tests/e2e/ner.slow.spec.ts` checks that, during an anonymization with AI detection, only bodyless `GET` requests to the Hugging Face Hub hosts leave the browser.
 
@@ -34,5 +34,5 @@ Like any HTTP request, downloading the model reveals to Hugging Face the machine
 ## What the tool produces
 
 - The **anonymized document** is still personal data within the meaning of the GDPR (pseudonymization, not anonymization): detection is not exhaustive and context can be enough to re-identify.
-- The **mapping** contains the original values in clear text: it must never be transmitted.
+- The **mapping** contains the original values in clear text: it must never be transmitted. It is included in the downloaded archive alongside the anonymized document, for convenience: the user is responsible for sending only the anonymized document, never the archive or the mapping.
 - The **report** contains no original value: its context excerpts are taken from the anonymized text.
