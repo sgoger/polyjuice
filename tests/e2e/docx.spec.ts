@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { expect, test } from "@playwright/test";
 import { docxAdapter } from "../../src/adapters/docx.ts";
-import { anonymizeFile, download, FIXTURES, upload } from "./helpers.ts";
+import { anonymizeFile, FIXTURES, runRestore, upload } from "./helpers.ts";
 
 const segments = async (data: Buffer) =>
   (
@@ -41,8 +41,7 @@ test("parcours .docx sans NER : anonymiser → vérifier → restaurer", async (
   const restorePanel = page.getByRole("tabpanel", { name: "Restaurer" });
   await upload(page, "restore-file", doc.name, doc.data);
   await upload(page, "restore-mapping", mapping.name, mapping.data, "application/json");
-  await restorePanel.getByRole("button", { name: "Restaurer", exact: true }).click();
+  const restored = await runRestore(page);
   await expect(restorePanel.getByText("Document restauré.")).toBeVisible();
-  const restored = await download(page, /^⬇ Document restauré/);
   expect(await segments(restored.data)).toEqual(await segments(original));
 });

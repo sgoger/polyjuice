@@ -8,6 +8,7 @@ import { PrimaryButton } from "./components/PrimaryButton.tsx";
 import { RestoreReportView } from "./components/Reports.tsx";
 import { Running } from "./components/Running.tsx";
 import { Timer } from "./components/Timer.tsx";
+import { saveFile } from "./download.ts";
 import { RESTORE_EXTENSIONS } from "./settings.ts";
 import { useEngine } from "./useEngine.ts";
 
@@ -25,7 +26,10 @@ export function RestoreTab() {
       fileName: file.name,
       mapping: await mapping.text(),
     });
-    if (r) setResult(r);
+    if (r) {
+      setResult(r);
+      saveFile(r.document);
+    }
   };
 
   return (
@@ -60,23 +64,34 @@ export function RestoreTab() {
       {state.error && <Banner tone="error" title={state.error} />}
       {result && (
         <div className="space-y-6">
-          <WarningsBanner warnings={result.warnings} />
+          <WarningsBanner warnings={result.warnings} when="avant d'utiliser le document" />
           {result.unknownTokens.length > 0 ? (
             <Banner
               tone="error"
               title={`${pl(result.unknownTokens.length, "token absent", "tokens absents")} du mapping : ${agree(result.unknownTokens.length, "laissé tel quel", "laissés tels quels")} dans le document restauré.`}
             >
-              Vérifiez que le mapping correspond à ce document.
+              Vérifiez que le mapping correspond à ce document. Le document restauré a été téléchargé :{" "}
+              <span className="font-mono break-all">{result.document.name}</span>.
             </Banner>
           ) : (
-            <Banner tone="success" title="Document restauré." />
+            <Banner tone="success" title="Document restauré.">
+              Il a été téléchargé : <span className="font-mono break-all">{result.document.name}</span>.
+            </Banner>
           )}
-          <Downloads
-            items={[
-              { label: "Document restauré", file: result.document, primary: true },
-              { label: "Rapport de restauration", file: result.report },
-            ]}
-          />
+          <section aria-labelledby="restaurer-telecharger" className="space-y-3">
+            <h3 id="restaurer-telecharger" className="font-semibold">
+              Télécharger à nouveau
+            </h3>
+            <p className="text-sm text-slate-600">
+              Si le téléchargement n'a pas démarré (certains navigateurs le bloquent), ou pour récupérer le rapport :
+            </p>
+            <Downloads
+              items={[
+                { label: "Document restauré", file: result.document, primary: true },
+                { label: "Rapport de restauration", file: result.report },
+              ]}
+            />
+          </section>
           <RestoreReportView r={result.summary} />
         </div>
       )}

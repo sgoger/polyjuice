@@ -1,14 +1,30 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { expect, test } from "@playwright/test";
-import { anonymizeFile, download, FIXTURES, upload } from "./helpers.ts";
+import { anonymizeFile, download, FIXTURES, runRestore, upload } from "./helpers.ts";
 
 test("parcours complet .md : anonymiser → vérifier → restaurer", async ({ page }) => {
   const original = readFileSync(join(FIXTURES, "sample.md"));
-  const { panel, doc, mapping } = await anonymizeFile(page, "sample.md");
+  const { panel, archive, doc, mapping, report } = await anonymizeFile(page, "sample.md");
 
+  // Archive téléchargée automatiquement : document, mapping, rapport.
+  expect(archive.name).toBe("sample.polyjuice.zip");
   expect(doc.name).toBe("sample.anonymise.md");
   expect(mapping.name).toBe("sample.json");
+  expect(report.name).toBe("sample.report.md");
+  // L'étape « Résultat » dit quoi envoyer et quoi garder, avec les vrais noms de fichiers.
+  await expect(panel.getByRole("status").filter({ hasText: "Document anonymisé :" })).toContainText(
+    "L'archive sample.polyjuice.zip a été téléchargée",
+  );
+  await expect(panel.getByRole("listitem").filter({ hasText: "À envoyer" })).toContainText("sample.anonymise.md");
+  await expect(panel.getByRole("listitem").filter({ hasText: "À garder, ne jamais transmettre" })).toContainText(
+    "sample.json",
+  );
+  // Boutons de secours : mêmes octets que l'archive.
+  expect((await download(page, /^⬇ Archive/)).data.equals(archive.data)).toBe(true);
+  expect((await download(page, /^⬇ Document anonymisé/)).data.equals(doc.data)).toBe(true);
+  expect((await download(page, /^⬇ Mapping/)).data.equals(mapping.data)).toBe(true);
+  expect((await download(page, /^⬇ Rapport/)).data.equals(report.data)).toBe(true);
   const anonymized = doc.data.toString("utf8");
   expect(anonymized).not.toContain("Paulina Kowalski");
   expect(anonymized).toMatch(/⟦P-[A-Z0-9]{5}⟧/u);
@@ -27,11 +43,12 @@ test("parcours complet .md : anonymiser → vérifier → restaurer", async ({ p
   const restorePanel = page.getByRole("tabpanel", { name: "Restaurer" });
   await upload(page, "restore-file", doc.name, doc.data);
   await upload(page, "restore-mapping", mapping.name, mapping.data, "application/json");
-  await restorePanel.getByRole("button", { name: "Restaurer", exact: true }).click();
+  // Le document restauré est téléchargé automatiquement ; le bouton reste disponible.
+  const restored = await runRestore(page);
   await expect(restorePanel.getByText("Document restauré.")).toBeVisible();
-  const restored = await download(page, /^⬇ Document restauré/);
   expect(restored.name).toBe("sample.restaure.md");
   expect(restored.data.equals(original)).toBe(true);
+  expect((await download(page, /^⬇ Document restauré/)).data.equals(original)).toBe(true);
 });
 
 test("refuse un format non pris en charge", async ({ page }) => {

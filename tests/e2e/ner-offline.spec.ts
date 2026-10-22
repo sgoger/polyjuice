@@ -8,11 +8,12 @@ test("hors ligne : l'échec du chargement du modèle ne bloque pas le mode motif
   await page.goto("./");
   const panel = page.getByRole("tabpanel", { name: "Anonymiser" });
   const box = panel.getByRole("checkbox", { name: /détection de noms par IA/ });
-  await box.check();
+  await expect(box).toBeChecked();
+  // Le chargement démarre au dépôt du document.
+  await upload(page, "anonymize-file", "sample.md", readFileSync(join(FIXTURES, "sample.md")));
   await expect(panel.getByRole("alert")).toContainText("n'a pas pu être chargé");
   await expect(box).not.toBeChecked();
 
-  await upload(page, "anonymize-file", "sample.md", readFileSync(join(FIXTURES, "sample.md")));
   await panel.getByRole("textbox", { name: /Liste de noms/ }).fill(NAMES);
   await panel.getByRole("button", { name: "Anonymiser", exact: true }).click();
   await expect(panel.getByText(/Document anonymisé :/)).toBeVisible();

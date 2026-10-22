@@ -29,13 +29,17 @@ export function Banner({ tone, title, children }: { tone: Tone; title: string; c
   );
 }
 
-export function WarningsBanner({ warnings }: { warnings: readonly string[] }) {
+export function WarningsBanner({
+  warnings,
+  when = "avant de télécharger",
+}: {
+  warnings: readonly string[];
+  /** Moment où les lire, ex. « avant d'envoyer le document ». */
+  when?: string;
+}) {
   if (warnings.length === 0) return null;
   return (
-    <Banner
-      tone="warning"
-      title={`${pl(warnings.length, "avertissement", "avertissements")} — à lire avant de télécharger`}
-    >
+    <Banner tone="warning" title={`${pl(warnings.length, "avertissement", "avertissements")} — à lire ${when}`}>
       <ul className="list-disc space-y-1 pl-5">
         {warnings.map((w) => (
           <li key={w}>{w}</li>

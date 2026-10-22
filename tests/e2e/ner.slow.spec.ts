@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { expect, test } from "@playwright/test";
 import { docxAdapter } from "../../src/adapters/docx.ts";
-import { download, FIXTURES, upload } from "./helpers.ts";
+import { FIXTURES, runAnonymize, upload } from "./helpers.ts";
 
 test("anonymiser un .docx avec la NER activée (Chromium) @slow", async ({ page }) => {
   test.setTimeout(600_000);
@@ -20,19 +20,18 @@ test("anonymiser un .docx avec la NER activée (Chromium) @slow", async ({ page 
 
   await page.goto("./");
   const panel = page.getByRole("tabpanel", { name: "Anonymiser" });
-  await panel.getByRole("checkbox", { name: /détection de noms par IA/ }).check();
+  await expect(panel.getByRole("checkbox", { name: /détection de noms par IA/ })).toBeChecked();
+  // Le modèle se charge au dépôt du document.
+  await upload(page, "anonymize-file", "sample.docx", readFileSync(join(FIXTURES, "sample.docx")));
   // Échoue vite si le chargement échoue (message d'erreur) plutôt que d'attendre la fin du délai.
   await expect(panel.getByText("Modèle prêt.").or(panel.getByText(/n'a pas pu être chargé/))).toBeVisible({
     timeout: 540_000,
   });
   await expect(panel.getByText("Modèle prêt.")).toBeVisible();
 
-  await upload(page, "anonymize-file", "sample.docx", readFileSync(join(FIXTURES, "sample.docx")));
   // Sans liste de noms : les personnes doivent être trouvées par la NER.
-  await panel.getByRole("button", { name: "Anonymiser", exact: true }).click();
-  await expect(panel.getByText(/Document anonymisé :/)).toBeVisible({ timeout: 120_000 });
+  const { doc } = await runAnonymize(page);
   await expect(panel.getByRole("cell", { name: "IA (NER)" }).first()).toBeVisible();
-  const doc = await download(page, /^⬇ Document anonymisé/);
   const text = (
     await docxAdapter.read(
       doc.data.buffer.slice(doc.data.byteOffset, doc.data.byteOffset + doc.data.byteLength) as ArrayBuffer,

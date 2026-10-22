@@ -1,14 +1,28 @@
+import type { Progress } from "../../engine/types.ts";
 import type { RunState } from "../useEngine.ts";
 
-export function Running({ state, onCancel }: { state: RunState; onCancel: () => void }) {
+interface Props {
+  state: RunState;
+  onCancel: () => void;
+  /**
+   * Chargement du modèle lancé avant le traitement (au dépôt du document) : le traitement l'attend,
+   * mais la progression arrive à la requête de chargement, pas à celle-ci.
+   */
+  modelLoading?: { progress: Progress | null } | null;
+}
+
+export function Running({ state, onCancel, modelLoading }: Props) {
   if (!state.running) return null;
-  const { progress, nerProgress } = state;
+  const { progress } = state;
+  const nerProgress = state.nerProgress ?? modelLoading?.progress ?? null;
   const ner =
     nerProgress?.status === "download" && nerProgress.total
-      ? `Téléchargement du modèle : ${Math.round(((nerProgress.loaded ?? 0) / nerProgress.total) * 100)} %`
+      ? `Téléchargement du modèle de détection par IA : ${Math.round(((nerProgress.loaded ?? 0) / nerProgress.total) * 100)} % — le traitement démarrera ensuite.`
       : nerProgress?.status === "init"
-        ? "Initialisation du modèle…"
-        : null;
+        ? "Initialisation du modèle de détection par IA…"
+        : modelLoading && !progress
+          ? "Préparation du modèle de détection par IA…"
+          : null;
   return (
     <div className="space-y-2 rounded-lg border border-slate-300 bg-white p-4" aria-live="polite" aria-busy="true">
       <div className="flex items-center justify-between gap-4">
