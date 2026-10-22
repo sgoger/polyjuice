@@ -159,6 +159,9 @@ export function contentWarnings(pkg: OoxmlPackage, root: string, extra: { charts
     out.push(
       `${pl(ole, "objet incorporé (OLE) présent", "objets incorporés (OLE) présents")} : leur contenu n'est pas traité.`,
     );
+  // Paquets avec macros (.docm, .pptm, .xlsm) : le projet VBA est un binaire opaque.
+  const vba = `${root}/vbaProject.bin`;
+  if (pkg.has(vba)) out.push(`Macros présentes (${vba}) : copiées telles quelles, non analysées.`);
   return out;
 }
 

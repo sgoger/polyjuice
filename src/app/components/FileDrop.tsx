@@ -1,4 +1,5 @@
-import { useId, useRef, useState, type DragEvent } from "react";
+import { useId, useRef, useState, type DragEvent, type ReactNode } from "react";
+import { extensionOf, refusalMessage, signatureProblem } from "../../adapters/formats.ts";
 
 interface Props {
   label: string;
@@ -6,35 +7,37 @@ interface Props {
   accept: readonly string[];
   file: File | null;
   onFile: (file: File | null) => void;
-  hint?: string;
+  hint?: ReactNode;
   testId?: string;
 }
-
-const ext = (name: string) => /\.([^.]+)$/.exec(name)?.[1]?.toLowerCase() ?? "";
 
 export function FileDrop({ label, accept, file, onFile, hint, testId }: Props) {
   const id = useId();
   const input = useRef<HTMLInputElement>(null);
   const [over, setOver] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  /** Dernier fichier déposé : un dépôt plus récent l'emporte sur une lecture d'en-tête en cours. */
+  const latest = useRef<File | null>(null);
 
-  const take = (f: File | undefined) => {
+  const take = async (f: File | undefined) => {
     if (!f) return;
-    if (!accept.includes(ext(f.name))) {
-      setError(
-        `« ${f.name} » n'est pas pris en charge ici. Formats acceptés : ${accept.map((a) => `.${a}`).join(", ")}.`,
-      );
+    latest.current = f;
+    if (!accept.includes(extensionOf(f.name))) {
+      setError(refusalMessage(f.name, accept));
       onFile(null);
       return;
     }
-    setError(null);
-    onFile(f);
+    // Contenu qui ne correspond pas à l'extension (.doc renommé en .docx…), d'après les premiers octets.
+    const problem = signatureProblem(f.name, new Uint8Array(await f.slice(0, 8).arrayBuffer()));
+    if (latest.current !== f) return;
+    setError(problem);
+    onFile(problem ? null : f);
   };
 
   const onDrop = (e: DragEvent) => {
     e.preventDefault();
     setOver(false);
-    take(e.dataTransfer.files[0]);
+    void take(e.dataTransfer.files[0]);
   };
 
   return (
@@ -63,7 +66,7 @@ export function FileDrop({ label, accept, file, onFile, hint, testId }: Props) {
           accept={accept.map((a) => `.${a}`).join(",")}
           className="sr-only"
           onChange={(e) => {
-            take(e.target.files?.[0]);
+            void take(e.target.files?.[0]);
             e.target.value = "";
           }}
         />
@@ -91,7 +94,7 @@ export function FileDrop({ label, accept, file, onFile, hint, testId }: Props) {
           </span>
         )}
       </div>
-      {hint && <p className="text-sm text-slate-600">{hint}</p>}
+      {hint && <div className="text-sm text-slate-600">{hint}</div>}
       {error && (
         <p role="alert" className="text-sm text-red-700">
           ⚠ {error}

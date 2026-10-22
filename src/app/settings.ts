@@ -1,4 +1,5 @@
 import { createContext, useEffect } from "react";
+import { ANONYMIZE_EXTENSIONS, isSpreadsheet, RESTORE_EXTENSIONS as RESTORABLE } from "../adapters/formats.ts";
 import type { Progress } from "../engine/types.ts";
 
 /** Réglages partagés par les onglets Anonymiser et Vérifier (seul le glossaire peut être mémorisé). */
@@ -31,16 +32,17 @@ export interface GlossaryPersistence {
 
 export const GlossaryContext = createContext<GlossaryPersistence | null>(null);
 
-export const DOC_EXTENSIONS = ["docx", "pptx", "xlsx", "pdf", "md", "txt"] as const;
-export const RESTORE_EXTENSIONS = ["docx", "pptx", "xlsx", "md", "txt"] as const;
+export const DOC_EXTENSIONS = ANONYMIZE_EXTENSIONS;
+export const RESTORE_EXTENSIONS = RESTORABLE;
 /** Nombre de termes du glossaire de noms (lignes non vides, hors commentaires `#`). */
 export const countNames = (text: string): number =>
   text.split(/\r?\n/).filter((l) => l.replace(/#.*$/, "").trim()).length;
 
-export const isXlsx = (f: File | null) => !!f && /\.xlsx$/i.test(f.name);
+/** Classeur (.xlsx, .xlsm) : pas de détection par IA, « Colonnes à anonymiser » disponible. */
+export const isXlsx = (f: File | null) => !!f && isSpreadsheet(f.name);
 export const isPdf = (f: File | null) => !!f && /\.pdf$/i.test(f.name);
 
-/** Le modèle se charge dès le dépôt d'un document qui en a besoin (jamais pour un .xlsx). */
+/** Le modèle se charge dès le dépôt d'un document qui en a besoin (jamais pour un classeur). */
 export function useNerPreload(settings: SharedSettings, file: File | null): void {
   const { ner, ensureNer } = settings;
   const needed = !!file && !isXlsx(file);

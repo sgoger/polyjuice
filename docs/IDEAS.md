@@ -11,3 +11,6 @@
 - PDF: keep links and the tagged structure, with their targets and alternate texts anonymized, instead of removing them.
 - PDF: shift the rest of the line when a token is much wider than the value it replaces (spike 0.4 approach A), instead of shrinking the token.
 - Restore a PDF returned by an external tool, if such tools turn out to return PDFs.
+- OpenDocument adapter (`.odt`, `.ods`, `.odp`): zipped XML like OOXML, so the same lossless approach would work, with another schema (`text:p`, `text:span`, `table:table-cell`). Refused for now with a message to save as `.docx`, `.xlsx` or `.pptx`.
+- Office 97-2003 files (`.doc`, `.xls`, `.ppt`): the spike readers (`spikes/legacy-formats/readers/`) could convert them (`.xls` to a minimal `.xlsx`, `.doc` and `.ppt` to `.md`) if users turn out to need it. Lossless rewriting in place is not realistic: every replacement changes the text length and all property tables would have to be shifted.
+- `.csv`: accept it as a spreadsheet (encoding detection, delimiter detection) so « Colonnes à anonymiser » applies.

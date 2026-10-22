@@ -4,7 +4,7 @@ import { preflightMessage } from "../preflight.ts";
 import { engine } from "../useEngine.ts";
 import { Banner } from "./Banner.tsx";
 
-const OFFICE = /\.(docx|pptx|xlsx)$/i;
+const OFFICE = /\.(docx|pptx|xlsx|docm|pptm|xlsm)$/i;
 
 /**
  * Inspection au dépôt : avertit, sans bloquer, des commentaires, révisions et noms d'auteurs d'un

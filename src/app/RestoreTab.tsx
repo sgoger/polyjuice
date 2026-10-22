@@ -70,7 +70,7 @@ export function RestoreTab() {
             setFile(f);
             setResult(null);
           }}
-          hint="Formats : .docx, .pptx, .xlsx, .md, .txt (pour un PDF anonymisé, déposez le .md produit)."
+          hint="Formats : .docx, .pptx, .xlsx (et .docm, .pptm, .xlsm), .md, .txt (pour un PDF anonymisé, déposez le .md produit)."
           testId="restore-file"
         />
         <FileDrop

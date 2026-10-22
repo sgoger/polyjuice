@@ -2,6 +2,13 @@
 // Indépendant du Worker : testé directement en Node.
 import JSZip from "jszip";
 import { agree, pl } from "../engine/plural.ts";
+import {
+  ANONYMIZE_EXTENSIONS,
+  refusalMessage,
+  RESTORE_EXTENSIONS,
+  signatureProblem,
+  SPREADSHEET_EXTENSIONS,
+} from "../adapters/formats.ts";
 import { adapterFor, extensionOf } from "../adapters/index.ts";
 import { detectSegment } from "../engine/detect.ts";
 import { NameMatcher, parseNames } from "../engine/detectors/names.ts";
@@ -43,6 +50,9 @@ const MIME: Record<string, string> = {
   pptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
   xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   pdf: "application/pdf",
+  docm: "application/vnd.ms-word.document.macroEnabled.12",
+  pptm: "application/vnd.ms-powerpoint.presentation.macroEnabled.12",
+  xlsm: "application/vnd.ms-excel.sheet.macroEnabled.12",
   md: "text/markdown;charset=utf-8",
   txt: "text/plain;charset=utf-8",
   json: "application/json",
@@ -74,13 +84,23 @@ function resolveAdapter(fileName: string): { format: Format; adapter: Adapter } 
     const ext = extensionOf(fileName);
     throw new EngineError(
       "UnsupportedFormat",
-      ext ? `Format non pris en charge : .${ext}` : "Fichier sans extension : format inconnu",
+      ext ? refusalMessage(fileName, ANONYMIZE_EXTENSIONS) : "Fichier sans extension : format inconnu",
     );
   }
   return found;
 }
 
-async function readDoc(adapter: Adapter, file: ArrayBuffer, columns?: readonly string[]): Promise<Doc> {
+const isSpreadsheet = (format: Format) => (SPREADSHEET_EXTENSIONS as readonly string[]).includes(format);
+
+async function readDoc(
+  fileName: string,
+  adapter: Adapter,
+  file: ArrayBuffer,
+  columns?: readonly string[],
+): Promise<Doc> {
+  // Contenu qui ne correspond pas à l'extension (.doc renommé en .docx…) : message explicite.
+  const problem = signatureProblem(fileName, new Uint8Array(file, 0, Math.min(8, file.byteLength)));
+  if (problem) throw new EngineError("InvalidDocument", problem);
   try {
     return await adapter.read(file, columns ? { columns } : undefined);
   } catch (e) {
@@ -95,7 +115,7 @@ async function readDoc(adapter: Adapter, file: ArrayBuffer, columns?: readonly s
  */
 async function nerFor(enabled: boolean, doc: Doc, format: Format, ctx: PipelineContext): Promise<NerProvider | null> {
   // NER toujours désactivée sur les classeurs (§3).
-  if (!enabled || format === "xlsx") return null;
+  if (!enabled || isSpreadsheet(format)) return null;
   if (!ctx.getNer) throw new EngineError("NerUnavailable", "Détection par IA indisponible");
   const ner = await ctx.getNer();
   const total = doc.segments.length;
@@ -141,7 +161,7 @@ async function noticeWarnings(doc: Doc, names: NameMatcher): Promise<string[]> {
 export async function anonymize(params: AnonymizeParams, ctx: PipelineContext): Promise<AnonymizeResult> {
   const { format, adapter } = resolveAdapter(params.fileName);
   const existing = params.mapping ? parseMapping(params.mapping) : null;
-  const doc = await readDoc(adapter, params.file, format === "xlsx" ? params.columns : undefined);
+  const doc = await readDoc(params.fileName, adapter, params.file, isSpreadsheet(format) ? params.columns : undefined);
   const ner = await nerFor(params.ner, doc, format, ctx);
   const names = new NameMatcher(parseNames(params.names));
   const source = { name: params.fileName, sha256: await sha256Hex(params.file), format };
@@ -203,7 +223,7 @@ export async function anonymize(params: AnonymizeParams, ctx: PipelineContext): 
 
 export async function check(params: CheckParams, ctx: PipelineContext): Promise<CheckResult> {
   const { format, adapter } = resolveAdapter(params.fileName);
-  const doc = await readDoc(adapter, params.file);
+  const doc = await readDoc(params.fileName, adapter, params.file);
   const ner = await nerFor(params.ner, doc, format, ctx);
   const names = new NameMatcher(parseNames(params.names));
   const rows: CheckRow[] = [];
@@ -230,15 +250,12 @@ export async function check(params: CheckParams, ctx: PipelineContext): Promise<
 }
 
 export async function restore(params: RestoreParams, ctx: PipelineContext): Promise<RestoreResult> {
-  if (extensionOf(params.fileName) === "pdf") {
-    throw new EngineError(
-      "UnsupportedFormat",
-      "La restauration ne s'applique pas à un PDF : déposez le fichier .md (ou .txt) renvoyé par l'outil externe.",
-    );
-  }
+  // PDF (lu seulement) : on restaure le fichier converti, pas l'original.
+  if (!(RESTORE_EXTENSIONS as readonly string[]).includes(extensionOf(params.fileName)))
+    throw new EngineError("UnsupportedFormat", refusalMessage(params.fileName, RESTORE_EXTENSIONS));
   const { adapter } = resolveAdapter(params.fileName);
+  const doc = await readDoc(params.fileName, adapter, params.file);
   const mapping = parseMapping(params.mapping);
-  const doc = await readDoc(adapter, params.file);
   const inventory = emptyInventory();
   const total = doc.segments.length;
   for (const [i, segment] of doc.segments.entries()) {

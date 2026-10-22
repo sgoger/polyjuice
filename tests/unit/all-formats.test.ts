@@ -6,11 +6,21 @@ import { check, restore } from "../../src/worker/pipeline.ts";
 import { anonymizeFixture, ctx, expected, fixture, NAMES, readDoc, text } from "./helpers.ts";
 import { allXmlText } from "./ooxml-helpers.ts";
 
-const FORMATS = ["sample.docx", "sample.pptx", "sample.xlsx", "sample.pdf", "sample.md", "sample.txt"];
-const extra = (name: string) => (name.endsWith(".xlsx") ? { columns: ["Nom", "Prénom"] } : {});
+const FORMATS = [
+  "sample.docx",
+  "sample.pptx",
+  "sample.xlsx",
+  "sample.docm",
+  "sample.pptm",
+  "sample.xlsm",
+  "sample.pdf",
+  "sample.md",
+  "sample.txt",
+];
+const extra = (name: string) => (/\.xls[xm]$/.test(name) ? { columns: ["Nom", "Prénom"] } : {});
 
 async function plainText(name: string, data: ArrayBuffer): Promise<string> {
-  if (/\.(docx|pptx|xlsx)$/.test(name)) {
+  if (/\.(docx|pptx|xlsx|docm|pptm|xlsm)$/.test(name)) {
     // Toutes les parties XML, sauf ce qui n'est pas modifié par conception et fait l'objet d'un
     // avertissement : relations (cibles de liens mailto:), noms de feuilles (xl/workbook.xml, recopiés
     // dans docProps/app.xml).

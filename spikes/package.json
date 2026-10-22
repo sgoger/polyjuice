@@ -7,7 +7,10 @@
     "token-survival:check": "tsx token-survival/check.ts",
     "ooxml": "tsx ooxml-roundtrip/run.ts",
     "ner:dev": "vite ner-browser",
-    "ner:bench": "tsx ner-browser/bench.ts"
+    "ner:bench": "tsx ner-browser/bench.ts",
+    "legacy:make": "tsx legacy-formats/make.ts",
+    "legacy:xls": "tsx legacy-formats/xls.ts",
+    "legacy:text": "tsx legacy-formats/text.ts"
   },
   "devDependencies": {
     "@huggingface/transformers": "^4.3.1",

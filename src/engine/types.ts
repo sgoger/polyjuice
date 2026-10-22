@@ -17,7 +17,8 @@ export type EntityType = (typeof ENTITY_TYPES)[number];
 export const DETECTION_SOURCES = ["ner", "regex", "names", "columns"] as const;
 export type DetectionSource = (typeof DETECTION_SOURCES)[number];
 
-export const FORMATS = ["docx", "pptx", "xlsx", "pdf", "md", "txt"] as const;
+/** Format du document d'origine (enregistré dans le mapping) ; les variantes avec macros ont le leur. */
+export const FORMATS = ["docx", "pptx", "xlsx", "pdf", "md", "txt", "docm", "pptm", "xlsm"] as const;
 export type Format = (typeof FORMATS)[number];
 
 /** Une entité détectée dans le texte d'un segment (offsets en unités UTF-16, fin exclue). */

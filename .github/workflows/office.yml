@@ -55,7 +55,7 @@ jobs:
       - name: Conversion PDF
         run: |
           cd samples-out
-          for f in *.docx *.pptx *.xlsx; do
+          for f in *.docx *.pptx *.xlsx *.docm *.pptm *.xlsm; do
             [ -e "$f" ] || continue
             soffice --headless --convert-to pdf "$f" >/dev/null 2>&1 || { echo "échec : $f"; exit 1; }
             [ -s "${f%.*}.pdf" ] || { echo "PDF vide : $f"; exit 1; }
