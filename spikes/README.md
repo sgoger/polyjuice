@@ -8,3 +8,10 @@ npm run token-survival:make && npm run token-survival:check -- <translated file>
 npm run ner:bench                                                                  # 0.2
 uv run ooxml-roundtrip/py_inputs.py out && npm run ooxml && uv run ooxml-roundtrip/validate.py out/roundtrip-*   # 0.3
 ```
+
+Spike 0.4 (PDF output) uses the application's code and dependencies: run it from the repository root.
+
+```sh
+npx tsx spikes/pdf-output/run.ts tests/fixtures/*.pdf [--mapping tests/real/x.pdf=tests/real/x.json tests/real/x.pdf]
+uv run spikes/pdf-output/mupdf_check.py spikes/out/pdf-output                                                     # 0.4
+```

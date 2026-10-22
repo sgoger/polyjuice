@@ -42,6 +42,7 @@ const MIME: Record<string, string> = {
   docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
   pptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
   xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  pdf: "application/pdf",
   md: "text/markdown;charset=utf-8",
   txt: "text/plain;charset=utf-8",
   json: "application/json",
@@ -169,21 +170,31 @@ export async function anonymize(params: AnonymizeParams, ctx: PipelineContext): 
   ctx.checkCancelled();
   ctx.progress(total, total);
 
-  const warnings = [...doc.warnings, ...(await noticeWarnings(doc, names))];
+  // PDF : réécriture du fichier d'origine si elle est sûre (sinon seul le .md est produit).
+  const original = adapter.writeOriginal ? await adapter.writeOriginal(doc) : null;
+  ctx.checkCancelled();
+  const warnings = [...(original?.warnings ?? []), ...doc.warnings, ...(await noticeWarnings(doc, names))];
   store.setWarnings(warnings);
   const mapping = store.toMapping();
   const data = await adapter.write(doc);
   const report = buildAnonymizeReport(params.fileName, format, mapping, contexts, warnings);
   const reportMarkdown = anonymizeReportMarkdown(report);
   const base = baseName(params.fileName);
-  const document = output(`${base}.anonymise.${doc.outputExtension}`, data);
+  const main = output(`${base}.anonymise.${doc.outputExtension}`, data);
+  // PDF réécrit : le .pdf est le document principal, le .md l'accompagne (aussi dans l'archive).
+  const document = original?.data ? output(`${base}.anonymise.${original.extension}`, original.data) : main;
+  const alternate = original?.data ? main : undefined;
   const mappingFile = output(`${base}.json`, encode(serializeMapping(mapping)));
   const reportFile = output(`${base}.report.md`, encode(reportMarkdown));
   return {
     document,
+    ...(alternate ? { alternate } : {}),
     mapping: mappingFile,
     report: reportFile,
-    archive: await archive(`${base}.polyjuice.zip`, [document, mappingFile]),
+    archive: await archive(
+      `${base}.polyjuice.zip`,
+      alternate ? [document, alternate, mappingFile] : [document, mappingFile],
+    ),
     reportMarkdown,
     summary: report,
     warnings,

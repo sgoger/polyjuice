@@ -26,9 +26,11 @@ The « Anonymiser » (anonymize) tab guides you through three numbered steps, th
    - the two files of the archive and what to do with each: `<name>.anonymise.<ext>` (**send**: the only file to give to the external tool) and `<name>.json`, the mapping (**keep, never send**: it contains the original data in clear text and is required to restore);
    - a folded « Télécharger à nouveau, rapport de détection » (download again, detection report) section, with a button per file in case the browser blocked the automatic download, the detection report (`<name>.report.md`, only available there) and its detailed view.
 
+A PDF is rewritten: the detected data is removed from the file and replaced with tokens, the layout is kept, and a text version (`.md`) is produced too (both are in the archive). When the PDF cannot be rewritten safely (unusual font, scanned or encrypted PDF, form…), only the `.md` is produced and a warning says why. A note explains this as soon as a `.pdf` is dropped. Why a PDF is harder to edit than a Word document: [`docs/FORMATS.md`](docs/FORMATS.md#pdf).
+
 ### Restaurer
 
-The « Restaurer » (restore) tab: drop the document returned by the external tool **and** the mapping (the `.json` file of the archive), then click « Restaurer ». The restored document is downloaded automatically; the restoration report is in a folded section. Each known token is replaced by its original value, even if the tool split the token across several formatting runs. Tokens in polyjuice format that are missing from the mapping are reported as an error and left as-is. The document is processed according to its extension, whatever the original's was: an anonymized PDF comes back as `.md` or `.txt`.
+The « Restaurer » (restore) tab: drop the document returned by the external tool **and** the mapping (the `.json` file of the archive), then click « Restaurer ». The restored document is downloaded automatically; the restoration report is in a folded section. Each known token is replaced by its original value, even if the tool split the token across several formatting runs. Tokens in polyjuice format that are missing from the mapping are reported as an error and left as-is. The document is processed according to its extension, whatever the original's was: for a PDF, drop the `.md` or `.txt` returned by the external tool (restoring a `.pdf` is not supported).
 
 ### Vérifier (optional)
 
@@ -36,16 +38,16 @@ The « Vérifier (facultatif) » (verify, optional) tab: drop an already anonymi
 
 ## Formats
 
-| Format  | « Anonymiser » output   | « Restaurer » input                    |
-| ------- | ----------------------- | -------------------------------------- |
-| `.docx` | `.docx`                 | yes                                    |
-| `.pptx` | `.pptx`                 | yes                                    |
-| `.xlsx` | `.xlsx`                 | yes                                    |
-| `.pdf`  | `.md` (text extraction) | no (drop the returned `.md` or `.txt`) |
-| `.md`   | `.md`                   | yes                                    |
-| `.txt`  | `.txt`                  | yes                                    |
+| Format  | « Anonymiser » output                                                   | « Restaurer » input                    |
+| ------- | ----------------------------------------------------------------------- | -------------------------------------- |
+| `.docx` | `.docx`                                                                 | yes                                    |
+| `.pptx` | `.pptx`                                                                 | yes                                    |
+| `.xlsx` | `.xlsx`                                                                 | yes                                    |
+| `.pdf`  | `.pdf` and `.md`, or `.md` only when the PDF cannot be rewritten safely | no (drop the returned `.md` or `.txt`) |
+| `.md`   | `.md`                                                                   | yes                                    |
+| `.txt`  | `.txt`                                                                  | yes                                    |
 
-Office documents are modified directly in their XML: only text nodes change, everything else (formatting, images, charts…) is copied byte for byte. What is and is not processed, format by format: [`docs/FORMATS.md`](docs/FORMATS.md).
+Office documents are modified directly in their XML: only text nodes change, everything else (formatting, images, charts…) is copied byte for byte. In a PDF, the glyphs of the detected data are removed from the page content and the token is drawn in their place; the produced PDF is read back and refused if any detected value can still be extracted from it. What is and is not processed, format by format: [`docs/FORMATS.md`](docs/FORMATS.md).
 
 ## Detected data and tokens
 
@@ -65,7 +67,7 @@ A token has the form `⟦X-ABCDE⟧`: `X` is the type letter, `ABCDE` is five ch
 
 ## Out of scope
 
-Not handled in this version (a warning is shown when relevant): text inside images (no OCR), scanned PDFs, SmartArt, OLE objects, charts; grouping variants of the same name; mapping shared between documents; restoring tokens altered by the external tool; realistic pseudonyms; any persistent storage other than the opt-in names glossary; any server; national identifiers other than the French NIR. Also not modified, but reported: hyperlink targets, Word field codes, comment and revision author names, spreadsheet sheet names.
+Not handled in this version (a warning is shown when relevant): text inside images (no OCR), scanned PDFs, rewriting PDFs whose detected data uses Type3 or other unsupported fonts (`.md` only), encrypted PDFs, PDF forms, restoring a `.pdf`, SmartArt, OLE objects, charts; grouping variants of the same name; mapping shared between documents; restoring tokens altered by the external tool; realistic pseudonyms; any persistent storage other than the opt-in names glossary; any server; national identifiers other than the French NIR. Also not modified, but reported: hyperlink targets, Word field codes, comment and revision author names, spreadsheet sheet names.
 
 ## Compliance
 

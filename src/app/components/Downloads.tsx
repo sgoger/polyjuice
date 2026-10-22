@@ -5,6 +5,8 @@ export interface DownloadItem {
   label: string;
   file: OutputFile;
   note?: string;
+  /** « warning » (par défaut) : mise en garde ; « info » : simple précision. */
+  noteTone?: "warning" | "info";
   primary?: boolean;
 }
 
@@ -27,7 +29,12 @@ export function Downloads({ items }: { items: DownloadItem[] }) {
             ⬇ {it.label}
           </button>
           <p className="font-mono text-xs break-all text-slate-600">{it.file.name}</p>
-          {it.note && <p className="text-sm font-medium text-red-800">⚠ {it.note}</p>}
+          {it.note &&
+            (it.noteTone === "info" ? (
+              <p className="text-sm text-slate-600">{it.note}</p>
+            ) : (
+              <p className="text-sm font-medium text-red-800">⚠ {it.note}</p>
+            ))}
         </div>
       ))}
     </div>

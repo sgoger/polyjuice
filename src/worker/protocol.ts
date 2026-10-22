@@ -44,6 +44,8 @@ export interface OutputFile {
 
 export interface AnonymizeResult {
   document: OutputFile;
+  /** Autre version du document : le .md d'un PDF réécrit. */
+  alternate?: OutputFile;
   mapping: OutputFile;
   report: OutputFile;
   /** Archive ZIP du document anonymisé et du mapping (sans le rapport), téléchargée automatiquement par l'interface. */

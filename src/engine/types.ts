@@ -75,6 +75,17 @@ export interface Adapter {
   read(file: ArrayBuffer, options?: ReadOptions): Promise<Doc>;
   /** Réécrit les segments dont `text` a changé. */
   write(doc: Doc): Promise<ArrayBuffer>;
+  /**
+   * PDF : produit en plus un fichier au format d'origine. `data` est null quand c'est refusé ; les
+   * avertissements disent alors pourquoi et seul le document de `write` est produit.
+   */
+  writeOriginal?(doc: Doc): Promise<OriginalOutput>;
+}
+
+export interface OriginalOutput {
+  extension: string;
+  data: ArrayBuffer | null;
+  warnings: string[];
 }
 
 export interface Progress {

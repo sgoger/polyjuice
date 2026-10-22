@@ -1,5 +1,6 @@
 // Anonymise puis restaure chaque fixture Office et écrit les résultats dans un dossier,
-// pour un contrôle d'ouverture par LibreOffice (CI) ou à la main.
+// pour un contrôle d'ouverture par LibreOffice (CI) ou à la main. Anonymise aussi les fixtures PDF
+// réécrites (PDF + mapping), contrôlées ensuite par scripts/check-pdf-samples.ts (pdftotext).
 // Usage : npx tsx scripts/export-samples.ts <dossier>
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -28,4 +29,14 @@ for (const name of ["sample.docx", "revisions.docx", "sample.pptx", "sample.xlsx
   );
   writeFileSync(join(out, restored.document.name), new Uint8Array(restored.document.data));
   console.log(`${name} → ${anon.document.name}, ${restored.document.name}`);
+}
+
+for (const name of ["sample.pdf", "pdf-fragments.pdf", "pdf-composite.pdf"]) {
+  const b = readFileSync(join(FIX, name));
+  const file = b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength);
+  const anon = await anonymize({ file, fileName: name, names, ner: false, columns: [], mapping: null }, ctx);
+  if (!anon.document.name.endsWith(".pdf")) throw new Error(`${name} : PDF non réécrit (${anon.warnings[0] ?? ""})`);
+  writeFileSync(join(out, anon.document.name), new Uint8Array(anon.document.data));
+  writeFileSync(join(out, anon.mapping.name), new Uint8Array(anon.mapping.data));
+  console.log(`${name} → ${anon.document.name}, ${anon.mapping.name}`);
 }
