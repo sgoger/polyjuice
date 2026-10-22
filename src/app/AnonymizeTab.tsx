@@ -202,9 +202,6 @@ function Outcome({ result }: { result: AnonymizeResult }) {
         <FileRole name={mapping.name} role="Garder, ne jamais envoyer" tone="keep">
           données en clair, nécessaire pour restaurer
         </FileRole>
-        <FileRole name={report.name} role="Pour information" tone="info">
-          ce qui a été remplacé
-        </FileRole>
       </ul>
       <More summary="Télécharger à nouveau, rapport de détection">
         <div className="space-y-2">

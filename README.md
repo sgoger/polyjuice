@@ -23,8 +23,8 @@ The « Anonymiser » (anonymize) tab guides you through three numbered steps, th
 3. **« Anonymiser »**: click the button. If the AI model is still downloading, processing waits for it and shows its progress. Processing can be cancelled.
 4. **Result** (the steps are folded into a summary): a ZIP archive `<name>.polyjuice.zip` is **downloaded automatically**. The screen then shows, in short:
    - the **warnings banner** (images, SmartArt, macros, cleared metadata…), to read before sending the document;
-   - the three files of the archive and what to do with each: `<name>.anonymise.<ext>` (**send**: the only file to give to the external tool), `<name>.json`, the mapping (**keep, never send**: it contains the original data in clear text and is required to restore), `<name>.report.md` (for information);
-   - a folded « Télécharger à nouveau, rapport de détection » (download again, detection report) section, with a button per file in case the browser blocked the automatic download, and the detailed report.
+   - the two files of the archive and what to do with each: `<name>.anonymise.<ext>` (**send**: the only file to give to the external tool) and `<name>.json`, the mapping (**keep, never send**: it contains the original data in clear text and is required to restore);
+   - a folded « Télécharger à nouveau, rapport de détection » (download again, detection report) section, with a button per file in case the browser blocked the automatic download, the detection report (`<name>.report.md`, only available there) and its detailed view.
 
 ### Restaurer
 

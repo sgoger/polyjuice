@@ -5,13 +5,12 @@ import { anonymizeFile, download, FIXTURES, openMore, runRestore, upload } from 
 
 test("parcours complet .md : anonymiser → vérifier → restaurer", async ({ page }) => {
   const original = readFileSync(join(FIXTURES, "sample.md"));
-  const { panel, archive, doc, mapping, report } = await anonymizeFile(page, "sample.md");
+  const { panel, archive, doc, mapping } = await anonymizeFile(page, "sample.md");
 
-  // Archive téléchargée automatiquement : document, mapping, rapport.
+  // Archive téléchargée automatiquement : document et mapping (le rapport a son bouton).
   expect(archive.name).toBe("sample.polyjuice.zip");
   expect(doc.name).toBe("sample.anonymise.md");
   expect(mapping.name).toBe("sample.json");
-  expect(report.name).toBe("sample.report.md");
   // L'étape « Résultat » dit quoi envoyer et quoi garder, avec les vrais noms de fichiers.
   await expect(panel.getByRole("status").filter({ hasText: "Document anonymisé :" })).toContainText(
     "Archive téléchargée : sample.polyjuice.zip",
@@ -28,7 +27,7 @@ test("parcours complet .md : anonymiser → vérifier → restaurer", async ({ p
   expect((await download(page, /^⬇ Archive/)).data.equals(archive.data)).toBe(true);
   expect((await download(page, /^⬇ Document anonymisé/)).data.equals(doc.data)).toBe(true);
   expect((await download(page, /^⬇ Mapping/)).data.equals(mapping.data)).toBe(true);
-  expect((await download(page, /^⬇ Rapport/)).data.equals(report.data)).toBe(true);
+  expect((await download(page, /^⬇ Rapport/)).name).toBe("sample.report.md");
   const anonymized = doc.data.toString("utf8");
   expect(anonymized).not.toContain("Paulina Kowalski");
   expect(anonymized).toMatch(/⟦P-[A-Z0-9]{5}⟧/u);

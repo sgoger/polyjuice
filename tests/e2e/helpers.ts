@@ -58,7 +58,7 @@ export async function upload(
 
 /**
  * Clique sur « Anonymiser » et renvoie l'archive téléchargée automatiquement, ainsi que le document,
- * le mapping et le rapport qu'elle contient.
+ * et le mapping qu'elle contient.
  */
 export async function runAnonymize(page: Page) {
   const panel = page.getByRole("tabpanel", { name: "Anonymiser" });
@@ -67,12 +67,11 @@ export async function runAnonymize(page: Page) {
   );
   await expect(panel.getByText(/Document anonymisé :/)).toBeVisible();
   const entries = await unzip(archive.data);
-  expect(entries).toHaveLength(3);
-  const [doc, mapping, report] = entries as [Downloaded, Downloaded, Downloaded];
+  expect(entries).toHaveLength(2);
+  const [doc, mapping] = entries as [Downloaded, Downloaded];
   expect(doc.name).toMatch(/\.anonymise\.[a-z]+$/);
   expect(mapping.name).toMatch(/\.json$/);
-  expect(report.name).toMatch(/\.report\.md$/);
-  return { panel, archive, doc, mapping, report };
+  return { panel, archive, doc, mapping };
 }
 
 /** Clique sur « Restaurer » et renvoie le document restauré, téléchargé automatiquement. */

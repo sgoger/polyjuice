@@ -9,7 +9,7 @@ polyjuice is a static site. Once the page is loaded, all processing happens in t
 - the name list;
 - the mapping (which contains the data in clear text).
 
-Files are read with the browser's `File` API and downloads are produced locally (`Blob` + download link). The ZIP archive downloaded after anonymization (anonymized document, mapping, report) is built in the Web Worker with JSZip, already used for Office files: building it sends nothing over the network. No request is sent during processing without AI detection: this is checked by an automated test that blocks every outgoing request and processes each format (`tests/e2e/network.spec.ts`). AI detection is enabled by default, but the model is only requested once a document other than `.xlsx` is dropped: opening the page, or dropping a workbook, sends no request (`tests/e2e/ner-loading.spec.ts`).
+Files are read with the browser's `File` API and downloads are produced locally (`Blob` + download link). The ZIP archive downloaded after anonymization (anonymized document and mapping) is built in the Web Worker with JSZip, already used for Office files: building it sends nothing over the network. No request is sent during processing without AI detection: this is checked by an automated test that blocks every outgoing request and processes each format (`tests/e2e/network.spec.ts`). AI detection is enabled by default, but the model is only requested once a document other than `.xlsx` is dropped: opening the page, or dropping a workbook, sends no request (`tests/e2e/ner-loading.spec.ts`).
 
 ## What is stored
 

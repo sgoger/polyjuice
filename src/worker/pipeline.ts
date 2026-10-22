@@ -183,7 +183,7 @@ export async function anonymize(params: AnonymizeParams, ctx: PipelineContext): 
     document,
     mapping: mappingFile,
     report: reportFile,
-    archive: await archive(`${base}.polyjuice.zip`, [document, mappingFile, reportFile]),
+    archive: await archive(`${base}.polyjuice.zip`, [document, mappingFile]),
     reportMarkdown,
     summary: report,
     warnings,
