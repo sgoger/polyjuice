@@ -44,12 +44,39 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx tsx scripts/export-samples.ts samples-out
+      # Le miroir apt Azure est parfois bridé à ~50 ko/s : les 109 Mo de paquets ne passaient plus en 10 minutes.
+      # Les .deb sont gardés en cache ; apt ne télécharge que ce qui manque ou a changé de version.
+      - name: Version de l'image du runner
+        id: image
+        run: echo "version=$ImageOS-$ImageVersion" >> "$GITHUB_OUTPUT"
+      - name: Cache des paquets LibreOffice et poppler
+        uses: actions/cache@v6
+        with:
+          path: ~/apt-archives/*.deb
+          key: apt-office-${{ steps.image.outputs.version }}
+          restore-keys: apt-office-
       - name: Installation de LibreOffice et poppler
+        timeout-minutes: 6
         run: |
           # Évite la régénération de l'index man-db, qui ralentit fortement apt sur les runners Ubuntu 24.04.
           sudo rm -f /var/lib/man-db/auto-update
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends libreoffice-writer-nogui libreoffice-impress-nogui libreoffice-calc-nogui poppler-utils
+          mkdir -p ~/apt-archives/partial
+          install() {
+            sudo apt-get update
+            sudo timeout "$1" apt-get install -y --no-install-recommends \
+              -o Dir::Cache::archives="$HOME/apt-archives" \
+              libreoffice-writer-nogui libreoffice-impress-nogui libreoffice-calc-nogui poppler-utils
+          }
+          # Si le miroir Azure est trop lent, on repart sur le miroir officiel Ubuntu ; les paquets déjà
+          # téléchargés sont conservés.
+          install 150 || {
+            echo "::warning::Miroir apt Azure trop lent, nouvel essai sur archive.ubuntu.com"
+            sudo sed -i 's#azure\.archive\.ubuntu\.com#archive.ubuntu.com#g' \
+              /etc/apt/apt-mirrors.txt /etc/apt/sources.list.d/*.sources 2>/dev/null || true
+            install 180
+          }
+          # Retire du cache les versions qui ne sont plus publiées, pour qu'il ne grossisse pas d'une image à l'autre.
+          sudo apt-get autoclean -o Dir::Cache::archives="$HOME/apt-archives"
       - name: Texte des PDF anonymisés (pdftotext)
         run: npx tsx scripts/check-pdf-samples.ts samples-out
       - name: Conversion PDF
