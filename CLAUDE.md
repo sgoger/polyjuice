@@ -3,7 +3,7 @@
 ## Language
 
 - All documentation is written in English: `README.md`, everything under `docs/` and `spikes/`, commit messages, pull request titles and descriptions.
-- The user interface stays in French (its users are French speakers). When documentation quotes a UI label, keep the French label and gloss it in English the first time, e.g. the « Anonymiser » (anonymize) tab.
+- The user interface is in French and German (its users are French and German speakers). French is the reference: every text lives in a catalog, `src/i18n/` for messages produced by the engine (warnings, reports, errors) and `src/app/messages/` for the interface, and any new or changed text must be added to both languages. When documentation quotes a UI label, keep the French label and gloss it in English the first time, e.g. the « Anonymiser » (anonymize) tab.
 - Conversations with the maintainer are in French: short, plain and easy to follow.
 
 ## One worktree per session

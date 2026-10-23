@@ -1,6 +1,6 @@
-import { pl } from "../../engine/plural.ts";
 import { use, useId, useRef } from "react";
 import { saveFile } from "../download.ts";
+import { useT } from "../messages/index.ts";
 import { countNames, GlossaryContext } from "../settings.ts";
 
 interface Props {
@@ -25,11 +25,12 @@ export function NamesInput({ value, onChange }: Props) {
   const glossary = use(GlossaryContext);
   const count = countNames(value);
   const remembered = !!glossary?.remember && glossary.available;
+  const m = useT().names;
   return (
     <div className="space-y-1">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <label htmlFor={id} className="font-medium">
-          Glossaire de noms <span className="font-normal text-slate-600">(facultatif)</span>
+          {m.label} <span className="font-normal text-slate-600">{m.optional}</span>
         </label>
         <span className="flex flex-wrap gap-2">
           <input
@@ -46,33 +47,31 @@ export function NamesInput({ value, onChange }: Props) {
             }}
           />
           <button type="button" onClick={() => input.current?.click()} className={BUTTON}>
-            Charger un .txt
+            {m.load}
           </button>
           <button
             type="button"
             disabled={!value}
             onClick={() => {
               saveFile({
-                name: "glossaire.txt",
+                name: m.fileName,
                 mime: "text/plain;charset=utf-8",
                 data: new TextEncoder().encode(value).buffer,
               });
             }}
             className={BUTTON}
           >
-            Enregistrer en .txt
+            {m.save}
           </button>
           {glossary && (
             <button type="button" disabled={!value} onClick={glossary.clear} className={BUTTON}>
-              Effacer
+              {m.clear}
             </button>
           )}
         </span>
       </div>
       <p id={helpId} className="text-sm text-slate-600">
-        Les noms listés ici sont toujours remplacés (type Personne), même si la détection par IA les manque. Un nom par
-        ligne, écrit tel qu'il apparaît dans les documents (« Thomas Rivière ») ; # pour un commentaire. Le même
-        glossaire sert aux onglets Anonymiser et Vérifier.
+        {m.help}
       </p>
       <textarea
         id={id}
@@ -85,11 +84,10 @@ export function NamesInput({ value, onChange }: Props) {
         spellCheck={false}
         autoComplete="off"
         className="w-full rounded-md border border-slate-300 p-2 font-mono text-sm"
-        placeholder={"Thomas Rivière\nJean Dupont"}
+        placeholder={m.placeholder}
       />
       <p className="text-sm text-slate-600">
-        {pl(count, "terme", "termes")}.{" "}
-        {remembered ? "Mémorisé dans ce navigateur." : "Non mémorisé : perdu au rechargement de la page."}
+        {m.count(count)} {remembered ? m.remembered : m.notRemembered}
       </p>
       {glossary && (
         <div className="space-y-1 pt-1">
@@ -106,18 +104,15 @@ export function NamesInput({ value, onChange }: Props) {
               className="mt-1 size-4"
             />
             <label htmlFor={rememberId} className={glossary.available ? "" : "text-slate-500"}>
-              Mémoriser ce glossaire dans ce navigateur
+              {m.remember}
             </label>
           </div>
           <p id={rememberNoteId} className="pl-6 text-sm text-slate-600">
-            {glossary.available
-              ? "Le glossaire reste sur cet ordinateur, dans ce navigateur, jusqu'à ce que vous décochiez la case ou cliquiez sur « Effacer ». Ne cochez pas cette case sur un poste partagé."
-              : "Indisponible : ce navigateur bloque le stockage local (navigation privée ?). Le glossaire sera perdu au rechargement de la page ; utilisez « Enregistrer en .txt » pour le conserver."}
+            {glossary.available ? m.rememberNote : m.unavailable}
           </p>
           {remembered && glossary.saveFailed && (
             <p role="alert" className="pl-6 text-sm text-red-700">
-              ⚠ Le glossaire n'a pas pu être mémorisé (stockage plein ou bloqué). Utilisez « Enregistrer en .txt » pour
-              le conserver.
+              {m.saveFailed}
             </p>
           )}
         </div>

@@ -1,5 +1,6 @@
 // Modèle du mapping JSON : création, réutilisation, validation (zod) et sérialisation stable.
 import { z } from "zod";
+import { t } from "../i18n/index.ts";
 import { EngineError } from "../worker/protocol.ts";
 import { deriveToken, isToken, TYPE_LETTERS, withSuffix } from "./tokens.ts";
 import {
@@ -39,15 +40,15 @@ export const MappingSchema = z
     salt: z
       .string()
       .regex(base64)
-      .refine((s) => fromBase64(s).length === SALT_BYTES, `le salt doit faire ${SALT_BYTES} octets`),
+      .refine((s) => fromBase64(s).length === SALT_BYTES, { error: () => t().mapping.saltBytes(SALT_BYTES) }),
     ner: z.object({ enabled: z.boolean(), provider: z.string().nullable(), model: z.string().nullable() }).strict(),
     entities: z.record(z.string(), EntitySchema).superRefine((entities, ctx) => {
       for (const [token, e] of Object.entries(entities)) {
-        if (!isToken(token)) ctx.addIssue({ code: "custom", message: `token invalide : ${token}`, path: [token] });
+        if (!isToken(token)) ctx.addIssue({ code: "custom", message: t().mapping.invalidToken(token), path: [token] });
         else if (token[1] !== TYPE_LETTERS[e.type])
           ctx.addIssue({
             code: "custom",
-            message: `lettre du token incohérente avec le type ${e.type}`,
+            message: t().mapping.letterMismatch(e.type),
             path: [token],
           });
       }
@@ -106,27 +107,27 @@ export function parseMapping(json: string): Mapping {
   try {
     raw = JSON.parse(json);
   } catch {
-    throw new EngineError("InvalidMapping", "Le mapping n'est pas un fichier JSON valide.");
+    throw new EngineError("InvalidMapping", t().mapping.notJson);
   }
   if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
-    throw new EngineError("InvalidMapping", "Le mapping doit être un objet JSON.");
+    throw new EngineError("InvalidMapping", t().mapping.notObject);
   }
   const version = (raw as Record<string, unknown>).schema_version;
   if (version !== SCHEMA_VERSION) {
     throw new EngineError(
       "InvalidMapping",
       version === undefined
-        ? "Ce fichier n'est pas un mapping polyjuice (champ schema_version absent)."
-        : `Version de schéma du mapping inconnue : ${JSON.stringify(version)} (cette version de polyjuice lit la version ${SCHEMA_VERSION}).`,
+        ? t().mapping.notPolyjuice
+        : t().mapping.unknownVersion(JSON.stringify(version), SCHEMA_VERSION),
     );
   }
   const parsed = MappingSchema.safeParse(raw);
   if (!parsed.success) {
     const issues = parsed.error.issues
       .slice(0, 5)
-      .map((i) => `${i.path.join(".") || "(racine)"} : ${i.message}`)
+      .map((i) => `${i.path.join(".") || t().mapping.root}${t().colon}${i.message}`)
       .join(" ; ");
-    throw new EngineError("InvalidMapping", `Mapping invalide — ${issues}`);
+    throw new EngineError("InvalidMapping", t().mapping.invalid(issues));
   }
   return parsed.data;
 }

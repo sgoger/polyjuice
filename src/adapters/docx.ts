@@ -1,5 +1,5 @@
 // Adaptateur .docx (WordprocessingML brut).
-import { agree, pl } from "../engine/plural.ts";
+import { t } from "../i18n/index.ts";
 import type { Adapter, Doc, SegmentKind } from "../engine/types.ts";
 import {
   altTexts,
@@ -37,8 +37,7 @@ async function read(file: ArrayBuffer): Promise<Doc> {
   for (const [re, kind] of PARTS) {
     for (const name of names.filter((n) => re.test(n)).sort(byNumber)) specs.push({ name, kind, paragraphs });
   }
-  if (!specs.some((s) => s.name === "word/document.xml"))
-    throw new Error("word/document.xml absent : ce n'est pas un document Word");
+  if (!specs.some((s) => s.name === "word/document.xml")) throw new Error(t().docx.notWord);
   const { segments, state } = await readParagraphParts(pkg, WORD, specs, warnings);
   warnings.push(...contentWarnings(pkg, "word"));
   warnings.push(...(await authorWarnings(pkg)));
@@ -51,21 +50,17 @@ async function read(file: ArrayBuffer): Promise<Doc> {
     if (!part) continue;
     for (const instr of elementsNS(part.parsed.doc, NS.w, "instrText")) {
       const code = (instr.textContent ?? "").trim();
-      if (code) notices.push({ text: code, where: "Code de champ" });
+      if (code) notices.push({ text: code, where: t().docx.fieldCode });
     }
     notices.push(...altTexts(part.parsed.doc));
     if (elementsNS(part.parsed.doc, NS.w, "delText").length) deleted = true;
     if (elementsNS(part.parsed.doc, NS.w, "dataBinding").length) bound = true;
   }
   if (deleted) {
-    warnings.push(
-      "Révisions supprimées (suivi des modifications) présentes : leur texte reste dans le fichier sans être traité. Acceptez ou rejetez les révisions avant d'anonymiser.",
-    );
+    warnings.push(t().docx.deletedRevisions);
   }
   if (bound && names.some((n) => n.startsWith("customXml/"))) {
-    warnings.push(
-      "Contrôles de contenu liés à des données XML (customXml) : ces données ne sont pas traitées et Word peut les réafficher à l'ouverture.",
-    );
+    warnings.push(t().docx.customXml);
   }
   return { format: "docx", outputExtension: "docx", segments, warnings, notices, state };
 }
@@ -74,17 +69,9 @@ async function read(file: ArrayBuffer): Promise<Doc> {
 async function authorWarnings(pkg: OoxmlPackage): Promise<string[]> {
   const { authors, trackRevisions, peopleList } = await inspectDocx(pkg);
   const out: string[] = [];
-  if (authors) {
-    out.push(
-      `${pl(authors, "nom d'auteur", "noms d'auteurs")} de commentaires ou de révisions ${agree(authors, "reste en clair : il n'est pas anonymisé", "restent en clair : ils ne sont pas anonymisés")}. Pour ${agree(authors, "le", "les")} retirer, acceptez toutes les modifications et supprimez tous les commentaires dans Word, puis anonymisez à nouveau.`,
-    );
-  }
-  if (peopleList)
-    out.push("Liste des personnes ayant commenté ou révisé le document (word/people.xml) conservée telle quelle.");
-  if (trackRevisions)
-    out.push(
-      "Suivi des modifications activé : toute modification ultérieure du document anonymisé y sera enregistrée avec le nom de son auteur.",
-    );
+  if (authors) out.push(t().docx.authors(authors));
+  if (peopleList) out.push(t().docx.peopleList);
+  if (trackRevisions) out.push(t().docx.trackRevisions);
   return out;
 }
 

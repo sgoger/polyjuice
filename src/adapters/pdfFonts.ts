@@ -13,6 +13,7 @@ import {
   type PDFContext,
   type PDFObject,
 } from "pdf-lib";
+import { t } from "../i18n/index.ts";
 
 export interface PdfFont {
   /** Raison pour laquelle le texte de cette police ne peut pas être réécrit, ou null. */
@@ -226,7 +227,7 @@ function loadSimple(context: PDFContext, font: PDFDict, toUnicode: Map<number, s
       const n = names[code];
       return (n ? metrics.getWidthOfGlyph(n) : undefined) ?? 0;
     };
-  } else return unsupported("police sans table de chasses");
+  } else return unsupported(t().pdf.fonts.noWidths);
 
   const unicode = (code: number): string | null => {
     const fromCmap = toUnicode?.get(code);
@@ -239,10 +240,10 @@ function loadSimple(context: PDFContext, font: PDFDict, toUnicode: Map<number, s
 
 function loadType0(context: PDFContext, font: PDFDict, toUnicode: Map<number, string> | null): PdfFont {
   const encoding = nameOf(context, font.get(PDFName.of("Encoding")));
-  if (encoding !== "Identity-H") return unsupported(`police composite (encodage ${encoding ?? "intégré"})`);
-  if (!toUnicode) return unsupported("police composite sans table ToUnicode");
+  if (encoding !== "Identity-H") return unsupported(t().pdf.fonts.composite(encoding));
+  if (!toUnicode) return unsupported(t().pdf.fonts.compositeNoToUnicode);
   const descendant = dictOf(context, arrayOf(context, font.get(PDFName.of("DescendantFonts")))?.[0]);
-  if (!descendant) return unsupported("police composite mal formée");
+  if (!descendant) return unsupported(t().pdf.fonts.compositeMalformed);
   const dw = numberOf(context, descendant.get(PDFName.of("DW"))) ?? 1000;
   const widths = new Map<number, number>();
   const w = arrayOf(context, descendant.get(PDFName.of("W"))) ?? [];
@@ -276,20 +277,20 @@ function loadType0(context: PDFContext, font: PDFDict, toUnicode: Map<number, st
 
 export function loadFont(context: PDFContext, obj: PDFObject | undefined): PdfFont {
   const font = dictOf(context, obj);
-  if (!font) return unsupported("police introuvable");
+  if (!font) return unsupported(t().pdf.fonts.notFound);
   const subtype = nameOf(context, font.get(PDFName.of("Subtype")));
   let toUnicode: Map<number, string> | null = null;
   try {
     const bytes = streamBytes(context, font.get(PDFName.of("ToUnicode")));
     if (bytes) toUnicode = parseToUnicode(bytes);
   } catch {
-    return unsupported("table ToUnicode illisible");
+    return unsupported(t().pdf.fonts.toUnicodeUnreadable);
   }
   if (subtype === "Type1" || subtype === "TrueType" || subtype === "MMType1") {
     return loadSimple(context, font, toUnicode);
   }
   if (subtype === "Type0") return loadType0(context, font, toUnicode);
-  return unsupported(`police ${subtype ?? "inconnue"}`);
+  return unsupported(t().pdf.fonts.other(subtype));
 }
 
 /** Découpe une chaîne en codes de caractères selon la police. */

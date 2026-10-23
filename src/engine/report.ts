@@ -1,43 +1,11 @@
 // Rapports Markdown (§7) et structures parallèles pour l'affichage React.
 // Les rapports ne contiennent jamais de valeur d'origine : les extraits de contexte sont pris dans le
 // texte anonymisé (pour « Vérifier », dans le texte vérifié, qui est censé être déjà anonymisé).
-import { pl } from "./plural.ts";
+import { t } from "../i18n/index.ts";
 import type { Mapping } from "./mapping.ts";
 import { ENTITY_TYPES, type EntityType, type Format, type SegmentKind } from "./types.ts";
 
 export const CONTEXT_RADIUS = 40;
-export const MAPPING_REMINDER = "Le mapping contient les données en clair. Ne pas transmettre.";
-
-export const TYPE_LABELS: Readonly<Record<EntityType, string>> = {
-  PERSON: "Personne",
-  ORGANIZATION: "Organisation",
-  LOCATION: "Lieu",
-  EMAIL_ADDRESS: "E-mail",
-  PHONE_NUMBER: "Téléphone",
-  IBAN_CODE: "IBAN",
-  CREDIT_CARD: "Carte bancaire",
-  URL: "URL",
-  IP_ADDRESS: "Adresse IP",
-  FR_NIR: "NIR",
-};
-
-export const SOURCE_LABELS: Readonly<Record<string, string>> = {
-  ner: "IA (NER)",
-  regex: "motif",
-  names: "liste de noms",
-  columns: "colonne",
-};
-
-export const KIND_LABELS: Readonly<Record<SegmentKind, string>> = {
-  body: "corps",
-  header: "en-tête",
-  footer: "pied de page",
-  footnote: "note",
-  comment: "commentaire",
-  notes: "notes du présentateur",
-  cell: "cellule",
-};
-
 export interface Context {
   before: string;
   match: string;
@@ -64,8 +32,12 @@ const cell = (s: string) =>
 const code = (s: string) => (s.includes("`") ? `\`\` ${s} \`\`` : `\`${s}\``);
 const contextMd = (c: Context) => `${cell(c.before)}**${cell(c.match)}**${cell(c.after)}`;
 
+const typeLabel = (type: EntityType) => t().labels.types[type];
+const sourceLabel = (source: string) => t().labels.sources[source] ?? source;
+
 function warningsSection(warnings: readonly string[]): string[] {
-  return ["## Avertissements", "", ...(warnings.length ? warnings.map((w) => `- ${w}`) : ["Aucun."]), ""];
+  const m = t().report;
+  return [`## ${m.warnings}`, "", ...(warnings.length ? warnings.map((w) => `- ${w}`) : [m.none]), ""];
 }
 
 // ---------------------------------------------------------------------------
@@ -113,30 +85,33 @@ export function buildAnonymizeReport(
 
 export function anonymizeReportMarkdown(r: AnonymizeReport): string {
   const total = r.rows.length;
+  const { report: m, colon } = t();
   return [
-    `# Rapport de détection — ${r.fileName}`,
+    `# ${m.detectionTitle(r.fileName)}`,
     "",
-    `- Fichier : ${code(r.fileName)}`,
-    `- Format : ${r.format}`,
-    `- Détection par IA (NER) : ${r.ner ? "activée" : "désactivée"}`,
-    `- Entités distinctes remplacées : ${total}`,
-    ...ENTITY_TYPES.filter((t) => r.counts[t]).map((t) => `  - ${TYPE_LABELS[t]} : ${r.counts[t] ?? 0}`),
+    `- ${m.file}${colon}${code(r.fileName)}`,
+    `- ${m.format}${colon}${r.format}`,
+    `- ${m.ner(r.ner)}`,
+    `- ${m.replacedEntities}${colon}${total}`,
+    ...ENTITY_TYPES.filter((type) => r.counts[type]).map(
+      (type) => `  - ${typeLabel(type)}${colon}${r.counts[type] ?? 0}`,
+    ),
     "",
-    "## Remplacements",
+    `## ${m.replacements}`,
     "",
     ...(total
       ? [
-          "| Token | Type | Source | Occurrences | Contexte (première occurrence) |",
+          `| ${m.token} | ${m.type} | ${m.source} | ${m.occurrences} | ${m.firstContext} |`,
           "|---|---|---|---:|---|",
           ...r.rows.map(
             (row) =>
-              `| ${row.token} | ${TYPE_LABELS[row.type]} | ${SOURCE_LABELS[row.source] ?? row.source} | ${row.occurrences} | ${contextMd(row.context)} |`,
+              `| ${row.token} | ${typeLabel(row.type)} | ${sourceLabel(row.source)} | ${row.occurrences} | ${contextMd(row.context)} |`,
           ),
         ]
-      : ["Aucune entité détectée."]),
+      : [m.noEntity]),
     "",
     ...warningsSection(r.warnings),
-    `> **${MAPPING_REMINDER}**`,
+    `> **${t().mappingReminder}**`,
     "",
   ].join("\n");
 }
@@ -160,25 +135,26 @@ export interface CheckReport {
 }
 
 export function checkReportMarkdown(r: CheckReport): string {
+  const { report: m, colon } = t();
   return [
-    `# Vérification — ${r.fileName}`,
+    `# ${m.checkTitle(r.fileName)}`,
     "",
-    r.rows.length === 0
-      ? "Aucune donnée personnelle détectée (les tokens existants sont ignorés)."
-      : `**${pl(r.rows.length, "élément ressemble", "éléments ressemblent")} encore à des données personnelles.**`,
+    r.rows.length === 0 ? m.nothingDetected : `**${t().stillLooksPersonal(r.rows.length)}**`,
     "",
     ...(r.rows.length
       ? [
-          "| Texte | Type | Source | Emplacement | Contexte |",
+          `| ${m.text} | ${m.type} | ${m.source} | ${m.location} | ${m.context} |`,
           "|---|---|---|---|---|",
           ...r.rows.map(
             (row) =>
-              `| ${cell(row.text)} | ${TYPE_LABELS[row.type]} | ${SOURCE_LABELS[row.source] ?? row.source} | ${KIND_LABELS[row.kind]} | ${contextMd(row.context)} |`,
+              `| ${cell(row.text)} | ${typeLabel(row.type)} | ${sourceLabel(row.source)} | ${t().labels.kinds[row.kind]} | ${contextMd(row.context)} |`,
           ),
           "",
         ]
       : []),
-    ...(r.notices.length ? ["## À signaler", "", ...r.notices.map((n) => `- ${n.where} : ${cell(n.text)}`), ""] : []),
+    ...(r.notices.length
+      ? [`## ${m.toReport}`, "", ...r.notices.map((n) => `- ${n.where}${colon}${cell(n.text)}`), ""]
+      : []),
     ...warningsSection(r.warnings),
   ].join("\n");
 }
@@ -217,34 +193,35 @@ export function buildRestoreReport(
 const byToken = (a: { token: string }, b: { token: string }) => a.token.localeCompare(b.token);
 
 export function restoreReportMarkdown(r: RestoreReport): string {
+  const m = t().report;
   return [
-    `# Rapport de restauration — ${r.fileName}`,
+    `# ${m.restoreTitle(r.fileName)}`,
     "",
     ...(r.unknown.length
       ? [
-          "## ⚠ Erreur : tokens inconnus",
+          `## ${m.unknownTokensTitle}`,
           "",
-          `${pl(r.unknown.length, "token au format polyjuice est absent du mapping et a été laissé tel quel", "tokens au format polyjuice sont absents du mapping et ont été laissés tels quels")}. Vérifiez que le mapping correspond bien à ce document.`,
+          m.unknownTokens(r.unknown.length),
           "",
-          "| Token | Occurrences |",
+          `| ${m.token} | ${m.occurrences} |`,
           "|---|---:|",
           ...r.unknown.map((u) => `| ${u.token} | ${u.occurrences} |`),
           "",
         ]
       : []),
-    "## Tokens restaurés",
+    `## ${m.restoredTokens}`,
     "",
     ...(r.found.length
       ? [
-          "| Token | Type | Occurrences |",
+          `| ${m.token} | ${m.type} | ${m.occurrences} |`,
           "|---|---|---:|",
-          ...r.found.map((f) => `| ${f.token} | ${TYPE_LABELS[f.type]} | ${f.occurrences} |`),
+          ...r.found.map((f) => `| ${f.token} | ${typeLabel(f.type)} | ${f.occurrences} |`),
         ]
-      : ["Aucun token du mapping n'a été trouvé dans ce document."]),
+      : [m.noTokenFound]),
     "",
-    "## Tokens du mapping non retrouvés (information)",
+    `## ${m.missingTokens}`,
     "",
-    ...(r.missing.length ? r.missing.map((m) => `- ${m.token} (${TYPE_LABELS[m.type]})`) : ["Aucun."]),
+    ...(r.missing.length ? r.missing.map((x) => `- ${x.token} (${typeLabel(x.type)})`) : [m.none]),
     "",
     ...warningsSection(r.warnings),
   ].join("\n");

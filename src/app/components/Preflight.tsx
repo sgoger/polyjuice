@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import type { Inspection } from "../../worker/protocol.ts";
+import { useT } from "../messages/index.ts";
 import { preflightMessage } from "../preflight.ts";
 import { engine } from "../useEngine.ts";
 import { Banner } from "./Banner.tsx";
@@ -13,6 +14,7 @@ const OFFICE = /\.(docx|pptx|xlsx|docm|pptm|xlsm)$/i;
 export function Preflight({ file }: { file: File | null }) {
   const [inspected, setInspected] = useState<{ file: File; inspection: Inspection | null } | null>(null);
   const office = !!file && OFFICE.test(file.name);
+  const m = useT();
 
   useEffect(() => {
     if (!file || !office) return;
@@ -35,11 +37,11 @@ export function Preflight({ file }: { file: File | null }) {
   if (inspected?.file !== file) {
     return (
       <p className="text-sm text-slate-600" aria-live="polite" data-testid="preflight-pending">
-        Recherche de commentaires et de révisions…
+        {m.preflight.pending}
       </p>
     );
   }
-  const message = preflightMessage(inspected.inspection);
+  const message = preflightMessage(inspected.inspection, m);
   if (!message) return null;
   return (
     <div data-testid="preflight">

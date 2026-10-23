@@ -2,6 +2,7 @@
 // Fins de ligne et BOM préservés. En Markdown, les blocs de code clôturés et les cibles de liens et
 // d'images `](…)` ne sont jamais modifiés ; le texte des liens est traité.
 import type { Adapter, Doc, Segment } from "../engine/types.ts";
+import { t } from "../i18n/index.ts";
 
 interface Locator {
   line: number;
@@ -94,9 +95,7 @@ export function readText(file: ArrayBuffer, markdown: boolean, format: "txt" | "
     }
   }
   const state: State = { bom, lines, seps };
-  const warnings = fence
-    ? ["Bloc de code Markdown non refermé : tout le texte qui suit l'ouverture du bloc n'est pas traité."]
-    : [];
+  const warnings = fence ? [t().text.unclosedFence] : [];
   return { format, outputExtension: format, segments, warnings, state };
 }
 

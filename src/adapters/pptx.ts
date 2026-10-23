@@ -1,5 +1,5 @@
 // Adaptateur .pptx (PresentationML / DrawingML brut).
-import { pl } from "../engine/plural.ts";
+import { t } from "../i18n/index.ts";
 import type { Adapter, Doc, SegmentKind } from "../engine/types.ts";
 import { inspectPptx } from "./inspect.ts";
 import {
@@ -35,8 +35,7 @@ async function read(file: ArrayBuffer): Promise<Doc> {
   const pkg = await OoxmlPackage.open(file);
   const warnings: string[] = [];
   const names = pkg.names();
-  if (!names.includes("ppt/presentation.xml"))
-    throw new Error("ppt/presentation.xml absent : ce n'est pas une présentation");
+  if (!names.includes("ppt/presentation.xml")) throw new Error(t().pptx.notPresentation);
   const specs: PartSpec[] = [];
   for (const [re, kind] of PARTS) {
     for (const name of names.filter((n) => re.test(n)).sort(byNumber)) {
@@ -47,11 +46,9 @@ async function read(file: ArrayBuffer): Promise<Doc> {
   warnings.push(...contentWarnings(pkg, "ppt"));
   const { comments, peopleList } = await inspectPptx(pkg);
   if (comments) {
-    warnings.push(
-      `${pl(comments, "commentaire de diapositive", "commentaires de diapositives")} : texte et noms des auteurs restent en clair (non traités). Supprimez les commentaires dans PowerPoint, puis anonymisez à nouveau.`,
-    );
+    warnings.push(t().pptx.comments(comments));
   } else if (peopleList) {
-    warnings.push("Liste des auteurs de commentaires conservée telle quelle (noms en clair).");
+    warnings.push(t().pptx.peopleList);
   }
   const notices = await externalTargets(pkg);
   for (const part of state.parts.values()) notices.push(...altTexts(part.parsed.doc));

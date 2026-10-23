@@ -1,6 +1,7 @@
 import { useId } from "react";
 import { NER_DOWNLOAD_MB } from "../../engine/detectors/ner.ts";
 import type { Progress } from "../../engine/types.ts";
+import { useT } from "../messages/index.ts";
 
 interface Props {
   checked: boolean;
@@ -32,6 +33,7 @@ export function NerToggle({
       ? Math.round(((progress.loaded ?? 0) / progress.total) * 100)
       : null;
   const active = checked && !disabled;
+  const m = useT().ner;
   return (
     <div className="space-y-1">
       <div className="flex items-start gap-2">
@@ -47,43 +49,42 @@ export function NerToggle({
           className="mt-1 size-4"
         />
         <label htmlFor={id} className={disabled ? "text-slate-500" : ""}>
-          Activer la détection de noms par IA (modèle téléchargé une fois, ~{NER_DOWNLOAD_MB} Mo)
+          {m.label(NER_DOWNLOAD_MB)}
           {disabled && disabledReason && <span className="block text-sm">{disabledReason}</span>}
         </label>
       </div>
       <p id={noteId} className="pl-6 text-sm text-slate-600">
-        Repère les noms de personnes et de lieux. Le modèle est téléchargé une fois, au premier document déposé, puis
-        gardé en cache par le navigateur ; aucune donnée de vos documents n'est envoyée.
+        {m.note}
       </p>
       {active && status === "loading" && (
         <div className="space-y-1 pl-6" aria-live="polite">
-          <progress
-            className="h-2 w-full"
-            max={100}
-            value={pct ?? undefined}
-            aria-label="Chargement du modèle de détection par IA"
-          />
+          <progress className="h-2 w-full" max={100} value={pct ?? undefined} aria-label={m.progressLabel} />
           <div className="flex items-center justify-between gap-4">
             <p className="text-sm text-slate-600">
               {progress?.status === "init" || progress?.status === "ready"
-                ? "Initialisation du modèle…"
+                ? m.initializing
                 : pct !== null
-                  ? `Téléchargement du modèle : ${pct} % (${Math.round((progress?.loaded ?? 0) / 1e6)} Mo sur ${Math.round((progress?.total ?? 0) / 1e6)} Mo)`
-                  : "Préparation du modèle…"}
+                  ? m.downloading(
+                      pct,
+                      Math.round((progress?.loaded ?? 0) / 1e6),
+                      Math.round((progress?.total ?? 0) / 1e6),
+                    )
+                  : m.preparing}
             </p>
             <button
               type="button"
               onClick={onCancel}
               className="rounded-md border border-slate-400 px-2 py-1 text-sm hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-600"
             >
-              Annuler le téléchargement
+              {m.cancel}
             </button>
           </div>
         </div>
       )}
       {active && status === "ready" && (
         <p className="pl-6 text-sm text-slate-700" aria-live="polite">
-          ✓ Modèle prêt.{backend && ` Calcul : ${backend}.`}
+          {m.ready}
+          {backend && m.backend(backend)}
         </p>
       )}
       {status === "error" && error && (

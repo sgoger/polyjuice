@@ -8,9 +8,24 @@ import { RestoreTab } from "./RestoreTab.tsx";
 import { glossaryStore } from "./glossary.ts";
 import { GlossaryContext, type GlossaryPersistence, type SharedSettings } from "./settings.ts";
 import { engine } from "./useEngine.ts";
+import { LanguageSwitch } from "./components/LanguageSwitch.tsx";
+import { LocaleContext, uiMessagesFor } from "./messages/index.ts";
+import type { UiMessages } from "./messages/fr.tsx";
+import { getLocale, setLocale, type Locale } from "../i18n/index.ts";
 
 export function App() {
   const [tab, setTab] = useState("anonymize");
+  // Langue détectée au démarrage (main.tsx), modifiable par le sélecteur en haut à droite. La valeur
+  // du module i18n suit l'état : elle sert aux messages hors React et est transmise au Worker.
+  const [locale, setLocaleState] = useState<Locale>(getLocale);
+  const changeLocale = useCallback((l: Locale) => {
+    setLocale(l);
+    setLocaleState(l);
+  }, []);
+  useEffect(() => {
+    document.documentElement.lang = locale;
+  }, [locale]);
+  const m = uiMessagesFor(locale);
   // Glossaire de noms : restauré au chargement seulement si l'utilisateur a demandé à le mémoriser.
   const [store] = useState(() => glossaryStore());
   const [saved] = useState(() => store.load());
@@ -23,7 +38,7 @@ export function App() {
   const [nerStatus, setNerStatus] = useState<SharedSettings["nerStatus"]>("idle");
   const [nerProgress, setNerProgress] = useState<Progress | null>(null);
   const [nerError, setNerError] = useState<string | null>(null);
-  const [nerBackend, setNerBackend] = useState<string | null>(null);
+  const [nerDevice, setNerDevice] = useState<{ device: string; threads: number } | null>(null);
   // Évite deux chargements si deux appels précèdent la mise à jour de nerStatus.
   const nerLoading = useRef(false);
 
@@ -36,7 +51,7 @@ export function App() {
     engine()
       .call("loadNer", {}, { onNerProgress: setNerProgress })
       .promise.then(({ device, threads }) => {
-        setNerBackend(backendLabel(device, threads));
+        setNerDevice({ device, threads });
         setNerStatus("ready");
       })
       .catch((e: unknown) => {
@@ -123,49 +138,49 @@ export function App() {
     nerStatus,
     nerProgress,
     nerError,
-    nerBackend,
+    nerBackend: nerDevice && backendLabel(nerDevice.device, nerDevice.threads, m.backend),
   };
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <header className="border-b border-slate-200 bg-white">
-        <div className="mx-auto max-w-5xl px-6 py-4">
-          <h1 className="text-2xl font-semibold">polyjuice</h1>
-          <p className="text-slate-600">
-            Pseudonymiser un document avant de l'envoyer à un outil externe, puis restaurer les données d'origine.
-          </p>
-        </div>
-      </header>
-      <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-6">
-        <GlossaryContext value={glossary}>
-          <Tabs
-            active={tab}
-            onChange={setTab}
-            tabs={[
-              { id: "anonymize", label: "Anonymiser", content: <AnonymizeTab settings={settings} /> },
-              { id: "restore", label: "Restaurer", content: <RestoreTab /> },
-              {
-                id: "check",
-                label: "Vérifier (facultatif)",
-                content: <CheckTab settings={settings} />,
-                secondary: true,
-              },
-            ]}
-          />
-        </GlossaryContext>
-      </main>
-      <footer className="sm:sticky bottom-0 border-t border-slate-300 bg-slate-800 text-white">
-        <p className="mx-auto max-w-5xl px-6 py-3 text-sm">
-          🔒 Aucune donnée ne quitte votre navigateur. Cet outil pseudonymise ; les documents produits restent des
-          données personnelles au sens du RGPD.
-        </p>
-      </footer>
-    </div>
+    <LocaleContext value={locale}>
+      <div className="flex min-h-screen flex-col">
+        <header className="border-b border-slate-200 bg-white">
+          <div className="mx-auto flex max-w-5xl items-start justify-between gap-4 px-6 py-4">
+            <div>
+              <h1 className="text-2xl font-semibold">polyjuice</h1>
+              <p className="text-slate-600">{m.tagline}</p>
+            </div>
+            <LanguageSwitch value={locale} onChange={changeLocale} />
+          </div>
+        </header>
+        <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-6">
+          <GlossaryContext value={glossary}>
+            <Tabs
+              active={tab}
+              onChange={setTab}
+              tabs={[
+                { id: "anonymize", label: m.tabs.anonymize, content: <AnonymizeTab settings={settings} /> },
+                { id: "restore", label: m.tabs.restore, content: <RestoreTab /> },
+                {
+                  id: "check",
+                  label: m.tabs.check,
+                  content: <CheckTab settings={settings} />,
+                  secondary: true,
+                },
+              ]}
+            />
+          </GlossaryContext>
+        </main>
+        <footer className="sm:sticky bottom-0 border-t border-slate-300 bg-slate-800 text-white">
+          <p className="mx-auto max-w-5xl px-6 py-3 text-sm">{m.footer}</p>
+        </footer>
+      </div>
+    </LocaleContext>
   );
 }
 
-function backendLabel(device: string, threads: number): string {
-  if (device === "webgpu") return "WebGPU (carte graphique)";
-  if (device === "wasm") return `WASM, ${threads} ${threads > 1 ? "cœurs" : "cœur"}`;
+function backendLabel(device: string, threads: number, labels: UiMessages["backend"]): string {
+  if (device === "webgpu") return labels.webgpu;
+  if (device === "wasm") return labels.wasm(threads);
   return device;
 }

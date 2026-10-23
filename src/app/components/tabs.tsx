@@ -1,4 +1,5 @@
 import { useRef, type KeyboardEvent, type ReactNode } from "react";
+import { useT } from "../messages/index.ts";
 
 export interface TabDef {
   id: string;
@@ -11,6 +12,7 @@ export interface TabDef {
 /** Onglets accessibles (motif WAI-ARIA) : flèches gauche/droite, Début, Fin. */
 export function Tabs({ tabs, active, onChange }: { tabs: TabDef[]; active: string; onChange: (id: string) => void }) {
   const refs = useRef<Record<string, HTMLButtonElement | null>>({});
+  const m = useT();
   const onKey = (e: KeyboardEvent, i: number) => {
     const n = tabs.length;
     const next =
@@ -33,7 +35,7 @@ export function Tabs({ tabs, active, onChange }: { tabs: TabDef[]; active: strin
   };
   return (
     <div>
-      <div role="tablist" aria-label="Actions" className="flex gap-1 border-b border-slate-300">
+      <div role="tablist" aria-label={m.tabs.label} className="flex gap-1 border-b border-slate-300">
         {tabs.map((t, i) => (
           <button
             key={t.id}

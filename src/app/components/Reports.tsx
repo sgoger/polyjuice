@@ -1,15 +1,6 @@
-import { pl } from "../../engine/plural.ts";
-import {
-  KIND_LABELS,
-  MAPPING_REMINDER,
-  SOURCE_LABELS,
-  TYPE_LABELS,
-  type AnonymizeReport,
-  type CheckReport,
-  type Context,
-  type RestoreReport,
-} from "../../engine/report.ts";
+import type { AnonymizeReport, CheckReport, Context, RestoreReport } from "../../engine/report.ts";
 import { ENTITY_TYPES } from "../../engine/types.ts";
+import { useEngineT, useT } from "../messages/index.ts";
 
 function Ctx({ c }: { c: Context }) {
   return (
@@ -25,21 +16,27 @@ const th = "border-b border-slate-300 px-2 py-1 text-left font-semibold";
 const td = "border-b border-slate-200 px-2 py-1 align-top";
 
 export function AnonymizeReportView({ r }: { r: AnonymizeReport }) {
+  const m = useT().reports;
+  const { labels, report, colon, mappingReminder } = useEngineT();
   return (
     <section aria-labelledby="rapport-detection" className="space-y-3">
       <h3 id="rapport-detection" className="text-lg font-semibold">
-        Rapport de détection
+        {m.detection}
       </h3>
       <ul className="text-sm">
         <li>
-          Fichier : <span className="font-mono">{r.fileName}</span> ({r.format})
+          {report.file}
+          {colon}
+          <span className="font-mono">{r.fileName}</span> ({r.format})
         </li>
-        <li>Détection par IA : {r.ner ? "activée" : "désactivée"}</li>
+        <li>{m.ner(r.ner)}</li>
         <li>
-          Entités distinctes remplacées : {r.rows.length}
+          {report.replacedEntities}
+          {colon}
+          {r.rows.length}
           {r.rows.length > 0 &&
-            ` (${ENTITY_TYPES.filter((t) => r.counts[t])
-              .map((t) => `${TYPE_LABELS[t]} : ${r.counts[t] ?? 0}`)
+            ` (${ENTITY_TYPES.filter((type) => r.counts[type])
+              .map((type) => `${labels.types[type]}${colon}${r.counts[type] ?? 0}`)
               .join(", ")})`}
         </li>
       </ul>
@@ -48,19 +45,19 @@ export function AnonymizeReportView({ r }: { r: AnonymizeReport }) {
           <table className="w-full border-collapse text-sm">
             <thead>
               <tr>
-                <th className={th}>Token</th>
-                <th className={th}>Type</th>
-                <th className={th}>Source</th>
-                <th className={`${th} text-right`}>Occurrences</th>
-                <th className={th}>Contexte (première occurrence)</th>
+                <th className={th}>{report.token}</th>
+                <th className={th}>{report.type}</th>
+                <th className={th}>{report.source}</th>
+                <th className={`${th} text-right`}>{report.occurrences}</th>
+                <th className={th}>{report.firstContext}</th>
               </tr>
             </thead>
             <tbody>
               {r.rows.map((row) => (
                 <tr key={row.token}>
                   <td className={`${td} font-mono whitespace-nowrap`}>{row.token}</td>
-                  <td className={td}>{TYPE_LABELS[row.type]}</td>
-                  <td className={td}>{SOURCE_LABELS[row.source] ?? row.source}</td>
+                  <td className={td}>{labels.types[row.type]}</td>
+                  <td className={td}>{labels.sources[row.source] ?? row.source}</td>
                   <td className={`${td} text-right`}>{row.occurrences}</td>
                   <td className={td}>
                     <Ctx c={row.context} />
@@ -71,39 +68,41 @@ export function AnonymizeReportView({ r }: { r: AnonymizeReport }) {
           </table>
         </div>
       ) : (
-        <p>Aucune entité détectée.</p>
+        <p>{report.noEntity}</p>
       )}
-      <p className="text-sm font-semibold text-red-800">⚠ {MAPPING_REMINDER}</p>
+      <p className="text-sm font-semibold text-red-800">⚠ {mappingReminder}</p>
     </section>
   );
 }
 
 export function CheckReportView({ r }: { r: CheckReport }) {
+  const m = useT().reports;
+  const { labels, report, colon } = useEngineT();
   if (r.rows.length === 0 && r.notices.length === 0) return null;
   return (
     <section aria-labelledby="rapport-verification" className="space-y-3">
       <h3 id="rapport-verification" className="text-lg font-semibold">
-        Éléments encore détectés
+        {m.stillDetected}
       </h3>
       {r.rows.length > 0 && (
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-sm">
             <thead>
               <tr>
-                <th className={th}>Texte</th>
-                <th className={th}>Type</th>
-                <th className={th}>Source</th>
-                <th className={th}>Emplacement</th>
-                <th className={th}>Contexte</th>
+                <th className={th}>{report.text}</th>
+                <th className={th}>{report.type}</th>
+                <th className={th}>{report.source}</th>
+                <th className={th}>{report.location}</th>
+                <th className={th}>{report.context}</th>
               </tr>
             </thead>
             <tbody>
               {r.rows.map((row, i) => (
                 <tr key={i}>
                   <td className={`${td} font-mono`}>{row.text}</td>
-                  <td className={td}>{TYPE_LABELS[row.type]}</td>
-                  <td className={td}>{SOURCE_LABELS[row.source] ?? row.source}</td>
-                  <td className={td}>{KIND_LABELS[row.kind]}</td>
+                  <td className={td}>{labels.types[row.type]}</td>
+                  <td className={td}>{labels.sources[row.source] ?? row.source}</td>
+                  <td className={td}>{labels.kinds[row.kind]}</td>
                   <td className={td}>
                     <Ctx c={row.context} />
                   </td>
@@ -117,7 +116,9 @@ export function CheckReportView({ r }: { r: CheckReport }) {
         <ul className="list-disc pl-5 text-sm">
           {r.notices.map((n, i) => (
             <li key={i}>
-              {n.where} : <span className="font-mono">{n.text}</span> (non modifié)
+              {n.where}
+              {colon}
+              <span className="font-mono">{n.text}</span> {m.unchanged}
             </li>
           ))}
         </ul>
@@ -127,14 +128,16 @@ export function CheckReportView({ r }: { r: CheckReport }) {
 }
 
 export function RestoreReportView({ r }: { r: RestoreReport }) {
+  const m = useT().reports;
+  const { labels } = useEngineT();
   return (
     <section aria-labelledby="rapport-restauration" className="space-y-3">
       <h3 id="rapport-restauration" className="text-lg font-semibold">
-        Rapport de restauration
+        {m.restore}
       </h3>
       {r.unknown.length > 0 && (
         <div className="text-sm">
-          <p className="font-semibold text-red-800">Tokens inconnus (laissés tels quels) :</p>
+          <p className="font-semibold text-red-800">{m.unknownTokens}</p>
           <ul className="list-disc pl-5 font-mono">
             {r.unknown.map((u) => (
               <li key={u.token}>
@@ -145,24 +148,18 @@ export function RestoreReportView({ r }: { r: RestoreReport }) {
         </div>
       )}
       <p className="text-sm">
-        {pl(r.found.length, "token restauré", "tokens restaurés")} (
-        {pl(
+        {m.restored(
+          r.found.length,
           r.found.reduce((a, f) => a + f.occurrences, 0),
-          "occurrence",
-          "occurrences",
         )}
-        ).
       </p>
       {r.missing.length > 0 && (
         <details className="text-sm">
-          <summary className="cursor-pointer">
-            {pl(r.missing.length, "token du mapping non retrouvé", "tokens du mapping non retrouvés")} dans ce document
-            (information)
-          </summary>
+          <summary className="cursor-pointer">{m.missing(r.missing.length)}</summary>
           <ul className="list-disc pl-5 font-mono">
-            {r.missing.map((m) => (
-              <li key={m.token}>
-                {m.token} ({TYPE_LABELS[m.type]})
+            {r.missing.map((x) => (
+              <li key={x.token}>
+                {x.token} ({labels.types[x.type]})
               </li>
             ))}
           </ul>

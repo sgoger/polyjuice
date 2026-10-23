@@ -10,6 +10,8 @@ A static web application that **pseudonymizes** office documents before they are
 
 The page has two main tabs, « Anonymiser » and « Restaurer », and an optional one, « Vérifier (facultatif) », set apart on the right. Each tab is a short sequence of numbered steps; once processing starts, the steps fold into a one-line summary (file, settings) with « Modifier les réglages » (change settings, same file) and « ↺ Recommencer » (start over) buttons.
 
+The interface is available in French and German. It opens in German when the browser's preferred language is German, in French otherwise; the « FR | DE » switch in the top right corner changes it at any time (the choice is not stored). Warnings, error messages and the Markdown reports follow the interface language; file names, tokens and the mapping format do not change. The labels quoted below are the French ones.
+
 ### Anonymiser
 
 The « Anonymiser » (anonymize) tab guides you through three numbered steps, then shows the result. The full cycle is: anonymize the document here → send the anonymized document to the external tool → restore the document it returns in the « Restaurer » tab, with the mapping.

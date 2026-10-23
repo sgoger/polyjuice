@@ -1,18 +1,20 @@
-import { pl } from "../../engine/plural.ts";
 import type { ReactNode } from "react";
+import { useEngineT, useT } from "../messages/index.ts";
 
 type Tone = "warning" | "success" | "error" | "info";
 
-const STYLES: Record<Tone, { box: string; icon: string; label: string }> = {
-  warning: { box: "border-amber-500 bg-amber-50 text-amber-950", icon: "⚠", label: "Avertissement" },
-  success: { box: "border-green-600 bg-green-50 text-green-950", icon: "✓", label: "Succès" },
-  error: { box: "border-red-600 bg-red-50 text-red-950", icon: "✕", label: "Erreur" },
-  info: { box: "border-slate-400 bg-slate-100 text-slate-900", icon: "ℹ", label: "Information" },
+const STYLES: Record<Tone, { box: string; icon: string }> = {
+  warning: { box: "border-amber-500 bg-amber-50 text-amber-950", icon: "⚠" },
+  success: { box: "border-green-600 bg-green-50 text-green-950", icon: "✓" },
+  error: { box: "border-red-600 bg-red-50 text-red-950", icon: "✕" },
+  info: { box: "border-slate-400 bg-slate-100 text-slate-900", icon: "ℹ" },
 };
 
 /** Bandeau : l'état est porté par une icône et un libellé, pas seulement par la couleur. */
 export function Banner({ tone, title, children }: { tone: Tone; title: string; children?: ReactNode }) {
   const s = STYLES[tone];
+  const label = useT().banner[tone];
+  const { colon } = useEngineT();
   return (
     <div
       role={tone === "error" || tone === "warning" ? "alert" : "status"}
@@ -21,7 +23,10 @@ export function Banner({ tone, title, children }: { tone: Tone; title: string; c
     >
       <p className="font-semibold">
         <span aria-hidden="true">{s.icon} </span>
-        <span className="sr-only">{s.label} : </span>
+        <span className="sr-only">
+          {label}
+          {colon}
+        </span>
         {title}
       </p>
       {children && <div className="mt-2 text-sm">{children}</div>}
@@ -31,18 +36,16 @@ export function Banner({ tone, title, children }: { tone: Tone; title: string; c
 
 export function WarningsBanner({
   warnings,
-  when,
+  beforeSending = false,
 }: {
   warnings: readonly string[];
-  /** Moment où les lire, ex. « avant l'envoi ». */
-  when?: string;
+  /** Avertissements à lire avant d'envoyer le document à l'outil externe. */
+  beforeSending?: boolean;
 }) {
+  const m = useT().banner;
   if (warnings.length === 0) return null;
   return (
-    <Banner
-      tone="warning"
-      title={`${pl(warnings.length, "avertissement", "avertissements")}${when ? ` — à lire ${when}` : ""}`}
-    >
+    <Banner tone="warning" title={m.warnings(warnings.length, beforeSending)}>
       <ul className="list-disc space-y-1 pl-5">
         {warnings.map((w) => (
           <li key={w}>{w}</li>

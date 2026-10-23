@@ -2,6 +2,7 @@
 import type { Inspection } from "../adapters/inspect.ts";
 import type { AnonymizeReport, CheckReport, RestoreReport } from "../engine/report.ts";
 import type { Progress } from "../engine/types.ts";
+import type { Locale } from "../i18n/index.ts";
 
 export interface AnonymizeParams {
   file: ArrayBuffer;
@@ -100,7 +101,13 @@ export interface ResultMap {
 export type RequestType = keyof RequestMap;
 
 export type Request = {
-  [K in RequestType]: { id: number; type: K; params: RequestMap[K] };
+  [K in RequestType]: {
+    id: number;
+    type: K;
+    params: RequestMap[K];
+    /** Langue des messages produits ; à défaut, celle déjà en cours dans le Worker. */
+    locale?: Locale;
+  };
 }[RequestType];
 
 export interface CancelMessage {

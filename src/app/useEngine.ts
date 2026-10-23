@@ -3,6 +3,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { Progress } from "../engine/types.ts";
 import { WorkerClient } from "../worker/client.ts";
 import { EngineError, type RequestMap, type RequestType, type ResultMap } from "../worker/protocol.ts";
+import { getLocale } from "../i18n/index.ts";
+import { uiMessagesFor } from "./messages/index.ts";
 
 export interface RunState {
   running: boolean;
@@ -58,12 +60,13 @@ export function useEngine() {
         if (active.current) setState({ ...idle, duration: duration() });
         return result;
       } catch (e) {
+        const m = uiMessagesFor(getLocale()).errors;
         const message =
           e instanceof EngineError
             ? e.code === "Cancelled"
-              ? "Traitement annulé."
+              ? m.cancelled
               : e.message
-            : `Erreur inattendue : ${e instanceof Error ? e.message : String(e)}`;
+            : m.unexpected(e instanceof Error ? e.message : String(e));
         if (active.current) setState({ ...idle, error: message, duration: duration() });
         return null;
       }

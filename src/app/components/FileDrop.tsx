@@ -1,5 +1,6 @@
 import { useId, useRef, useState, type DragEvent, type ReactNode } from "react";
 import { extensionOf, refusalMessage, signatureProblem } from "../../adapters/formats.ts";
+import { useT } from "../messages/index.ts";
 
 interface Props {
   label: string;
@@ -16,6 +17,7 @@ export function FileDrop({ label, accept, file, onFile, hint, testId }: Props) {
   const input = useRef<HTMLInputElement>(null);
   const [over, setOver] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const m = useT().fileDrop;
   /** Dernier fichier déposé : un dépôt plus récent l'emporte sur une lecture d'en-tête en cours. */
   const latest = useRef<File | null>(null);
 
@@ -75,9 +77,9 @@ export function FileDrop({ label, accept, file, onFile, hint, testId }: Props) {
           onClick={() => input.current?.click()}
           className="rounded-md bg-slate-800 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
         >
-          Choisir un fichier
+          {m.choose}
         </button>
-        <span className="text-sm text-slate-600">ou glisser-déposer ici</span>
+        <span className="text-sm text-slate-600">{m.orDrop}</span>
         {file && (
           <span className="flex items-center gap-2 text-sm">
             <span className="font-mono">{file.name}</span>
@@ -87,9 +89,9 @@ export function FileDrop({ label, accept, file, onFile, hint, testId }: Props) {
                 onFile(null);
               }}
               className="rounded px-1 text-slate-600 underline hover:text-slate-900"
-              aria-label={`Retirer ${file.name}`}
+              aria-label={m.removeLabel(file.name)}
             >
-              retirer
+              {m.remove}
             </button>
           </span>
         )}
