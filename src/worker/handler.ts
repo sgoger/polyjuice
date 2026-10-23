@@ -1,4 +1,5 @@
 // Traitement des requêtes, indépendant de l'objet Worker (testable en Node).
+import { inspect } from "../adapters/inspect.ts";
 import type { Progress } from "../engine/types.ts";
 import { TransformersNerProvider } from "../engine/detectors/ner.ts";
 import { anonymize, check, restore } from "./pipeline.ts";
@@ -57,6 +58,7 @@ export const defaultHandlers: Handlers = {
   anonymize: (params, ctx) => anonymize(params, withNer(ctx)),
   check: (params, ctx) => check(params, withNer(ctx)),
   restore: (params, ctx) => restore(params, ctx),
+  inspect: (params) => inspect(params.fileName, params.file),
   loadNer: async (_params, ctx) => {
     const provider = await getNer(ctx);
     return { model: provider.model, device: provider.device ?? "?", threads: provider.threads };
@@ -105,6 +107,8 @@ async function run(msg: Request, handlers: Handlers, ctx: Context): Promise<From
       return { id: msg.id, type: "result", request: msg.type, result: await handlers.check(msg.params, ctx) };
     case "restore":
       return { id: msg.id, type: "result", request: msg.type, result: await handlers.restore(msg.params, ctx) };
+    case "inspect":
+      return { id: msg.id, type: "result", request: msg.type, result: await handlers.inspect(msg.params, ctx) };
     case "loadNer":
       return { id: msg.id, type: "result", request: msg.type, result: await handlers.loadNer(msg.params, ctx) };
   }
@@ -112,7 +116,7 @@ async function run(msg: Request, handlers: Handlers, ctx: Context): Promise<From
 
 /** Les ArrayBuffer des fichiers produits sont transférés, pas copiés. */
 function transferables(msg: FromWorker): Transferable[] {
-  if (msg.type !== "result") return [];
+  if (msg.type !== "result" || !msg.result) return [];
   const r = msg.result as unknown as Record<string, unknown>;
   return Object.values(r).flatMap((v) =>
     v && typeof v === "object" && "data" in v && v.data instanceof ArrayBuffer ? [v.data] : [],

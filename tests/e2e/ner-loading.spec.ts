@@ -37,7 +37,7 @@ test("case cochée par défaut, aucun chargement avant un dépôt ni pour un .xl
 
   // Document Word : le chargement démarre (ici il échoue : hors ligne simulé).
   await upload(page, "anonymize-file", "sample.docx", readFileSync(join(FIXTURES, "sample.docx")));
-  await expect(panel.getByRole("alert")).toContainText("n'a pas pu être chargé");
+  await expect(panel.getByRole("alert").filter({ hasText: "n'a pas pu être chargé" })).toBeVisible();
   expect(requests.length).toBeGreaterThan(0);
   await expect(nerBox(page)).not.toBeChecked();
 });

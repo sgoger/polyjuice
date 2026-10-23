@@ -2,6 +2,7 @@
 // Formules, nombres, dates, booléens, noms de feuilles, styles, graphiques et macros ne sont jamais touchés.
 import { pl } from "../engine/plural.ts";
 import type { Adapter, Doc, ReadOptions } from "../engine/types.ts";
+import { inspectXlsx } from "./inspect.ts";
 import {
   contentWarnings,
   externalTargets,
@@ -79,8 +80,13 @@ async function read(file: ArrayBuffer, options?: ReadOptions): Promise<Doc> {
   warnings.push(...contentWarnings(pkg, "xl"));
   if (names.includes("xl/vbaProject.bin"))
     warnings.push("Macros présentes (xl/vbaProject.bin) : copiées telles quelles, non analysées.");
-  if (names.some((n) => /^xl\/(comments\d*\.xml|threadedComments\/)/.test(n))) {
-    warnings.push("Commentaires ou notes de cellules présents : leur texte n'est pas traité.");
+  const { comments, notes, peopleList } = await inspectXlsx(pkg);
+  if (comments + notes) {
+    warnings.push(
+      `${pl(comments + notes, "commentaire ou note de cellule", "commentaires ou notes de cellules")} : texte et noms des auteurs restent en clair (non traités). Supprimez-les dans Excel, puis anonymisez à nouveau.`,
+    );
+  } else if (peopleList) {
+    warnings.push("Liste des auteurs de commentaires (xl/persons) conservée telle quelle (noms en clair).");
   }
 
   const notices = await externalTargets(pkg);

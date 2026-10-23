@@ -8,5 +8,7 @@ test("PDF : extraction dans le navigateur (pdf.js dans le Worker) → .md anonym
   expect(md).toContain("Compte rendu de réunion");
   expect(md).not.toContain("Jean Dupont");
   expect(md).toMatch(/⟦E-[A-Z0-9]{5}⟧/u);
-  await expect(panel.getByRole("alert").filter({ hasText: "avertissement" })).toContainText("PDF converti en Markdown");
+  await expect(panel.getByRole("alert").filter({ hasText: "à lire avant l'envoi" })).toContainText(
+    "PDF converti en Markdown",
+  );
 });

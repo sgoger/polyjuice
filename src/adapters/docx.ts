@@ -10,7 +10,8 @@ import {
   type PartSpec,
 } from "./ooxml/common.ts";
 import { WORD } from "./ooxml/runs.ts";
-import { elementsNS, NS, parseXml } from "./ooxml/xml.ts";
+import { inspectDocx } from "./inspect.ts";
+import { elementsNS, NS } from "./ooxml/xml.ts";
 import { OoxmlPackage } from "./ooxml/zip.ts";
 
 const PARTS: readonly [RegExp, SegmentKind][] = [
@@ -71,30 +72,19 @@ async function read(file: ArrayBuffer): Promise<Doc> {
 
 /** Les noms d'auteurs (commentaires, révisions) sont des attributs : ils ne sont pas traités. */
 async function authorWarnings(pkg: OoxmlPackage): Promise<string[]> {
-  const authors = new Set<string>();
-  for (const name of pkg
-    .names()
-    .filter((n) => /^word\/(document|comments|footnotes|endnotes|header\d*|footer\d*)\.xml$/.test(n))) {
-    try {
-      const { doc } = parseXml(await pkg.readText(name));
-      for (const local of ["comment", "ins", "del", "moveFrom", "moveTo", "rPrChange", "pPrChange"]) {
-        for (const el of elementsNS(doc, NS.w, local)) {
-          const a = el.getAttributeNS(NS.w, "author");
-          if (a) authors.add(a);
-        }
-      }
-    } catch {
-      // partie illisible : déjà signalée
-    }
-  }
+  const { authors, trackRevisions, peopleList } = await inspectDocx(pkg);
   const out: string[] = [];
-  if (authors.size) {
+  if (authors) {
     out.push(
-      `${pl(authors.size, "nom d'auteur", "noms d'auteurs")} de commentaires ou de révisions ${agree(authors.size, "conservé tel quel : il n'est pas anonymisé", "conservés tels quels : ils ne sont pas anonymisés")}.`,
+      `${pl(authors, "nom d'auteur", "noms d'auteurs")} de commentaires ou de révisions ${agree(authors, "reste en clair : il n'est pas anonymisé", "restent en clair : ils ne sont pas anonymisés")}. Pour ${agree(authors, "le", "les")} retirer, acceptez toutes les modifications et supprimez tous les commentaires dans Word, puis anonymisez à nouveau.`,
     );
   }
-  if (pkg.has("word/people.xml"))
+  if (peopleList)
     out.push("Liste des personnes ayant commenté ou révisé le document (word/people.xml) conservée telle quelle.");
+  if (trackRevisions)
+    out.push(
+      "Suivi des modifications activé : toute modification ultérieure du document anonymisé y sera enregistrée avec le nom de son auteur.",
+    );
   return out;
 }
 

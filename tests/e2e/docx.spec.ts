@@ -14,7 +14,7 @@ test("parcours .docx sans NER : anonymiser → vérifier → restaurer", async (
   const { panel, doc, mapping } = await anonymizeFile(page, "sample.docx");
 
   // Les avertissements sont visibles avant le bandeau de succès.
-  const banner = panel.getByRole("alert").filter({ hasText: "avertissement" });
+  const banner = panel.getByRole("alert").filter({ hasText: "à lire avant l'envoi" });
   await expect(banner).toContainText("image");
   await expect(banner).toContainText("Métadonnées vidées");
   const bannerBox = await banner.boundingBox();

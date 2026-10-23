@@ -5,12 +5,14 @@ import {
   CommentRangeEnd,
   CommentRangeStart,
   CommentReference,
+  DeletedTextRun,
   Document,
   ExternalHyperlink,
   Footer,
   FootnoteReferenceRun,
   Header,
   ImageRun,
+  InsertedTextRun,
   Packer,
   Paragraph,
   Table,
@@ -90,9 +92,17 @@ const PNG = Buffer.from(
 // ---------------------------------------------------------------------------
 // Utilitaires
 
-/** Rend un zip OOXML reproductible : dates fixes dans les entrées et dans docProps/core.xml. */
-async function normalizeZip(buf: Uint8Array | Buffer, patch: Record<string, (xml: string) => string> = {}) {
+/**
+ * Rend un zip OOXML reproductible : dates fixes dans les entrées et dans docProps/core.xml.
+ * `patch` réécrit des parties existantes, `add` ajoute des parties.
+ */
+async function normalizeZip(
+  buf: Uint8Array | Buffer,
+  patch: Record<string, (xml: string) => string> = {},
+  add: Record<string, string> = {},
+) {
   const zip = await JSZip.loadAsync(buf, { createFolders: false });
+  for (const [name, content] of Object.entries(add)) zip.file(name, content, { createFolders: false });
   const core = zip.file("docProps/core.xml");
   if (core) {
     const xml = (await core.async("string"))
@@ -507,6 +517,86 @@ async function makeText(): Promise<{ md: Expected[]; txt: Expected[] }> {
 }
 
 // ---------------------------------------------------------------------------
+// DOCX avec commentaires et révisions (inspection au dépôt)
+
+/**
+ * 2 commentaires, 4 révisions (2 insertions, 1 suppression, 1 changement de mise en forme), 3 auteurs
+ * distincts, suivi des modifications activé, word/people.xml présent.
+ */
+async function makeRevisionsDocx(): Promise<void> {
+  const rev = (id: number, author: string) => ({ id, author, date: FIXED_DATE.toISOString() });
+  const doc = new Document({
+    creator: D.sabine,
+    features: { trackRevisions: true },
+    comments: {
+      children: [
+        { id: 0, author: D.klaus, initials: "KM", date: FIXED_DATE, children: [p("Chiffre à confirmer.")] },
+        { id: 1, author: D.sabine, initials: "SW", date: FIXED_DATE, children: [p("D'accord.")] },
+      ],
+    },
+    sections: [
+      {
+        children: [
+          p("Compte rendu de réunion"),
+          new Paragraph({
+            children: [
+              new TextRun("Le budget passe à "),
+              new DeletedTextRun({ text: "10 000", ...rev(10, D.sabine) }),
+              new InsertedTextRun({ text: "12 000", ...rev(11, D.sabine) }),
+              new TextRun(" euros."),
+            ],
+          }),
+          new Paragraph({
+            children: [
+              new CommentRangeStart(0),
+              new TextRun("Prochaine réunion le 5 mai."),
+              new CommentRangeEnd(0),
+              new TextRun({ children: [new CommentReference(0)] }),
+              new CommentRangeStart(1),
+              new CommentRangeEnd(1),
+              new TextRun({ children: [new CommentReference(1)] }),
+            ],
+          }),
+          new Paragraph({
+            children: [
+              new TextRun({ text: "Point important", bold: true, revision: { ...rev(12, D.emily), bold: false } }),
+              new InsertedTextRun({ text: " à suivre.", ...rev(13, D.emily) }),
+            ],
+          }),
+        ],
+      },
+    ],
+  });
+  const W15 = "http://schemas.microsoft.com/office/word/2012/wordml";
+  const people = [D.sabine, D.emily]
+    .map(
+      (a) => `<w15:person w15:author="${a}"><w15:presenceInfo w15:providerId="None" w15:userId="${a}"/></w15:person>`,
+    )
+    .join("");
+  await writeFile(
+    new URL("revisions.docx", OUT),
+    await normalizeZip(
+      await Packer.toBuffer(doc),
+      {
+        "[Content_Types].xml": (xml) =>
+          xml.replace(
+            "</Types>",
+            '<Override PartName="/word/people.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.people+xml"/></Types>',
+          ),
+        "word/_rels/document.xml.rels": (xml) =>
+          xml.replace(
+            "</Relationships>",
+            '<Relationship Id="rIdPeople" Type="http://schemas.microsoft.com/office/2011/relationships/people" Target="people.xml"/></Relationships>',
+          ),
+      },
+      {
+        "word/people.xml": `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<w15:people xmlns:w15="${W15}">${people}</w15:people>`,
+      },
+    ),
+  );
+}
+
+// ---------------------------------------------------------------------------
 
 await mkdir(OUT, { recursive: true });
 const text = await makeText();
@@ -524,6 +614,7 @@ const expected = {
     "sample.txt": text.txt,
   },
 };
+await makeRevisionsDocx();
 await writeFile(new URL("expected.json", OUT), JSON.stringify(expected, null, 2) + "\n");
 await writeFile(new URL("fixture-names.txt", OUT), ["# Liste de noms fictifs des fixtures", ...NAMES, ""].join("\n"));
 console.log("Fixtures écrites dans", OUT.pathname);

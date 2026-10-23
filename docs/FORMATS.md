@@ -1,6 +1,6 @@
 # What is processed, format by format
 
-"Processed": the text is analyzed and detected data is replaced with tokens. "Flagged": not modified, but a warning is shown (banner, report, mapping) or the item is listed by « Vérifier » (verify). "Ignored": neither modified nor flagged.
+"Processed": the text is analyzed and detected data is replaced with tokens. "Flagged": not modified, but a warning is shown (banner, report, mapping) or the item is listed by « Vérifier » (verify). "Flagged at drop time": a warning banner appears as soon as the file is dropped, before any processing, with the steps to remove the item in Office; processing stays possible and the warning is repeated afterwards. "Ignored": neither modified nor flagged.
 
 ## `.txt`, `.md`
 
@@ -29,23 +29,23 @@
 | SmartArt (`word/diagrams`), charts (`word/charts`), OLE objects (`word/embeddings`)                                                            | flagged                                                                          |
 | Hyperlink targets (`*.rels`, e.g. `mailto:`)                                                                                                   | flagged if data is detected in them                                              |
 | Field codes (`w:instrText`)                                                                                                                    | flagged if data is detected in them                                              |
-| Comment and revision author names, `word/people.xml`                                                                                           | flagged                                                                          |
+| Comment and revision author names, `word/people.xml`, track changes switched on (`w:trackRevisions`)                                           | flagged at drop time (with comment and revision counts) and after processing     |
 | Titles copied into `docProps/app.xml`                                                                                                          | flagged                                                                          |
 | All other parts (styles, theme, numbering…)                                                                                                    | copied byte for byte                                                             |
 
 ## `.pptx`
 
-| Item                                                                                                   | Status                              |
-| ------------------------------------------------------------------------------------------------------ | ----------------------------------- |
-| Shapes, nested groups (at any depth), tables                                                           | processed                           |
-| Speaker notes                                                                                          | processed                           |
-| Masters and layouts (paragraphs containing text)                                                       | processed                           |
-| `a:fld` fields (slide number, date)                                                                    | ignored                             |
-| Metadata                                                                                               | same as `.docx`                     |
-| Images (`ppt/media`), SmartArt (`ppt/diagrams`), charts (`ppt/charts`), OLE objects (`ppt/embeddings`) | flagged                             |
-| Slide comments and their authors                                                                       | flagged                             |
-| Hyperlink targets                                                                                      | flagged if data is detected in them |
-| Slide titles copied into `docProps/app.xml`                                                            | flagged                             |
+| Item                                                                                                   | Status                                                                     |
+| ------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------- |
+| Shapes, nested groups (at any depth), tables                                                           | processed                                                                  |
+| Speaker notes                                                                                          | processed                                                                  |
+| Masters and layouts (paragraphs containing text)                                                       | processed                                                                  |
+| `a:fld` fields (slide number, date)                                                                    | ignored                                                                    |
+| Metadata                                                                                               | same as `.docx`                                                            |
+| Images (`ppt/media`), SmartArt (`ppt/diagrams`), charts (`ppt/charts`), OLE objects (`ppt/embeddings`) | flagged                                                                    |
+| Slide comments (legacy and modern) and their authors                                                   | flagged at drop time and after processing (text and authors not processed) |
+| Hyperlink targets                                                                                      | flagged if data is detected in them                                        |
+| Slide titles copied into `docProps/app.xml`                                                            | flagged                                                                    |
 
 ## `.xlsx`
 
@@ -59,7 +59,7 @@
 | Sheet names (`xl/workbook.xml`)                                   | never changed; listed by « Vérifier » if they contain detected data            |
 | Styles, charts, conditional formatting                            | copied byte for byte                                                           |
 | Macros (`xl/vbaProject.bin`)                                      | copied; flagged                                                                |
-| Cell comments and notes                                           | flagged                                                                        |
+| Cell comments, notes and their authors                            | flagged at drop time and after processing (text and authors not processed)     |
 | Metadata                                                          | same as `.docx`                                                                |
 | AI detection                                                      | always disabled (patterns, name list and columns only)                         |
 

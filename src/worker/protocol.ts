@@ -1,4 +1,5 @@
 // Protocole de messages typé entre l'interface et le Worker du moteur.
+import type { Inspection } from "../adapters/inspect.ts";
 import type { AnonymizeReport, CheckReport, RestoreReport } from "../engine/report.ts";
 import type { Progress } from "../engine/types.ts";
 
@@ -26,6 +27,14 @@ export interface RestoreParams {
   fileName: string;
   mapping: string;
 }
+
+/** Inspection rapide au dépôt (commentaires, révisions, auteurs), sans extraction du texte. */
+export interface InspectParams {
+  file: ArrayBuffer;
+  fileName: string;
+}
+
+export type { Inspection };
 
 export interface OutputFile {
   name: string;
@@ -72,6 +81,7 @@ export interface RequestMap {
   anonymize: AnonymizeParams;
   check: CheckParams;
   restore: RestoreParams;
+  inspect: InspectParams;
   loadNer: Record<string, never>;
 }
 
@@ -80,6 +90,8 @@ export interface ResultMap {
   anonymize: AnonymizeResult;
   check: CheckResult;
   restore: RestoreResult;
+  /** null pour les formats sans commentaires ni révisions (.pdf, .md, .txt). */
+  inspect: Inspection | null;
   loadNer: NerLoadResult;
 }
 
