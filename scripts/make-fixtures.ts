@@ -797,6 +797,51 @@ async function makeRevisionsDocx(): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
+// Variantes avec macros (.docm, .pptm, .xlsm) : même paquet, type de contenu « macroEnabled » et projet
+// VBA factice (quelques octets de texte : polyjuice le copie sans le lire).
+
+const MACRO = {
+  docm: { from: "sample.docx", root: "word", main: "document.xml", type: "vnd.ms-word.document.macroEnabled" },
+  pptm: {
+    from: "sample.pptx",
+    root: "ppt",
+    main: "presentation.xml",
+    type: "vnd.ms-powerpoint.presentation.macroEnabled",
+  },
+  xlsm: { from: "sample.xlsx", root: "xl", main: "workbook.xml", type: "vnd.ms-excel.sheet.macroEnabled" },
+} as const;
+
+const VBA_PROJECT = new TextEncoder().encode("Projet VBA factice (fixture polyjuice), sans code.\n");
+
+async function makeMacroVariant(ext: keyof typeof MACRO): Promise<void> {
+  const m = MACRO[ext];
+  const { readFile } = await import("node:fs/promises");
+  const zip = await JSZip.loadAsync(await readFile(new URL(m.from, OUT)), { createFolders: false });
+  const vba = `${m.root}/vbaProject.bin`;
+  zip.file(vba, VBA_PROJECT, { createFolders: false });
+  const buf = await zip.generateAsync({ type: "nodebuffer" });
+  await writeFile(
+    new URL(`sample.${ext}`, OUT),
+    await normalizeZip(buf, {
+      "[Content_Types].xml": (xml) =>
+        xml
+          .replace(new RegExp(`<Override[^>]*PartName="/${m.root}/${m.main}"[^>]*/>`), (o) =>
+            o.replace(/ContentType="[^"]+"/, `ContentType="application/${m.type}.main+xml"`),
+          )
+          .replace(
+            "<Default ",
+            '<Default Extension="bin" ContentType="application/vnd.ms-office.vbaProject"/><Default ',
+          ),
+      [`${m.root}/_rels/${m.main}.rels`]: (xml) =>
+        xml.replace(
+          "</Relationships>",
+          '<Relationship Id="rIdVba" Type="http://schemas.microsoft.com/office/2006/relationships/vbaProject" Target="vbaProject.bin"/></Relationships>',
+        ),
+    }),
+  );
+}
+
+// ---------------------------------------------------------------------------
 
 await mkdir(OUT, { recursive: true });
 const text = await makeText();
@@ -819,6 +864,13 @@ const expected = {
   },
 };
 await makeRevisionsDocx();
+for (const ext of ["docm", "pptm", "xlsm"] as const) await makeMacroVariant(ext);
+// Les variantes avec macros contiennent les mêmes données que leur source.
+Object.assign(expected.fixtures, {
+  "sample.docm": expected.fixtures["sample.docx"],
+  "sample.pptm": expected.fixtures["sample.pptx"],
+  "sample.xlsm": expected.fixtures["sample.xlsx"],
+});
 await writeFile(new URL("expected.json", OUT), JSON.stringify(expected, null, 2) + "\n");
 await writeFile(new URL("fixture-names.txt", OUT), ["# Liste de noms fictifs des fixtures", ...NAMES, ""].join("\n"));
 console.log("Fixtures écrites dans", OUT.pathname);

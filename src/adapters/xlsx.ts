@@ -78,8 +78,6 @@ async function read(file: ArrayBuffer, options?: ReadOptions): Promise<Doc> {
   if (columns.length) warnings.push(...markColumns(state, segments, sheets, new Set(columns)));
 
   warnings.push(...contentWarnings(pkg, "xl"));
-  if (names.includes("xl/vbaProject.bin"))
-    warnings.push("Macros présentes (xl/vbaProject.bin) : copiées telles quelles, non analysées.");
   const { comments, notes, peopleList } = await inspectXlsx(pkg);
   if (comments + notes) {
     warnings.push(

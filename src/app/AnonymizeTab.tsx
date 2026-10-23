@@ -4,6 +4,7 @@ import type { AnonymizeResult } from "../worker/protocol.ts";
 import { WarningsBanner, Banner } from "./components/Banner.tsx";
 import { Downloads } from "./components/Downloads.tsx";
 import { FileDrop } from "./components/FileDrop.tsx";
+import { FormatsHint } from "./components/FormatsHint.tsx";
 import { More } from "./components/More.tsx";
 import { NamesInput } from "./components/NamesInput.tsx";
 import { NerToggle } from "./components/NerToggle.tsx";
@@ -103,7 +104,7 @@ export function AnonymizeTab({ settings }: { settings: SharedSettings }) {
             setFile(f);
             setResult(null);
           }}
-          hint="Formats : .docx, .pptx, .xlsx, .pdf, .md, .txt."
+          hint={<FormatsHint />}
           testId="anonymize-file"
         />
         <Preflight file={file} />
@@ -113,7 +114,7 @@ export function AnonymizeTab({ settings }: { settings: SharedSettings }) {
       <Step n={2} title="Options">
         {xlsx ? (
           <p className="text-sm text-slate-600">
-            Détection par IA indisponible pour les classeurs .xlsx : les données sont repérées par motifs (e-mails,
+            Détection par IA indisponible pour les classeurs : les données sont repérées par motifs (e-mails,
             téléphones, IBAN…), par la liste de noms et par les colonnes ci-dessous.
           </p>
         ) : (

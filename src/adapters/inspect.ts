@@ -44,7 +44,8 @@ const WORD_STORIES = /^word\/(document|comments|footnotes|endnotes|header\d*|foo
 
 /** Inspection d'un fichier d'après son extension ; null pour les formats sans commentaires (.pdf, .md, .txt). */
 export async function inspect(fileName: string, file: ArrayBuffer): Promise<Inspection | null> {
-  const ext = /\.([^./\\]+)$/.exec(fileName)?.[1]?.toLowerCase();
+  // Variantes avec macros (.docm…) : même structure que le format de base.
+  const ext = /\.([^./\\]+)$/.exec(fileName)?.[1]?.toLowerCase().replace(/m$/, "x");
   if (ext !== "docx" && ext !== "pptx" && ext !== "xlsx") return null;
   const pkg = await OoxmlPackage.open(file);
   if (ext === "docx") return inspectDocx(pkg);

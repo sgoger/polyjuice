@@ -97,7 +97,7 @@ export function CheckTab({ settings }: { settings: SharedSettings }) {
       </Step>
       <Step n={2} title="Options">
         {xlsx ? (
-          <p className="text-sm text-slate-600">Détection par IA indisponible pour les classeurs .xlsx.</p>
+          <p className="text-sm text-slate-600">Détection par IA indisponible pour les classeurs.</p>
         ) : (
           <NerToggle
             checked={settings.ner}

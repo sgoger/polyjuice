@@ -3,6 +3,9 @@ import { join } from "node:path";
 import { expect, test } from "@playwright/test";
 import { anonymizeFile, FIXTURES, nerBox, restart, upload } from "./helpers.ts";
 
+/** Début d'un fichier Office 97-2003 (conteneur OLE2). */
+const OLE2 = new Uint8Array([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1, ...new Array<number>(504).fill(0)]);
+
 test("PDF : note avant traitement, PDF réécrit dans le navigateur + version .md dans l'archive", async ({ page }) => {
   await page.goto("./");
   const panel = page.getByRole("tabpanel", { name: "Anonymiser" });
@@ -38,4 +41,31 @@ test("PDF non réécrivable (police Type3) : .md seul, avertissement qui dit pou
   await expect(panel.getByRole("alert").filter({ hasText: "à lire avant l'envoi" })).toContainText(
     "PDF non réécrit (1 valeur détectée n'a pas pu être retirée du texte du PDF ; en cause : police Type3)",
   );
+});
+
+test(".xls refusé au dépôt : message qui explique comment convertir, aucun traitement", async ({ page }) => {
+  await page.goto("./");
+  const panel = page.getByRole("tabpanel", { name: "Anonymiser" });
+  await upload(page, "anonymize-file", "budget.xls", Buffer.from(OLE2));
+  await expect(panel.getByRole("alert")).toContainText(
+    "« budget.xls » : .xls n'est pas pris en charge (ancien format binaire Excel 97-2003) : ouvrez-le dans Excel, Fichier → Enregistrer sous → Classeur Excel (.xlsx), puis déposez le .xlsx.",
+  );
+  await expect(panel.getByRole("button", { name: "Anonymiser", exact: true })).toBeDisabled();
+});
+
+test(".odt refusé au dépôt avec le format vers lequel le convertir", async ({ page }) => {
+  await page.goto("./");
+  const panel = page.getByRole("tabpanel", { name: "Anonymiser" });
+  await upload(page, "anonymize-file", "notes.odt", Buffer.from("PK\u0003\u0004"));
+  await expect(panel.getByRole("alert")).toContainText(
+    "« notes.odt » : .odt n'est pas pris en charge (format OpenDocument) : ouvrez-le dans Word, Fichier → Enregistrer sous → Document Word (.docx), puis déposez le .docx.",
+  );
+});
+
+test("faux .docx (un .doc renommé) : refusé au dépôt avec un message clair", async ({ page }) => {
+  await page.goto("./");
+  const panel = page.getByRole("tabpanel", { name: "Anonymiser" });
+  await upload(page, "anonymize-file", "rapport.docx", Buffer.from(OLE2));
+  await expect(panel.getByRole("alert")).toContainText("« rapport.docx » n'est pas un vrai .docx");
+  await expect(panel.getByRole("button", { name: "Anonymiser", exact: true })).toBeDisabled();
 });

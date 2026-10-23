@@ -2,6 +2,24 @@
 
 "Processed": the text is analyzed and detected data is replaced with tokens. "Flagged": not modified, but a warning is shown (banner, report, mapping) or the item is listed by « Vérifier » (verify). "Flagged at drop time": a warning banner appears as soon as the file is dropped, before any processing, with the steps to remove the item in Office; processing stays possible and the warning is repeated afterwards. "Ignored": neither modified nor flagged.
 
+## File extensions
+
+What happens to each extension commonly found in companies, and why. "OOXML" is the Office Open XML format of Office 2007 and later (a zip of XML parts); "OLE2" is the binary container of Office 97-2003.
+
+| Extension                                                              | Accepted | Why                                                                                                                                                                                                                                                                                         |
+| ---------------------------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `.docx`, `.pptx`, `.xlsx`                                              | yes      | OOXML: only the text nodes are rewritten, everything else is copied byte for byte.                                                                                                                                                                                                          |
+| `.docm`, `.pptm`, `.xlsm`                                              | yes      | Same structure plus a VBA project (`vbaProject.bin`), copied as is and flagged. The output keeps the extension, which must match the content type declared in the package.                                                                                                                  |
+| `.doc`, `.dot`, `.xls`, `.xlt`, `.ppt`, `.pps`                         | no       | OLE2 + binary records (Word piece table, Excel BIFF8, PowerPoint atoms): no XML to rewrite in place. Reading them is feasible (see the spike in [`DEVIATIONS.md`](DEVIATIONS.md)), but the result would be degraded and these files are rare. Message: save as `.docx`, `.xlsx` or `.pptx`. |
+| `.rtf`                                                                 | no       | Another format (RTF control words). Message: save as `.docx` in Word.                                                                                                                                                                                                                       |
+| `.odt`, `.ods`, `.odp`                                                 | no       | OpenDocument: zipped XML too, but another schema, which would need its own adapter (see [`IDEAS.md`](IDEAS.md)). Message: save as `.docx`, `.xlsx` or `.pptx`.                                                                                                                              |
+| `.csv`                                                                 | no       | No encoding information (often Windows-1252 from Excel) and no columns for « Colonnes à anonymiser » (columns to anonymize). Message: save as `.xlsx` in Excel.                                                                                                                             |
+| `.dotx`, `.dotm`, `.xltx`, `.xltm`, `.potx`, `.potm`, `.ppsx`, `.ppsm` | no       | Templates and slideshows: other content types. Message: save as `.docx`, `.xlsx` or `.pptx`.                                                                                                                                                                                                |
+| `.xlsb`                                                                | no       | Binary Excel workbook. Message: save as `.xlsx`.                                                                                                                                                                                                                                            |
+| anything else                                                          | no       | Generic message listing the accepted formats.                                                                                                                                                                                                                                               |
+
+A refused file is refused as soon as it is dropped, with the reason and the conversion to do (e.g. « .xls n'est pas pris en charge (ancien format binaire Excel 97-2003) : ouvrez-le dans Excel, Fichier → Enregistrer sous → Classeur Excel (.xlsx), puis déposez le .xlsx. »). A file whose content does not match its extension is also refused at drop time, from its first bytes: a `.doc` renamed `.docx`, or a password-protected Office file (both OLE2), gives « n'est pas un vrai .docx » (is not a real .docx) with the advice to save it as `.docx` in Word. The engine runs the same check.
+
 ## `.txt`, `.md`
 
 | Item                                   | Status                  |
@@ -96,3 +114,12 @@ When the PDF is refused, only the `.md` is produced and the warning says why. Th
 | Restoring a `.pdf`                                                                       | refused: drop in the `.md` (or `.txt`) returned by the external tool                                 |
 
 Detected values are matched in the PDF by their text, case-sensitively and on word boundaries: every occurrence of a detected value is removed, including occurrences the text detection did not flag, all with the same token. Restoring a PDF returned by an external tool would mean rewriting it again, with the same layout and font problems, for a file whose layout the tool has probably changed: out of scope. The tool's text output (`.md`, `.txt`) is restored instead.
+
+## `.docm`, `.pptm`, `.xlsm`
+
+Same as `.docx`, `.pptx`, `.xlsx`. In addition:
+
+| Item                                                                      | Status                                      |
+| ------------------------------------------------------------------------- | ------------------------------------------- |
+| Macros (`word/vbaProject.bin`, `ppt/vbaProject.bin`, `xl/vbaProject.bin`) | copied byte for byte, not analyzed; flagged |
+| Output extension and content type                                         | kept (`.docm` → `.docm`…)                   |
