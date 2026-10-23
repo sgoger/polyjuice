@@ -61,7 +61,7 @@ test("« Anonymiser » pendant le chargement du modèle : le traitement l'attend
   await upload(page, "anonymize-file", "sample.md", readFileSync(join(FIXTURES, "sample.md")));
   await panel.getByRole("button", { name: "Anonymiser", exact: true }).click();
   const running = panel.locator("[aria-busy=true]");
-  await expect(running).toContainText("modèle de détection par IA");
+  await expect(running).toContainText("modèle d'IA");
   // Les étapes laissent place au récapitulatif pendant le traitement.
   await expect(nerBox(page)).toHaveCount(0);
   await expect(panel.getByText("Détection IA", { exact: true })).toBeVisible();

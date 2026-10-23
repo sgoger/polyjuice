@@ -51,7 +51,7 @@ function pptx(i: Inspection, m: Texts): PreflightMessage {
   if (!i.comments) return { title: m.pptx.peopleList, details: [m.listStays] };
   return {
     title: m.pptx.contains(i.comments, i.authors),
-    details: [...(i.authors ? [m.namesStay(i.authors)] : []), m.pptx.textToo, m.pptx.remove],
+    details: [...(i.authors ? [m.namesStay(i.authors)] : []), m.textToo, m.pptx.remove],
   };
 }
 
@@ -60,6 +60,6 @@ function xlsx(i: Inspection, m: Texts): PreflightMessage {
   if (!found.length) return { title: m.xlsx.peopleList, details: [m.listStays] };
   return {
     title: m.xlsx.contains(found, i.authors),
-    details: [...(i.authors ? [m.namesStay(i.authors)] : []), m.xlsx.textToo(!!i.comments, !!i.notes), m.xlsx.remove],
+    details: [...(i.authors ? [m.namesStay(i.authors)] : []), m.textToo, m.xlsx.remove],
   };
 }

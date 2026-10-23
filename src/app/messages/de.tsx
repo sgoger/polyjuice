@@ -4,7 +4,7 @@ import type { UiMessages } from "./fr.tsx";
 /** Accord en nombre à l'allemande : seul 1 est au singulier (« 0 Einträge »). */
 const pl = (n: number, one: string, many: string): string => `${n} ${n === 1 ? one : many}`;
 
-const AGAIN = "speichern Sie die Datei und wählen Sie sie dann erneut aus.";
+const AGAIN = "dann speichern und die Datei erneut auswählen.";
 function byPeople(n: number): string {
   return n === 1 ? " von einer Person" : n > 1 ? ` von ${n} Personen` : "";
 }
@@ -13,10 +13,9 @@ export const de: UiMessages = {
   languageName: "Deutsch",
   languageLabel: "Sprache",
   tagline:
-    "Ein Dokument pseudonymisieren, bevor es an ein externes Tool gesendet wird, und danach die Originaldaten wiederherstellen.",
+    "Ein Dokument pseudonymisieren, bevor es an ein externes Tool geht, und danach die Originaldaten wiederherstellen.",
   tabs: { label: "Aktionen", anonymize: "Anonymisieren", restore: "Wiederherstellen", check: "Prüfen (optional)" },
-  footer:
-    "🔒 Keine Daten verlassen Ihren Browser. Dieses Tool pseudonymisiert; die erzeugten Dokumente bleiben personenbezogene Daten im Sinne der DSGVO.",
+  footer: "🔒 Keine Daten verlassen Ihren Browser. Die erzeugten Dokumente bleiben personenbezogene Daten (DSGVO).",
   backend: {
     webgpu: "WebGPU (Grafikkarte)",
     wasm: (threads) => `WASM, ${threads} ${threads === 1 ? "Kern" : "Kerne"}`,
@@ -30,57 +29,54 @@ export const de: UiMessages = {
     recapMapping: (name) => `Wiederverwendetes Mapping: ${name}`,
     intro: (
       <>
-        Das Dokument hier <strong>anonymisieren</strong>, das anonymisierte Dokument an das externe Tool (KI,
-        Übersetzung…) <strong>senden</strong> und dessen Antwort anschließend im Tab „Wiederherstellen“ mit dem Mapping{" "}
-        <strong>wiederherstellen</strong>.
+        Das Dokument <strong>anonymisieren</strong>, an das externe Tool (KI, Übersetzung…) <strong>senden</strong> und
+        dessen Antwort unter „Wiederherstellen“ <strong>wiederherstellen</strong>.
       </>
     ),
     step1: "Dokument auswählen",
     fileLabel: "Zu anonymisierendes Dokument",
     step2: "Optionen",
     xlsxNoNer:
-      "Für Arbeitsmappen ist keine KI-Erkennung verfügbar: Die Daten werden über Muster (E-Mail-Adressen, Telefonnummern, IBAN…), über das Namensglossar und über die unten angegebenen Spalten erkannt.",
+      "Für Arbeitsmappen ist keine KI-Erkennung verfügbar: Es werden nur Muster (E-Mail, Telefon, IBAN…), das Glossar und die Spalten unten verwendet.",
     columnsLabel: "Zu anonymisierende Spalten",
-    columnsHint: "(Spaltenüberschriften, durch Kommas getrennt)",
+    columnsHint: "(Überschriften, durch Kommas getrennt)",
     columnsPlaceholder: "Name, Vorname",
-    columnsHelp:
-      "Alle Textzellen dieser Spalten werden auf jedem Tabellenblatt vollständig ersetzt (Überschrift = erste nicht leere Zeile).",
+    columnsHelp: "Textzellen werden auf jedem Blatt vollständig ersetzt (Überschrift = erste nicht leere Zeile).",
     advanced: "Erweiterte Optionen",
     advancedMapping: (name) => ` (wiederverwendetes Mapping: ${name})`,
-    mappingLabel: "Vorhandenes Mapping wiederverwenden (optional)",
-    mappingHint: "Verwendet denselben Salt und dieselben Tokens; das Mapping wird ergänzt, nie gekürzt.",
+    mappingLabel: "Mapping wiederverwenden (optional)",
+    mappingHint: "Gleiche Tokens; das Mapping wird ergänzt, nie gekürzt.",
     step3: "Anonymisieren",
     button: "Anonymisieren",
-    willDownload: "Ein .zip-Archiv wird automatisch heruntergeladen.",
-    needFile: "Wählen Sie zuerst ein Dokument aus (Schritt 1).",
+    willDownload: "Ein .zip-Archiv wird heruntergeladen.",
+    needFile: "Wählen Sie zuerst ein Dokument aus.",
     success: (n) => `Dokument anonymisiert: ${pl(n, "Entität ersetzt", "Entitäten ersetzt")}.`,
     archiveDownloaded: "Heruntergeladenes Archiv: ",
     roleSend: "Senden",
     roleOrSend: "Oder senden",
     roleKeep: "Behalten, niemals senden",
-    sendDocument: "Dokument, das an das externe Tool übermittelt wird",
-    sendOnly: "einzige Datei, die an das externe Tool übermittelt wird",
-    sendAlternate: "gleicher Inhalt als Text, für Tools, die PDFs schlecht lesen",
-    keepMapping: "Daten im Klartext, für die Wiederherstellung erforderlich",
+    sendDocument: "für das externe Tool",
+    sendOnly: "einzige zu sendende Datei",
+    sendAlternate: "Textversion, falls das Tool PDFs schlecht liest",
+    keepMapping: "Klartextdaten, für die Wiederherstellung",
     more: "Erneut herunterladen, Erkennungsbericht",
-    moreIntro: "Falls der Download nicht gestartet ist, oder für eine einzelne Datei:",
+    moreIntro: "Einzelne Dateien:",
     dlArchive: "Archiv (.zip)",
     dlDocument: "Anonymisiertes Dokument",
     dlAlternate: "Textversion (Markdown)",
     dlMapping: "Mapping (JSON)",
-    dlMappingNote: "Daten im Klartext: niemals weitergeben.",
+    dlMappingNote: "Klartextdaten: niemals weitergeben.",
     dlReport: "Bericht (Markdown)",
-    checkHint: "Optionale Kontrolle vor dem Senden: das anonymisierte Dokument im Tab „Prüfen“ auswählen.",
-    pdfTitle: "PDF: umgeschrieben, wenn das gefahrlos möglich ist, sonst in Text umgewandelt",
+    checkHint: "Optionale Kontrolle vor dem Senden: Tab „Prüfen“.",
+    pdfTitle: "PDF: wenn möglich umgeschrieben, sonst in Text umgewandelt",
     pdfBody:
-      "Die erkannten Daten werden aus dem PDF entfernt und durch Tokens ersetzt, das Layout bleibt erhalten; zusätzlich wird eine Textversion (.md) erzeugt. Stehen Daten in einem Text, den das Tool nicht mit Sicherheit umschreiben kann (besondere Schriftart, verschlüsseltes PDF, Formular, gescanntes PDF…), wird nur die .md-Datei erzeugt: Ein PDF ist kein bearbeitbarer Text, sondern eine Folge einzeln positionierter Glyphen.",
+      "Die Daten werden im PDF durch Tokens ersetzt, das Layout bleibt erhalten; dazu kommt eine Textversion (.md). Lässt sich das PDF nicht gefahrlos umschreiben (besondere Schriftart, verschlüsseltes PDF, Formular, Scan…), wird nur die .md-Datei erzeugt.",
     learnMore: "Mehr erfahren",
   },
 
   check: {
-    clean: "Nichts erkannt: keine personenbezogenen Daten gefunden.",
-    intro:
-      "Optional: Führt die Erkennung erneut auf einem bereits anonymisierten Dokument aus (zum Beispiel einem seither bearbeiteten) und listet auf, was noch nach personenbezogenen Daten aussieht. Es wird keine Datei erzeugt.",
+    clean: "Nichts erkannt.",
+    intro: "Optional: Findet in einem bereits anonymisierten Dokument, was noch nach personenbezogenen Daten aussieht.",
     step1: "Anonymisiertes Dokument auswählen",
     fileLabel: "Zu prüfendes anonymisiertes Dokument",
     step2: "Optionen",
@@ -90,26 +86,25 @@ export const de: UiMessages = {
   },
 
   restore: {
-    intro:
-      "Ersetzt die Tokens im vom externen Tool zurückgegebenen Dokument mithilfe des Mappings (der .json-Datei aus dem Archiv) durch die Originaldaten.",
+    intro: "Setzt mithilfe des Mappings (der .json-Datei aus dem Archiv) die Originaldaten anstelle der Tokens ein.",
     step1: "Dateien auswählen",
     fileLabel: "Vom externen Tool zurückgegebenes Dokument",
     fileHint:
-      "Formate: .docx, .pptx, .xlsx (sowie .docm, .pptm, .xlsm), .md, .txt (für ein anonymisiertes PDF die erzeugte .md-Datei auswählen).",
-    mappingLabel: "Bei der Anonymisierung erzeugtes Mapping (.json)",
+      "Formate: .docx, .pptx, .xlsx (sowie .docm, .pptm, .xlsm), .md, .txt. Für ein PDF dessen .md-Datei auswählen.",
+    mappingLabel: "Mapping (.json)",
     step2: "Wiederherstellen",
     button: "Wiederherstellen",
-    willDownload: "Das wiederhergestellte Dokument wird automatisch heruntergeladen.",
-    needFiles: "Wählen Sie zuerst das Dokument und das Mapping aus (Schritt 1).",
+    willDownload: "Das wiederhergestellte Dokument wird heruntergeladen.",
+    needFiles: "Wählen Sie zuerst Dokument und Mapping aus.",
     unknown: (n) =>
       n === 1
         ? "1 Token fehlt im Mapping und wurde unverändert gelassen."
         : `${n} Tokens fehlen im Mapping und wurden unverändert gelassen.`,
-    unknownBody: "Prüfen Sie, ob das Mapping zu diesem Dokument gehört. Trotzdem heruntergeladen: ",
+    unknownBody: "Gehört das Mapping zu diesem Dokument? Trotzdem heruntergeladen: ",
     success: "Dokument wiederhergestellt.",
     downloaded: "Heruntergeladen: ",
     more: "Erneut herunterladen, Wiederherstellungsbericht",
-    moreIntro: "Falls der Download nicht gestartet ist, oder für den Bericht:",
+    moreIntro: "Einzelne Dateien:",
     dlDocument: "Wiederhergestelltes Dokument",
     dlReport: "Wiederherstellungsbericht",
   },
@@ -130,12 +125,11 @@ export const de: UiMessages = {
   },
 
   formatsHint: {
-    formats: "Formate: .docx, .pptx, .xlsx (und ihre Varianten mit Makros .docm, .pptm, .xlsm), .pdf, .md, .txt.",
+    formats: "Formate: .docx, .pptx, .xlsx (sowie .docm, .pptm, .xlsm), .pdf, .md, .txt.",
     legacyQuestion: "Und .doc, .xls, .ppt?",
     legacyAnswer:
-      "Das sind die alten Binärformate von Office 97-2003. polyjuice bearbeitet Office-Dokumente direkt in ihrem XML, ohne den Rest anzutasten (Formatierung, Bilder, Diagramme); die Binärformate haben diese Struktur nicht. Öffnen Sie die Datei in Word, Excel oder PowerPoint, Datei → Speichern unter → .docx, .xlsx oder .pptx, und wählen Sie dann diese Datei aus.",
-    otherFormats:
-      "Dasselbe gilt für .rtf, .odt, .ods, .odp und .csv: Speichern Sie sie zuerst im Format .docx, .xlsx oder .pptx.",
+      "Alte Binärformate von Office 97-2003: polyjuice bearbeitet nur die aktuellen XML-Formate. Öffnen Sie die Datei in Word, Excel oder PowerPoint, Datei → Speichern unter → .docx, .xlsx oder .pptx, und wählen Sie dann diese Datei aus.",
+    otherFormats: "Dasselbe gilt für .rtf, .odt, .ods, .odp und .csv.",
   },
 
   names: {
@@ -145,23 +139,22 @@ export const de: UiMessages = {
     save: "Als .txt speichern",
     fileName: "glossar.txt",
     clear: "Leeren",
-    help: "Die hier aufgeführten Namen werden immer ersetzt (Typ Person), auch wenn die KI-Erkennung sie übersieht. Ein Name pro Zeile, so geschrieben, wie er in den Dokumenten vorkommt („Thomas Müller“); # für einen Kommentar. Dasselbe Glossar gilt für die Tabs „Anonymisieren“ und „Prüfen“.",
+    help: "Werden immer ersetzt, auch wenn die KI sie übersieht. Ein Name pro Zeile, wie im Dokument geschrieben; # für einen Kommentar. Gilt für „Anonymisieren“ und „Prüfen“.",
     placeholder: "Thomas Müller\nAnna Schmidt",
     count: (n) => `${pl(n, "Eintrag", "Einträge")}.`,
     remembered: "In diesem Browser gespeichert.",
-    notRemembered: "Nicht gespeichert: geht beim Neuladen der Seite verloren.",
+    notRemembered: "Nicht gespeichert: geht beim Neuladen verloren.",
     remember: "Dieses Glossar in diesem Browser speichern",
     rememberNote:
-      "Das Glossar bleibt auf diesem Computer in diesem Browser gespeichert, bis Sie das Häkchen entfernen oder auf „Leeren“ klicken. Aktivieren Sie diese Option nicht auf einem gemeinsam genutzten Rechner.",
+      "Bleibt gespeichert, bis Sie das Häkchen entfernen oder auf „Leeren“ klicken. Nicht auf gemeinsam genutzten Rechnern.",
     unavailable:
-      "Nicht verfügbar: Dieser Browser blockiert den lokalen Speicher (privates Fenster?). Das Glossar geht beim Neuladen der Seite verloren; verwenden Sie „Als .txt speichern“, um es zu behalten.",
-    saveFailed:
-      "⚠ Das Glossar konnte nicht gespeichert werden (Speicher voll oder blockiert). Verwenden Sie „Als .txt speichern“, um es zu behalten.",
+      "Nicht verfügbar: lokaler Speicher blockiert (privates Fenster?). Um das Glossar zu behalten, „Als .txt speichern“ verwenden.",
+    saveFailed: "⚠ Speichern nicht möglich (Speicher voll oder blockiert). „Als .txt speichern“ verwenden.",
   },
 
   ner: {
-    label: (mb) => `Namenserkennung per KI aktivieren (Modell wird einmalig heruntergeladen, ca. ${mb} MB)`,
-    note: "Erkennt Namen von Personen und Orten. Das Modell wird einmalig beim ersten ausgewählten Dokument heruntergeladen und danach vom Browser zwischengespeichert; es werden keine Daten aus Ihren Dokumenten gesendet.",
+    label: (mb) => `Namenserkennung per KI aktivieren (ca. ${mb} MB, einmaliger Download)`,
+    note: "Personen und Orte. Das Modell bleibt im Browser-Cache; Ihre Dokumente werden nie gesendet.",
     progressLabel: "Laden des KI-Erkennungsmodells",
     initializing: "Modell wird initialisiert…",
     downloading: (pct, loadedMb, totalMb) => `Modell wird heruntergeladen: ${pct} % (${loadedMb} von ${totalMb} MB)`,
@@ -180,34 +173,31 @@ export const de: UiMessages = {
       n === 1
         ? "Der Name dieser Person bleibt im anonymisierten Dokument im Klartext."
         : "Die Namen dieser Personen bleiben im anonymisierten Dokument im Klartext.",
-    listStays: "Ihre Namen bleiben im anonymisierten Dokument im Klartext.",
+    listStays: "Diese Namen bleiben im anonymisierten Dokument im Klartext.",
+    textToo: "Auch ihr Text wird nicht anonymisiert.",
     docx: {
       contains: (found, authors) => `Dieses Dokument enthält ${found.join(" und ")}${byPeople(authors)}.`,
       remove: (revisions, comments) =>
-        `Um sie vor dem Anonymisieren zu entfernen: in Word auf der Registerkarte Überprüfen → ${[
+        `Zum Entfernen: in Word, Registerkarte Überprüfen → ${[
           ...(revisions ? ["Annehmen → Alle Änderungen annehmen"] : []),
           ...(comments ? ["Löschen → Alle Kommentare im Dokument löschen"] : []),
         ].join(", dann ")}; ${AGAIN}`,
-      peopleListToo:
-        "Die Datei enthält außerdem die Liste der Personen, die das Dokument kommentiert oder geändert haben.",
-      peopleList: "Dieses Dokument enthält die Liste der Personen, die es kommentiert oder geändert haben.",
+      peopleListToo: "Die Datei listet außerdem die Personen auf, die sie kommentiert oder geändert haben.",
+      peopleList: "Dieses Dokument listet die Personen auf, die es kommentiert oder geändert haben.",
       tracking: "In diesem Dokument ist „Änderungen nachverfolgen“ aktiviert.",
       trackingDetail: (also) =>
-        `${also ? "Außerdem ist „Änderungen nachverfolgen“ aktiviert: J" : "J"}ede spätere Änderung würde mit dem Namen der Person gespeichert, die sie vornimmt. Zum Deaktivieren: in Word auf der Registerkarte Überprüfen → Änderungen nachverfolgen; ${AGAIN}`,
+        `${also ? "Außerdem ist „Änderungen nachverfolgen“ aktiviert: J" : "J"}ede spätere Änderung würde mit dem Namen der Person gespeichert, die sie vornimmt. Zum Deaktivieren: Registerkarte Überprüfen → Änderungen nachverfolgen; ${AGAIN}`,
     },
     pptx: {
-      peopleList: "Diese Präsentation enthält die Liste der Personen, die sie kommentiert haben.",
+      peopleList: "Diese Präsentation listet die Personen auf, die sie kommentiert haben.",
       contains: (comments, authors) =>
         `Diese Präsentation enthält ${pl(comments, "Kommentar", "Kommentare")}${byPeople(authors)}.`,
-      textToo: "Auch der Text der Kommentare wird nicht anonymisiert.",
-      remove: `Um sie vor dem Anonymisieren zu entfernen: in PowerPoint auf der Registerkarte Überprüfen → Löschen → Alle Kommentare in dieser Präsentation löschen; ${AGAIN}`,
+      remove: `Zum Entfernen: in PowerPoint, Registerkarte Überprüfen → Löschen → Alle Kommentare in dieser Präsentation löschen; ${AGAIN}`,
     },
     xlsx: {
-      peopleList: "Diese Arbeitsmappe enthält die Liste der Personen, die sie kommentiert haben.",
+      peopleList: "Diese Arbeitsmappe listet die Personen auf, die sie kommentiert haben.",
       contains: (found, authors) => `Diese Arbeitsmappe enthält ${found.join(" und ")}${byPeople(authors)}.`,
-      textToo: (comments, notes) =>
-        `Auch der Text der ${notes && !comments ? "Notizen" : comments && !notes ? "Kommentare" : "Kommentare und Notizen"} wird nicht anonymisiert.`,
-      remove: `Um sie vor dem Anonymisieren zu entfernen: in Excel auf jedem Tabellenblatt alle Zellen markieren (Strg+A), dann Registerkarte Start → Löschen → Kommentare und Notizen löschen; ${AGAIN}`,
+      remove: `Zum Entfernen: in Excel auf jedem Blatt Strg+A, dann Registerkarte Start → Löschen → Kommentare und Notizen löschen; ${AGAIN}`,
     },
   },
 
@@ -233,9 +223,9 @@ export const de: UiMessages = {
   },
 
   running: {
-    downloading: (pct) => `Download des KI-Erkennungsmodells: ${pct} % – die Verarbeitung beginnt danach.`,
-    initializing: "KI-Erkennungsmodell wird initialisiert…",
-    preparing: "KI-Erkennungsmodell wird vorbereitet…",
+    downloading: (pct) => `Download des KI-Modells: ${pct} %, danach beginnt die Verarbeitung.`,
+    initializing: "KI-Modell wird initialisiert…",
+    preparing: "KI-Modell wird vorbereitet…",
     progress: (done, total) => `Verarbeitung: ${done} / ${total} Segmente`,
     reading: "Dokument wird gelesen…",
     cancel: "Abbrechen",

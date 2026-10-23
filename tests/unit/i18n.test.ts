@@ -80,7 +80,7 @@ describe("messages en allemand", () => {
     );
     expect(m?.title).toBe("Dieses Dokument enthält 2 Kommentare und 1 nachverfolgte Änderung von einer Person.");
     expect(m?.details).toContain(
-      "Um sie vor dem Anonymisieren zu entfernen: in Word auf der Registerkarte Überprüfen → Annehmen → Alle Änderungen annehmen, dann Löschen → Alle Kommentare im Dokument löschen; speichern Sie die Datei und wählen Sie sie dann erneut aus.",
+      "Zum Entfernen: in Word, Registerkarte Überprüfen → Annehmen → Alle Änderungen annehmen, dann Löschen → Alle Kommentare im Dokument löschen; dann speichern und die Datei erneut auswählen.",
     );
   });
 });
