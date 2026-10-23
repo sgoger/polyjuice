@@ -1,5 +1,5 @@
 // Éléments communs aux trois adaptateurs Office : métadonnées, avertissements, cibles de liens.
-import { pl } from "../../engine/plural.ts";
+import { t } from "../../i18n/index.ts";
 import { applyEdits, collect, type RunModel } from "./runs.ts";
 import { elementsNS, NS, parseXml, serializeXml, setText, type Element, type ParsedPart } from "./xml.ts";
 import type { OoxmlPackage } from "./zip.ts";
@@ -8,20 +8,18 @@ import type { Doc, Segment, SegmentKind } from "../../engine/types.ts";
 /** Valeur fixe des dates de création et de modification (déterminisme). */
 export const FIXED_DATE = "2000-01-01T00:00:00Z";
 
-const CORE_FIELDS: readonly [ns: string, local: string, label: string][] = [
-  [NS.dc, "creator", "auteur"],
-  [NS.cp, "lastModifiedBy", "dernier modificateur"],
-  [NS.dc, "title", "titre"],
-  [NS.dc, "subject", "sujet"],
-  [NS.cp, "keywords", "mots-clés"],
-  [NS.dc, "description", "description"],
-  [NS.cp, "category", "catégorie"],
-  [NS.cp, "contentStatus", "statut"],
+/** Champs de métadonnées vidés ; libellés traduits dans `ooxml.metadata`, indexés par nom local. */
+const CORE_FIELDS: readonly [ns: string, local: string][] = [
+  [NS.dc, "creator"],
+  [NS.cp, "lastModifiedBy"],
+  [NS.dc, "title"],
+  [NS.dc, "subject"],
+  [NS.cp, "keywords"],
+  [NS.dc, "description"],
+  [NS.cp, "category"],
+  [NS.cp, "contentStatus"],
 ];
-const APP_FIELDS: readonly [local: string, label: string][] = [
-  ["Company", "société"],
-  ["Manager", "responsable"],
-];
+const APP_FIELDS: readonly string[] = ["Company", "Manager"];
 const CORE = "docProps/core.xml";
 const APP = "docProps/app.xml";
 const CUSTOM = "docProps/custom.xml";
@@ -40,12 +38,13 @@ const filled = (els: Element[]) => els.some((e) => (e.textContent ?? "").trim() 
 /** Libellés des métadonnées non vides qui seront vidées à l'écriture. */
 export async function metadataToClear(pkg: OoxmlPackage): Promise<string[]> {
   const out: string[] = [];
+  const label = (key: string) => t().ooxml.metadata[key] ?? key;
   const core = await tryParse(pkg, CORE);
-  if (core) for (const [ns, local, label] of CORE_FIELDS) if (filled(elementsNS(core.doc, ns, local))) out.push(label);
+  if (core) for (const [ns, local] of CORE_FIELDS) if (filled(elementsNS(core.doc, ns, local))) out.push(label(local));
   const app = await tryParse(pkg, APP);
-  if (app) for (const [local, label] of APP_FIELDS) if (filled(elementsNS(app.doc, NS.ep, local))) out.push(label);
-  if (pkg.has(CUSTOM)) out.push("propriétés personnalisées");
-  if (thumbnails(pkg).length) out.push("miniature d'aperçu");
+  if (app) for (const local of APP_FIELDS) if (filled(elementsNS(app.doc, NS.ep, local))) out.push(label(local));
+  if (pkg.has(CUSTOM)) out.push(label("custom"));
+  if (thumbnails(pkg).length) out.push(label("thumbnail"));
   return out;
 }
 
@@ -56,17 +55,11 @@ export async function titlesWarning(pkg: OoxmlPackage): Promise<string[]> {
   const titles = elementsNS(app.doc, NS.ep, "TitlesOfParts").flatMap((t) =>
     Array.from(t.getElementsByTagName("vt:lpstr")).filter((e) => (e.textContent ?? "").trim() !== ""),
   );
-  return titles.length
-    ? [
-        `Propriétés du document (docProps/app.xml) : ${pl(titles.length, "titre recopié", "titres recopiés")} (noms de feuilles, titres de diapositives…), conservés tels quels.`,
-      ]
-    : [];
+  return titles.length ? [t().ooxml.titles(titles.length)] : [];
 }
 
 export function metadataWarning(labels: readonly string[]): string[] {
-  return labels.length
-    ? [`Métadonnées vidées : ${labels.join(", ")} (dates de création et de modification neutralisées).`]
-    : [];
+  return labels.length ? [t().ooxml.metadataCleared(labels.join(", "))] : [];
 }
 
 /** Ne réécrit une partie que si son contenu change (les parties identiques gardent leurs octets). */
@@ -88,7 +81,7 @@ export async function clearMetadata(pkg: OoxmlPackage): Promise<void> {
   if (pkg.has(APP)) {
     const xml = await pkg.readText(APP);
     const app = parseXml(xml);
-    for (const [local] of APP_FIELDS) for (const el of elementsNS(app.doc, NS.ep, local)) setText(el, "");
+    for (const local of APP_FIELDS) for (const el of elementsNS(app.doc, NS.ep, local)) setText(el, "");
     writeIfChanged(pkg, APP, xml, app);
   }
   if (pkg.has(CUSTOM)) {
@@ -114,7 +107,7 @@ export function altTexts(doc: ParsedPart["doc"]): { text: string; where: string 
     for (const el of elementsNS(doc, ns, local)) {
       for (const attr of ["descr", "title"]) {
         const v = el.getAttribute(attr);
-        if (v?.trim()) out.push({ text: v, where: "Texte alternatif" });
+        if (v?.trim()) out.push({ text: v, where: t().ooxml.altText });
       }
     }
   }
@@ -148,20 +141,14 @@ export function contentWarnings(pkg: OoxmlPackage, root: string, extra: { charts
   const count = (dir: string) => pkg.names().filter((n) => n.startsWith(`${root}/${dir}/`)).length;
   const out: string[] = [];
   const media = count("media");
-  if (media)
-    out.push(
-      `${pl(media, "image ou média présent", "images ou médias présents")} : le texte contenu dans les images n'est pas traité.`,
-    );
-  if (count("diagrams")) out.push("SmartArt présents : leur texte n'est pas traité.");
-  if (extra.charts !== false && count("charts")) out.push("Graphiques présents : leur texte n'est pas traité.");
+  if (media) out.push(t().ooxml.media(media));
+  if (count("diagrams")) out.push(t().ooxml.smartArt);
+  if (extra.charts !== false && count("charts")) out.push(t().ooxml.charts);
   const ole = count("embeddings");
-  if (ole)
-    out.push(
-      `${pl(ole, "objet incorporé (OLE) présent", "objets incorporés (OLE) présents")} : leur contenu n'est pas traité.`,
-    );
+  if (ole) out.push(t().ooxml.ole(ole));
   // Paquets avec macros (.docm, .pptm, .xlsm) : le projet VBA est un binaire opaque.
   const vba = `${root}/vbaProject.bin`;
-  if (pkg.has(vba)) out.push(`Macros présentes (${vba}) : copiées telles quelles, non analysées.`);
+  if (pkg.has(vba)) out.push(t().ooxml.macros(vba));
   return out;
 }
 
@@ -173,7 +160,8 @@ export async function externalTargets(pkg: OoxmlPackage): Promise<{ text: string
     if (!rels) continue;
     for (const rel of elementsNS(rels.doc, NS.rel, "Relationship")) {
       const target = rel.getAttribute("Target");
-      if (rel.getAttribute("TargetMode") === "External" && target) out.push({ text: target, where: "Cible de lien" });
+      if (rel.getAttribute("TargetMode") === "External" && target)
+        out.push({ text: target, where: t().ooxml.linkTarget });
     }
   }
   return out;
@@ -219,7 +207,7 @@ export async function readParagraphParts(
       xml = await pkg.readText(spec.name);
       parsed = parseXml(xml);
     } catch (e) {
-      warnings.push(`Partie illisible, non traitée : ${spec.name} (${e instanceof Error ? e.message : String(e)}).`);
+      warnings.push(t().ooxml.partUnreadable(spec.name, e instanceof Error ? e.message : String(e)));
       continue;
     }
     const paragraphs = spec.paragraphs(parsed.doc);

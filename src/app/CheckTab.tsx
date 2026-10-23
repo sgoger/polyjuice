@@ -1,4 +1,3 @@
-import { pl } from "../engine/plural.ts";
 import { useState } from "react";
 import type { CheckResult } from "../worker/protocol.ts";
 import { Banner, WarningsBanner } from "./components/Banner.tsx";
@@ -14,11 +13,15 @@ import { Step } from "./components/Step.tsx";
 import { Timer } from "./components/Timer.tsx";
 import { DOC_EXTENSIONS, isXlsx, useNerPreload, type SharedSettings } from "./settings.ts";
 import { useEngine } from "./useEngine.ts";
+import { useEngineT, useT } from "./messages/index.ts";
 
 export function CheckTab({ settings }: { settings: SharedSettings }) {
   const [file, setFile] = useState<File | null>(null);
   const [result, setResult] = useState<CheckResult | null>(null);
   const { state, run, cancel } = useEngine();
+  const t = useT();
+  const m = t.check;
+  const engineT = useEngineT();
   const xlsx = isXlsx(file);
   useNerPreload(settings, file);
 
@@ -58,15 +61,15 @@ export function CheckTab({ settings }: { settings: SharedSettings }) {
         {result && (
           <section aria-labelledby="resultat-verification" className="space-y-4">
             <h2 id="resultat-verification" className="sr-only">
-              Résultat
+              {t.result}
             </h2>
             <WarningsBanner warnings={result.warnings} />
             {clean ? (
-              <Banner tone="success" title="Rien de détecté : aucune donnée personnelle reconnue." />
+              <Banner tone="success" title={m.clean} />
             ) : (
               <Banner
                 tone="warning"
-                title={`${pl(result.report.rows.length + result.report.notices.length, "élément ressemble", "éléments ressemblent")} encore à des données personnelles.`}
+                title={engineT.stillLooksPersonal(result.report.rows.length + result.report.notices.length)}
               />
             )}
             <CheckReportView r={result.report} />
@@ -78,13 +81,10 @@ export function CheckTab({ settings }: { settings: SharedSettings }) {
 
   return (
     <>
-      <p className="rounded-lg bg-indigo-50 p-4 text-slate-800">
-        Facultatif : relance la détection sur un document déjà anonymisé (par exemple modifié depuis) et liste ce qui
-        ressemble encore à une donnée personnelle. Rien n'est produit.
-      </p>
-      <Step n={1} title="Déposer le document anonymisé">
+      <p className="rounded-lg bg-indigo-50 p-4 text-slate-800">{m.intro}</p>
+      <Step n={1} title={m.step1}>
         <FileDrop
-          label="Document anonymisé à vérifier"
+          label={m.fileLabel}
           accept={DOC_EXTENSIONS}
           file={file}
           onFile={(f) => {
@@ -95,9 +95,9 @@ export function CheckTab({ settings }: { settings: SharedSettings }) {
         />
         <Preflight file={file} />
       </Step>
-      <Step n={2} title="Options">
+      <Step n={2} title={m.step2}>
         {xlsx ? (
-          <p className="text-sm text-slate-600">Détection par IA indisponible pour les classeurs.</p>
+          <p className="text-sm text-slate-600">{m.xlsxNoNer}</p>
         ) : (
           <NerToggle
             checked={settings.ner}
@@ -112,9 +112,9 @@ export function CheckTab({ settings }: { settings: SharedSettings }) {
         )}
         <NamesInput value={settings.names} onChange={settings.setNames} />
       </Step>
-      <Step n={3} title="Vérifier">
+      <Step n={3} title={m.step3}>
         <PrimaryButton disabled={!file} onClick={() => void start()}>
-          Vérifier
+          {m.button}
         </PrimaryButton>
         {state.error && <Banner tone="error" title={state.error} />}
       </Step>

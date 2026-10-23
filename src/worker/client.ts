@@ -1,5 +1,6 @@
 // Côté interface : promisifie les appels au Worker et expose la progression.
 import type { Progress } from "../engine/types.ts";
+import { getLocale, t } from "../i18n/index.ts";
 import {
   EngineError,
   type FromWorker,
@@ -83,14 +84,14 @@ export class WorkerClient {
     const file = (params as { file?: unknown }).file;
     const copy = file instanceof ArrayBuffer ? file.slice(0) : null;
     const sent = copy ? { ...params, file: copy } : params;
-    this.worker.postMessage({ id, type, params: sent } as ToWorker, copy ? [copy] : []);
+    this.worker.postMessage({ id, type, params: sent, locale: getLocale() } as ToWorker, copy ? [copy] : []);
     return { id, promise };
   }
 
   /** Annule une requête en terminant le Worker ; toutes les requêtes en cours sont rejetées. */
   cancel(): void {
     this.worker.terminate();
-    for (const [, p] of this.pending) p.reject(new EngineError("Cancelled", "Traitement annulé"));
+    for (const [, p] of this.pending) p.reject(new EngineError("Cancelled", t().cancelled));
     this.pending.clear();
     this.worker = this.spawn();
     for (const l of this.resetListeners) l();

@@ -2,6 +2,7 @@
 // modifiées sont recompressées ; toutes les autres gardent leurs octets compressés, leur méthode de
 // compression et leur position (règles du spike 0.3, docs/DEVIATIONS.md).
 import JSZip from "jszip";
+import { t } from "../../i18n/index.ts";
 
 interface CentralEntry {
   name: string;
@@ -18,7 +19,7 @@ export function centralDirectory(buf: Uint8Array): CentralEntry[] {
       break;
     }
   }
-  if (eocd < 0) throw new Error("archive zip invalide (répertoire central introuvable)");
+  if (eocd < 0) throw new Error(t().ooxml.invalidZip);
   const count = dv.getUint16(eocd + 10, true);
   let p = dv.getUint32(eocd + 16, true);
   const dec = new TextDecoder();
@@ -64,13 +65,13 @@ export class OoxmlPackage {
 
   async readText(name: string): Promise<string> {
     const f = this.zip.file(name);
-    if (!f) throw new Error(`partie absente : ${name}`);
+    if (!f) throw new Error(t().ooxml.missingPart(name));
     return f.async("string");
   }
 
   async readBytes(name: string): Promise<Uint8Array> {
     const f = this.zip.file(name);
-    if (!f) throw new Error(`partie absente : ${name}`);
+    if (!f) throw new Error(t().ooxml.missingPart(name));
     return f.async("uint8array");
   }
 

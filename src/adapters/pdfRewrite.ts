@@ -29,6 +29,7 @@ import {
 } from "./pdfContent.ts";
 import { codesOf, dictOf, loadFont, lookup, nameOf, standardFont, streamBytes, type PdfFont } from "./pdfFonts.ts";
 import { TOKEN_CLOSE, TOKEN_OPEN } from "../engine/tokens.ts";
+import { t } from "../i18n/index.ts";
 
 export interface Replacement {
   /** Valeur d'origine telle que détectée dans le texte extrait. */
@@ -708,15 +709,16 @@ function removedParts(doc: PDFDocument): string[] {
   const cat = doc.catalog;
   const ctx = doc.context;
   const out: string[] = [];
+  const m = t().pdf.removedParts;
   const info = dictOf(ctx, ctx.trailerInfo.Info);
-  if ((info && info.keys().length > 0) || cat.has(PDFName.of("Metadata"))) out.push("les métadonnées (titre, auteur…)");
+  if ((info && info.keys().length > 0) || cat.has(PDFName.of("Metadata"))) out.push(m.metadata);
   const annots = doc.getPages().reduce((s, p) => s + (p.node.Annots()?.size() ?? 0), 0);
-  if (annots) out.push(`${annots} annotation${annots > 1 ? "s" : ""} (liens, commentaires…)`);
-  if (cat.has(PDFName.of("Outlines"))) out.push("les signets");
-  if (cat.has(PDFName.of("StructTreeRoot"))) out.push("la structure d'accessibilité (PDF balisé)");
+  if (annots) out.push(m.annotations(annots));
+  if (cat.has(PDFName.of("Outlines"))) out.push(m.outlines);
+  if (cat.has(PDFName.of("StructTreeRoot"))) out.push(m.structure);
   const names = dictOf(ctx, cat.get(PDFName.of("Names")));
-  if (names?.has(PDFName.of("EmbeddedFiles"))) out.push("les fichiers joints");
-  if (names?.has(PDFName.of("JavaScript")) || cat.has(PDFName.of("OpenAction"))) out.push("les actions et scripts");
+  if (names?.has(PDFName.of("EmbeddedFiles"))) out.push(m.attachments);
+  if (names?.has(PDFName.of("JavaScript")) || cat.has(PDFName.of("OpenAction"))) out.push(m.scripts);
   return out;
 }
 
@@ -724,8 +726,8 @@ function precheck(doc: PDFDocument): string | null {
   const ctx = doc.context;
   const form = dictOf(ctx, doc.catalog.get(PDFName.of("AcroForm")));
   const fields = lookup(ctx, form?.get(PDFName.of("Fields")));
-  if (fields instanceof PDFArray && fields.size() > 0) return "formulaire PDF";
-  if (doc.catalog.has(PDFName.of("OCProperties"))) return "calques (contenu optionnel)";
+  if (fields instanceof PDFArray && fields.size() > 0) return t().pdf.form;
+  if (doc.catalog.has(PDFName.of("OCProperties"))) return t().pdf.layers;
   return null;
 }
 
@@ -742,12 +744,12 @@ export async function rewritePdf(file: ArrayBuffer, replacements: readonly Repla
     src = await PDFDocument.load(new Uint8Array(file.slice(0)), { updateMetadata: false });
   } catch (e) {
     const encrypted = e instanceof Error && /encrypt/i.test(e.message);
-    return { ok: false, reason: encrypted ? "PDF chiffré" : "structure du PDF non prise en charge", stats: null };
+    return { ok: false, reason: encrypted ? t().pdf.encrypted : t().pdf.unsupportedStructure, stats: null };
   }
   try {
     return await rewriteLoaded(src, replacements);
   } catch {
-    return { ok: false, reason: "structure du PDF non prise en charge", stats: null };
+    return { ok: false, reason: t().pdf.unsupportedStructure, stats: null };
   }
 }
 
@@ -819,12 +821,12 @@ async function rewriteLoaded(src: PDFDocument, replacements: readonly Replacemen
       for (const f of job.unit.forms) forms.push({ ref: f, parentResources: resources });
     }
   } catch (e) {
-    return { ok: false, reason: `flux de contenu illisible (${e instanceof Error ? e.message : String(e)})`, stats };
+    return { ok: false, reason: t().pdf.unreadableStream(e instanceof Error ? e.message : String(e)), stats };
   }
   stats.unsupportedFonts = [...unsupported];
   if (invisible) {
     // PDF océrisé : retirer la couche de texte ne retire pas la donnée de l'image qu'elle recouvre.
-    return { ok: false, reason: "texte invisible superposé à une image (PDF océrisé)", stats };
+    return { ok: false, reason: t().pdf.ocr, stats };
   }
 
   const out = await PDFDocument.create({ updateMetadata: false });
@@ -839,7 +841,7 @@ async function rewriteLoaded(src: PDFDocument, replacements: readonly Replacemen
 
   const leak = await verifyPdf(data, replacements);
   if (leak) {
-    const why = stats.unsupportedFonts.length ? ` ; en cause : ${stats.unsupportedFonts.join(", ")}` : "";
+    const why = stats.unsupportedFonts.length ? t().pdf.cause(stats.unsupportedFonts.join(", ")) : "";
     return { ok: false, reason: `${leak}${why}`, stats };
   }
   return { ok: true, data, removed, stats };
@@ -896,18 +898,14 @@ export async function verifyPdf(data: Uint8Array, replacements: readonly Replace
   try {
     x = await extractPdf(data.slice().buffer);
   } catch {
-    return "le PDF produit ne s'ouvre pas";
+    return t().pdf.doesNotOpen;
   }
   const extracted = `${x.markdown}\n${x.itemsText}`;
   const left = remainingValues(extracted, originals);
-  if (left.length) {
-    return `${left.length} valeur${left.length > 1 ? "s" : ""} détectée${left.length > 1 ? "s" : ""} n'a pas pu être retirée du texte du PDF`;
-  }
+  if (left.length) return t().pdf.notRemoved(left.length);
   const missing = [...new Set(replacements.map((r) => r.token))].filter((t) => !x.markdown.includes(t));
-  if (missing.length)
-    return `${missing.length} token${missing.length > 1 ? "s" : ""} illisible${missing.length > 1 ? "s" : ""} dans le PDF produit`;
+  if (missing.length) return t().pdf.unreadableTokens(missing.length);
   const raw = remainingValues((await rawTexts(data)).join("\n"), originals);
-  if (raw.length)
-    return `${raw.length} valeur${raw.length > 1 ? "s" : ""} détectée${raw.length > 1 ? "s" : ""} subsiste${raw.length > 1 ? "nt" : ""} dans la structure du PDF`;
+  if (raw.length) return t().pdf.remainsInStructure(raw.length);
   return null;
 }

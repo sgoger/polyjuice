@@ -1,5 +1,6 @@
 // Traitement des requêtes, indépendant de l'objet Worker (testable en Node).
 import { inspect } from "../adapters/inspect.ts";
+import { setLocale, t } from "../i18n/index.ts";
 import type { Progress } from "../engine/types.ts";
 import { TransformersNerProvider } from "../engine/detectors/ner.ts";
 import { anonymize, check, restore } from "./pipeline.ts";
@@ -41,10 +42,7 @@ function getNer(ctx: Context): Promise<TransformersNerProvider> {
       });
     } catch (e) {
       nerLoading = null;
-      throw new EngineError(
-        "NerUnavailable",
-        `Le modèle de détection par IA n'a pas pu être chargé (${e instanceof Error ? e.message : String(e)}). Vérifiez la connexion, ou décochez l'option : la détection par motifs et par liste fonctionne sans réseau.`,
-      );
+      throw new EngineError("NerUnavailable", t().pipeline.nerLoadFailed(e instanceof Error ? e.message : String(e)));
     }
     ner = provider;
     return provider;
@@ -74,6 +72,8 @@ export function createDispatcher(post: Post, handlers: Handlers = defaultHandler
       return;
     }
     const { id } = msg;
+    // Langue des messages produits (avertissements, rapports, erreurs) : celle de l'interface.
+    if (msg.locale) setLocale(msg.locale);
     const ctx: Context = {
       id,
       post,
@@ -81,7 +81,7 @@ export function createDispatcher(post: Post, handlers: Handlers = defaultHandler
         post({ id, type: "progress", done, total });
       },
       checkCancelled: () => {
-        if (cancelled.has(id)) throw new EngineError("Cancelled", "Traitement annulé");
+        if (cancelled.has(id)) throw new EngineError("Cancelled", t().cancelled);
       },
     };
     try {

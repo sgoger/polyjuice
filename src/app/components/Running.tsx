@@ -1,4 +1,5 @@
 import type { Progress } from "../../engine/types.ts";
+import { useT } from "../messages/index.ts";
 import type { RunState } from "../useEngine.ts";
 
 interface Props {
@@ -12,36 +13,35 @@ interface Props {
 }
 
 export function Running({ state, onCancel, modelLoading }: Props) {
+  const m = useT().running;
   if (!state.running) return null;
   const { progress } = state;
   const nerProgress = state.nerProgress ?? modelLoading?.progress ?? null;
   const ner =
     nerProgress?.status === "download" && nerProgress.total
-      ? `Téléchargement du modèle de détection par IA : ${Math.round(((nerProgress.loaded ?? 0) / nerProgress.total) * 100)} % — le traitement démarrera ensuite.`
+      ? m.downloading(Math.round(((nerProgress.loaded ?? 0) / nerProgress.total) * 100))
       : nerProgress?.status === "init"
-        ? "Initialisation du modèle de détection par IA…"
+        ? m.initializing
         : modelLoading && !progress
-          ? "Préparation du modèle de détection par IA…"
+          ? m.preparing
           : null;
   return (
     <div className="space-y-2 rounded-lg border border-slate-300 bg-white p-4" aria-live="polite" aria-busy="true">
       <div className="flex items-center justify-between gap-4">
-        <p>
-          {ner ?? (progress ? `Traitement : ${progress.done} / ${progress.total} segments` : "Lecture du document…")}
-        </p>
+        <p>{ner ?? (progress ? m.progress(progress.done, progress.total) : m.reading)}</p>
         <button
           type="button"
           onClick={onCancel}
           className="rounded-md border border-slate-400 px-3 py-1.5 text-sm hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-600"
         >
-          Annuler
+          {m.cancel}
         </button>
       </div>
       <progress
         className="h-2 w-full"
         max={progress?.total ?? 1}
         value={progress ? progress.done : undefined}
-        aria-label="Progression du traitement"
+        aria-label={m.progressLabel}
       />
     </div>
   );

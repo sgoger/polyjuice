@@ -1,7 +1,7 @@
 // Adaptateur .pdf : extraction du texte avec pdf.js en Markdown minimal, traité comme du texte brut
 // (document .md). À l'anonymisation, le PDF d'origine est aussi réécrit (pdfRewrite.ts) quand c'est
 // possible sans risque : le .pdf devient le document principal, le .md reste produit.
-import { pl } from "../engine/plural.ts";
+import { t } from "../i18n/index.ts";
 import type { Adapter, Doc, OriginalOutput } from "../engine/types.ts";
 import { readText, writeText } from "./text.ts";
 
@@ -154,14 +154,10 @@ async function read(file: ArrayBuffer): Promise<Doc> {
   const warnings: string[] = [];
   const scanned = x.pages > 0 && x.chars / x.pages < SCANNED_THRESHOLD;
   if (scanned) {
-    warnings.push(
-      `PDF probablement scanné (${Math.round(x.chars / x.pages)} caractères par page en moyenne) : le texte contenu dans les images n'est pas extrait (pas d'OCR).`,
-    );
+    warnings.push(t().pdf.scanned(Math.round(x.chars / x.pages)));
   }
   if (x.pagesWithImages) {
-    warnings.push(
-      `${pl(x.pagesWithImages, "page contient", "pages contiennent")} des images : le texte contenu dans les images n'est pas traité.`,
-    );
+    warnings.push(t().pdf.pagesWithImages(x.pagesWithImages));
   }
   // Scanné : peu de texte et des images. Le PDF réécrit montrerait encore les données des images.
   const state: State = {
@@ -172,8 +168,6 @@ async function read(file: ArrayBuffer): Promise<Doc> {
   };
   return { ...doc, format: "pdf", outputExtension: "md", warnings, state };
 }
-
-const MD_ONLY = "seul le texte est produit, en Markdown (.md) ; la mise en forme d'origine n'est pas conservée";
 
 /** Valeurs remplacées (texte d'origine → token), d'après les édits du moteur. */
 function replacementsOf(doc: Doc, originals: readonly string[]): { original: string; token: string }[] {
@@ -191,22 +185,20 @@ function replacementsOf(doc: Doc, originals: readonly string[]): { original: str
 async function writeOriginal(doc: Doc): Promise<OriginalOutput> {
   const state = doc.state as State;
   if (state.scanned) {
-    return { extension: "pdf", data: null, warnings: [`PDF non réécrit (probablement scanné) : ${MD_ONLY}.`] };
+    return { extension: "pdf", data: null, warnings: [t().pdf.notRewrittenScanned] };
   }
   let result;
   try {
     const { rewritePdf } = await import("./pdfRewrite.ts");
     result = await rewritePdf(state.file, replacementsOf(doc, state.originals));
   } catch (e) {
-    result = { ok: false as const, reason: `erreur inattendue : ${e instanceof Error ? e.message : String(e)}` };
+    result = { ok: false as const, reason: t().pdf.unexpected(e instanceof Error ? e.message : String(e)) };
   }
   if (!result.ok) {
-    return { extension: "pdf", data: null, warnings: [`PDF non réécrit (${result.reason}) : ${MD_ONLY}.`] };
+    return { extension: "pdf", data: null, warnings: [t().pdf.notRewritten(result.reason)] };
   }
-  const warnings = [
-    "PDF réécrit : les données détectées sont retirées du fichier et remplacées par des tokens (affichés entre [ ], copiés avec ⟦ ⟧), la mise en page est conservée. Une version texte (.md) est aussi produite.",
-  ];
-  if (result.removed.length) warnings.push(`Retirés du PDF produit : ${result.removed.join(", ")}.`);
+  const warnings = [t().pdf.rewritten];
+  if (result.removed.length) warnings.push(t().pdf.removed(result.removed.join(", ")));
   return { extension: "pdf", data: result.data.slice().buffer, warnings };
 }
 

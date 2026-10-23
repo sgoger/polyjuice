@@ -108,7 +108,7 @@ describe.each(["sample.pdf", "pdf-fragments.pdf", "pdf-composite.pdf"])("PDF ré
     ).map(([token, e]) => ({ token, original: e.original }));
     expect(await verifyPdf(new Uint8Array(r.document.data), replacements)).toBeNull();
     // L'original, lui, ne la passe pas.
-    expect(await verifyPdf(new Uint8Array(fixture(name)), replacements)).toMatch(/n'a pas pu être retirée/);
+    expect(await verifyPdf(new Uint8Array(fixture(name)), replacements)).toMatch(/pas pu être retirées? du texte/);
     // Mise en page conservée : chaque glyphe conservé est exactement à sa place d'origine.
     const kept = await glyphsOf(r.document.data);
     const before = new Set(await glyphsOf(fixture(name)));

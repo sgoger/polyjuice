@@ -4,6 +4,7 @@
 // ce qui garantit aussi un comportement identique dans tous les navigateurs (le spike 0.3 a montré que
 // le XMLSerializer de Chromium réordonne les déclarations d'espaces de noms).
 import { DOMParser, XMLSerializer, type Document, type Element, type Node } from "@xmldom/xmldom";
+import { t } from "../../i18n/index.ts";
 
 export type { Document, Element, Node };
 
@@ -44,9 +45,9 @@ export function parseXml(xml: string): ParsedPart {
       },
     }).parseFromString(xml, "text/xml");
   } catch (e) {
-    throw new Error(`XML invalide : ${e instanceof Error ? e.message : String(e)}`, { cause: e });
+    throw new Error(t().ooxml.invalidXml(e instanceof Error ? e.message : String(e)), { cause: e });
   }
-  if (errors.length > 0 || !doc.documentElement) throw new Error(`XML invalide : ${errors[0] ?? "document vide"}`);
+  if (errors.length > 0 || !doc.documentElement) throw new Error(t().ooxml.invalidXml(errors[0] ?? t().ooxml.emptyXml));
   return { doc, declaration: DECL.exec(xml)?.[0] ?? "" };
 }
 

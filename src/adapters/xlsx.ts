@@ -1,6 +1,6 @@
 // Adaptateur .xlsx (SpreadsheetML brut) : chaînes partagées et chaînes inline uniquement.
 // Formules, nombres, dates, booléens, noms de feuilles, styles, graphiques et macros ne sont jamais touchés.
-import { pl } from "../engine/plural.ts";
+import { t } from "../i18n/index.ts";
 import type { Adapter, Doc, ReadOptions } from "../engine/types.ts";
 import { inspectXlsx } from "./inspect.ts";
 import {
@@ -66,7 +66,7 @@ function cellsOf(sheet: Element | ReturnType<typeof parseXml>["doc"], sstTexts: 
 async function read(file: ArrayBuffer, options?: ReadOptions): Promise<Doc> {
   const pkg = await OoxmlPackage.open(file);
   const names = pkg.names();
-  if (!names.includes("xl/workbook.xml")) throw new Error("xl/workbook.xml absent : ce n'est pas un classeur");
+  if (!names.includes("xl/workbook.xml")) throw new Error(t().xlsx.notWorkbook);
   const warnings: string[] = [];
   const sheets = names.filter((n) => SHEET_RE.test(n)).sort(byNumber);
   const specs: PartSpec[] = [];
@@ -80,11 +80,9 @@ async function read(file: ArrayBuffer, options?: ReadOptions): Promise<Doc> {
   warnings.push(...contentWarnings(pkg, "xl"));
   const { comments, notes, peopleList } = await inspectXlsx(pkg);
   if (comments + notes) {
-    warnings.push(
-      `${pl(comments + notes, "commentaire ou note de cellule", "commentaires ou notes de cellules")} : texte et noms des auteurs restent en clair (non traités). Supprimez-les dans Excel, puis anonymisez à nouveau.`,
-    );
+    warnings.push(t().xlsx.comments(comments + notes));
   } else if (peopleList) {
-    warnings.push("Liste des auteurs de commentaires (xl/persons) conservée telle quelle (noms en clair).");
+    warnings.push(t().xlsx.peopleList);
   }
 
   const notices = await externalTargets(pkg);
@@ -94,29 +92,29 @@ async function read(file: ArrayBuffer, options?: ReadOptions): Promise<Doc> {
     for (const c of elementsNS(part.parsed.doc, NS.s, "c")) {
       // Valeur calculée (en cache) d'une formule texte : jamais modifiée, signalée si sensible.
       const v = c.getAttribute("t") === "str" ? child(c, "v")?.textContent : null;
-      if (v?.trim()) notices.push({ text: v, where: "Résultat de formule" });
+      if (v?.trim()) notices.push({ text: v, where: t().xlsx.formulaResult });
     }
     for (const local of ["oddHeader", "oddFooter", "evenHeader", "evenFooter", "firstHeader", "firstFooter"]) {
       for (const el of elementsNS(part.parsed.doc, NS.s, local)) {
-        const t = el.textContent ?? "";
-        if (t.trim()) notices.push({ text: t, where: "En-tête ou pied de page de feuille" });
+        const text = el.textContent ?? "";
+        if (text.trim()) notices.push({ text, where: t().xlsx.headerFooter });
       }
     }
   }
   if (names.some((n) => n.startsWith("xl/pivotCache/"))) {
-    warnings.push("Tableaux croisés dynamiques présents : leur cache (copie des données sources) n'est pas traité.");
+    warnings.push(t().xlsx.pivotTables);
   }
   if (names.some((n) => n.startsWith("xl/externalLinks/"))) {
-    warnings.push("Liaisons vers d'autres classeurs présentes : leurs valeurs en cache ne sont pas traitées.");
+    warnings.push(t().xlsx.externalLinks);
   }
   try {
     const wb = parseXml(await pkg.readText("xl/workbook.xml"));
     for (const s of elementsNS(wb.doc, NS.s, "sheet")) {
       const name = s.getAttribute("name");
-      if (name) notices.push({ text: name, where: "Nom de feuille" });
+      if (name) notices.push({ text: name, where: t().xlsx.sheetName });
     }
   } catch {
-    warnings.push("Partie illisible : xl/workbook.xml (noms de feuilles non vérifiés).");
+    warnings.push(t().xlsx.workbookUnreadable);
   }
   return { format: "xlsx", outputExtension: "xlsx", segments, warnings, notices, state };
 }
@@ -171,11 +169,7 @@ function markColumns(
   }
   // Chaînes partagées marquées et utilisées par des cellules de plusieurs colonnes.
   const shared = [...marked].filter((i) => (usage.get(i)?.size ?? 0) > 1).length;
-  return shared
-    ? [
-        `${pl(shared, "chaîne partagée des colonnes anonymisées est utilisée", "chaînes partagées des colonnes anonymisées sont utilisées")} dans plusieurs colonnes : toutes les cellules qui les utilisent sont remplacées.`,
-      ]
-    : [];
+  return shared ? [t().xlsx.sharedStrings(shared)] : [];
 }
 
 export const xlsxAdapter: Adapter = {

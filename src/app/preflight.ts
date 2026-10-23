@@ -1,92 +1,65 @@
 // Message affiché au dépôt d'un document Office contenant commentaires, révisions ou auteurs.
 import { isClean, type Inspection } from "../adapters/inspect.ts";
-import { agree, pl } from "../engine/plural.ts";
+import { getLocale } from "../i18n/index.ts";
+import type { UiMessages } from "./messages/fr.tsx";
+import { uiMessagesFor } from "./messages/index.ts";
 
 export interface PreflightMessage {
   title: string;
   details: string[];
 }
 
-const AGAIN = "enregistrez, puis déposez à nouveau le fichier.";
+type Texts = UiMessages["preflight"];
 
-const byAuthors = (n: number) => (n === 1 ? " d'un auteur" : n > 1 ? ` de ${n} auteurs` : "");
-const namesStay = (n: number) =>
-  `${agree(n, "Le nom de cet auteur restera", "Les noms de ces auteurs resteront")} en clair dans le document anonymisé.`;
-const listStays = "Leurs noms resteront en clair dans le document anonymisé.";
-
-/** Message par format, ou null si rien n'a été trouvé. */
-export function preflightMessage(i: Inspection | null): PreflightMessage | null {
+/** Message par format, ou null si rien n'a été trouvé. Textes dans la langue courante par défaut. */
+export function preflightMessage(
+  i: Inspection | null,
+  messages: UiMessages = uiMessagesFor(getLocale()),
+): PreflightMessage | null {
   if (!i || isClean(i)) return null;
+  const m = messages.preflight;
   switch (i.format) {
     case "docx":
-      return docx(i);
+      return docx(i, m);
     case "pptx":
-      return pptx(i);
+      return pptx(i, m);
     case "xlsx":
-      return xlsx(i);
+      return xlsx(i, m);
   }
 }
 
-function docx(i: Inspection): PreflightMessage {
-  const found = [
-    ...(i.comments ? [pl(i.comments, "commentaire", "commentaires")] : []),
-    ...(i.revisions ? [pl(i.revisions, "révision", "révisions")] : []),
-  ];
+function docx(i: Inspection, m: Texts): PreflightMessage {
+  const found = [...(i.comments ? [m.comments(i.comments)] : []), ...(i.revisions ? [m.revisions(i.revisions)] : [])];
   const details: string[] = [];
   let title: string;
   if (found.length) {
-    title = `Ce document contient ${found.join(" et ")}${byAuthors(i.authors)}.`;
-    if (i.authors) details.push(namesStay(i.authors));
-    const steps = [
-      ...(i.revisions ? ["Accepter → Accepter toutes les modifications"] : []),
-      ...(i.comments ? ["Supprimer → Supprimer tous les commentaires du document"] : []),
-    ];
-    details.push(
-      `Pour les retirer avant d'anonymiser : dans Word, onglet Révision → ${steps.join(", puis ")} ; ${AGAIN}`,
-    );
-    if (i.peopleList) details.push("Le fichier contient aussi la liste des personnes qui l'ont commenté ou révisé.");
+    title = m.docx.contains(found, i.authors);
+    if (i.authors) details.push(m.namesStay(i.authors));
+    details.push(m.docx.remove(!!i.revisions, !!i.comments));
+    if (i.peopleList) details.push(m.docx.peopleListToo);
   } else if (i.peopleList) {
-    title = "Ce document contient la liste des personnes qui l'ont commenté ou révisé.";
-    details.push(listStays);
+    title = m.docx.peopleList;
+    details.push(m.listStays);
   } else {
-    title = "Le suivi des modifications est activé dans ce document.";
+    title = m.docx.tracking;
   }
-  if (i.trackRevisions) {
-    details.push(
-      `${found.length || i.peopleList ? "Le suivi des modifications est aussi activé : t" : "T"}oute modification ultérieure serait enregistrée avec le nom de son auteur. Pour le désactiver : dans Word, onglet Révision → Suivi des modifications ; ${AGAIN}`,
-    );
-  }
+  if (i.trackRevisions) details.push(m.docx.trackingDetail(!!(found.length || i.peopleList)));
   return { title, details };
 }
 
-function pptx(i: Inspection): PreflightMessage {
-  if (!i.comments) {
-    return { title: "Cette présentation contient la liste des auteurs de ses commentaires.", details: [listStays] };
-  }
+function pptx(i: Inspection, m: Texts): PreflightMessage {
+  if (!i.comments) return { title: m.pptx.peopleList, details: [m.listStays] };
   return {
-    title: `Cette présentation contient ${pl(i.comments, "commentaire", "commentaires")}${byAuthors(i.authors)}.`,
-    details: [
-      ...(i.authors ? [namesStay(i.authors)] : []),
-      "Le texte des commentaires n'est pas anonymisé non plus.",
-      `Pour les retirer avant d'anonymiser : dans PowerPoint, onglet Révision → Supprimer → Supprimer tous les commentaires de la présentation ; ${AGAIN}`,
-    ],
+    title: m.pptx.contains(i.comments, i.authors),
+    details: [...(i.authors ? [m.namesStay(i.authors)] : []), m.pptx.textToo, m.pptx.remove],
   };
 }
 
-function xlsx(i: Inspection): PreflightMessage {
-  const found = [
-    ...(i.comments ? [pl(i.comments, "commentaire", "commentaires")] : []),
-    ...(i.notes ? [pl(i.notes, "note", "notes")] : []),
-  ];
-  if (!found.length) {
-    return { title: "Ce classeur contient la liste des auteurs de ses commentaires.", details: [listStays] };
-  }
+function xlsx(i: Inspection, m: Texts): PreflightMessage {
+  const found = [...(i.comments ? [m.comments(i.comments)] : []), ...(i.notes ? [m.notes(i.notes)] : [])];
+  if (!found.length) return { title: m.xlsx.peopleList, details: [m.listStays] };
   return {
-    title: `Ce classeur contient ${found.join(" et ")}${byAuthors(i.authors)}.`,
-    details: [
-      ...(i.authors ? [namesStay(i.authors)] : []),
-      `Le texte des ${i.notes && !i.comments ? "notes" : i.comments && !i.notes ? "commentaires" : "commentaires et des notes"} n'est pas anonymisé non plus.`,
-      `Pour les retirer avant d'anonymiser : dans Excel, sur chaque feuille, sélectionnez toutes les cellules (Ctrl+A), puis onglet Accueil → Effacer → Effacer les commentaires et les notes ; ${AGAIN}`,
-    ],
+    title: m.xlsx.contains(found, i.authors),
+    details: [...(i.authors ? [m.namesStay(i.authors)] : []), m.xlsx.textToo(!!i.comments, !!i.notes), m.xlsx.remove],
   };
 }

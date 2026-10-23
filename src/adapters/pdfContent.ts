@@ -1,5 +1,6 @@
 // Flux de contenu PDF : découpage en opérations (opérandes + opérateur) et sérialisation.
 // Chaque opération garde ses positions dans le flux, pour recopier à l'identique celles qu'on ne modifie pas.
+import { t } from "../i18n/index.ts";
 
 export interface PdfName {
   name: string;
@@ -66,7 +67,7 @@ export function parseContent(bytes: Uint8Array): Operation[] {
         out.push(c);
       } else out.push(c);
     }
-    throw new ContentSyntaxError("chaîne non terminée");
+    throw new ContentSyntaxError(t().pdf.syntax.unterminatedString);
   };
 
   const readHex = (): Uint8Array => {
@@ -107,7 +108,7 @@ export function parseContent(bytes: Uint8Array): Operation[] {
   const readValue = (): Operand | undefined => {
     skipWs();
     const c = bytes[pos];
-    if (c === undefined) throw new ContentSyntaxError("fin de flux inattendue");
+    if (c === undefined) throw new ContentSyntaxError(t().pdf.syntax.unexpectedEnd);
     if (c === 0x28) return readLiteral();
     if (c === 0x2f) return readName();
     if (c === 0x5b) {
@@ -120,7 +121,7 @@ export function parseContent(bytes: Uint8Array): Operation[] {
           return arr;
         }
         const v = readValue();
-        if (v === undefined) throw new ContentSyntaxError("tableau mal formé");
+        if (v === undefined) throw new ContentSyntaxError(t().pdf.syntax.malformedArray);
         arr.push(v);
       }
     }
@@ -134,15 +135,15 @@ export function parseContent(bytes: Uint8Array): Operation[] {
           return dict;
         }
         const k = readValue();
-        if (!k || typeof k !== "object" || !("name" in k)) throw new ContentSyntaxError("dictionnaire mal formé");
+        if (!k || typeof k !== "object" || !("name" in k)) throw new ContentSyntaxError(t().pdf.syntax.malformedDict);
         const v = readValue();
-        if (v === undefined) throw new ContentSyntaxError("dictionnaire mal formé");
+        if (v === undefined) throw new ContentSyntaxError(t().pdf.syntax.malformedDict);
         dict.set(k.name, v);
       }
     }
     if (c === 0x3c) return readHex();
     if (c === 0x5d || c === 0x3e || c === 0x29 || c === 0x7b || c === 0x7d) {
-      throw new ContentSyntaxError("délimiteur inattendu");
+      throw new ContentSyntaxError(t().pdf.syntax.unexpectedDelimiter);
     }
     const word = readKeyword();
     if (word === "true") return true;
@@ -150,7 +151,7 @@ export function parseContent(bytes: Uint8Array): Operation[] {
     if (word === "null") return null;
     const num = Number(word);
     if (word !== "" && !Number.isNaN(num)) return num;
-    throw new ContentSyntaxError(`valeur inattendue : ${word}`);
+    throw new ContentSyntaxError(t().pdf.syntax.unexpectedValue(word));
   };
 
   for (;;) {
@@ -163,7 +164,7 @@ export function parseContent(bytes: Uint8Array): Operation[] {
       if (v !== undefined) stack.push(v);
       continue;
     }
-    if (!isRegular(c)) throw new ContentSyntaxError("délimiteur inattendu");
+    if (!isRegular(c)) throw new ContentSyntaxError(t().pdf.syntax.unexpectedDelimiter);
     const word = readKeyword();
     const num = Number(word);
     if (word === "true" || word === "false" || word === "null" || !Number.isNaN(num)) {
@@ -179,7 +180,7 @@ export function parseContent(bytes: Uint8Array): Operation[] {
         const k = readValue();
         const v = readValue();
         if (!k || typeof k !== "object" || !("name" in k) || v === undefined) {
-          throw new ContentSyntaxError("image en ligne mal formée");
+          throw new ContentSyntaxError(t().pdf.syntax.malformedInlineImage);
         }
         dict.set(k.name, v);
       }
@@ -201,7 +202,7 @@ export function parseContent(bytes: Uint8Array): Operation[] {
           end = p;
         }
       }
-      if (end < 0) throw new ContentSyntaxError("image en ligne non terminée");
+      if (end < 0) throw new ContentSyntaxError(t().pdf.syntax.unterminatedInlineImage);
       pos = end + 2;
       ops.push({ op: "BI", args: [dict], start: opStart, end: pos });
       stack = [];

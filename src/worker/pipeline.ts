@@ -1,7 +1,7 @@
 // Enchaînement adaptateur → moteur → adaptateur pour les trois onglets.
 // Indépendant du Worker : testé directement en Node.
 import JSZip from "jszip";
-import { agree, pl } from "../engine/plural.ts";
+import { t } from "../i18n/index.ts";
 import {
   ANONYMIZE_EXTENSIONS,
   refusalMessage,
@@ -84,7 +84,7 @@ function resolveAdapter(fileName: string): { format: Format; adapter: Adapter } 
     const ext = extensionOf(fileName);
     throw new EngineError(
       "UnsupportedFormat",
-      ext ? refusalMessage(fileName, ANONYMIZE_EXTENSIONS) : "Fichier sans extension : format inconnu",
+      ext ? refusalMessage(fileName, ANONYMIZE_EXTENSIONS) : t().pipeline.noExtension,
     );
   }
   return found;
@@ -105,7 +105,7 @@ async function readDoc(
     return await adapter.read(file, columns ? { columns } : undefined);
   } catch (e) {
     if (e instanceof EngineError) throw e;
-    throw new EngineError("InvalidDocument", `Document illisible : ${e instanceof Error ? e.message : String(e)}`);
+    throw new EngineError("InvalidDocument", t().pipeline.unreadable(e instanceof Error ? e.message : String(e)));
   }
 }
 
@@ -116,7 +116,7 @@ async function readDoc(
 async function nerFor(enabled: boolean, doc: Doc, format: Format, ctx: PipelineContext): Promise<NerProvider | null> {
   // NER toujours désactivée sur les classeurs (§3).
   if (!enabled || isSpreadsheet(format)) return null;
-  if (!ctx.getNer) throw new EngineError("NerUnavailable", "Détection par IA indisponible");
+  if (!ctx.getNer) throw new EngineError("NerUnavailable", t().pipeline.nerUnavailable);
   const ner = await ctx.getNer();
   const total = doc.segments.length;
   return documentNer(
@@ -150,10 +150,7 @@ async function sensitiveNotices(doc: Doc, names: NameMatcher): Promise<{ text: s
 async function noticeWarnings(doc: Doc, names: NameMatcher): Promise<string[]> {
   const counts = new Map<string, number>();
   for (const n of await sensitiveNotices(doc, names)) counts.set(n.where, (counts.get(n.where) ?? 0) + 1);
-  return [...counts].map(
-    ([where, n]) =>
-      `${where} : ${pl(n, "élément contient", "éléments contiennent")} des données personnelles détectées et ${agree(n, "n'est pas modifié", "ne sont pas modifiés")} (« Vérifier » les liste).`,
-  );
+  return [...counts].map(([where, n]) => t().pipeline.notice(where, n));
 }
 
 // ---------------------------------------------------------------------------

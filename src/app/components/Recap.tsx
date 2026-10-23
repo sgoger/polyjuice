@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { useT } from "../messages/index.ts";
 import { SecondaryButton } from "./PrimaryButton.tsx";
 
 interface Props {
@@ -16,8 +17,9 @@ interface Props {
 
 /** Une fois le traitement lancé, remplace les étapes de préparation par un résumé d'une ligne. */
 export function Recap({ files, details = [], running, onRestart, onEdit, children }: Props) {
+  const m = useT().recap;
   return (
-    <section aria-label="Fichiers traités" className="space-y-4 rounded-lg border border-slate-200 bg-white p-4">
+    <section aria-label={m.label} className="space-y-4 rounded-lg border border-slate-200 bg-white p-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
           <p className="font-mono text-sm font-medium break-all">{files.join(" + ")}</p>
@@ -25,8 +27,8 @@ export function Recap({ files, details = [], running, onRestart, onEdit, childre
         </div>
         {!running && (
           <div className="flex flex-wrap gap-2">
-            {onEdit && <SecondaryButton onClick={onEdit}>Modifier les réglages</SecondaryButton>}
-            <SecondaryButton onClick={onRestart}>↺ Recommencer</SecondaryButton>
+            {onEdit && <SecondaryButton onClick={onEdit}>{m.edit}</SecondaryButton>}
+            <SecondaryButton onClick={onRestart}>{m.restart}</SecondaryButton>
           </div>
         )}
       </div>

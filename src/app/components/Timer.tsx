@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useEngineT, useT } from "../messages/index.ts";
 import type { RunState } from "../useEngine.ts";
 
 /** « 42 s », « 3 min 05 s ». */
@@ -11,6 +12,8 @@ export function formatDuration(ms: number): string {
 /** Minuteur discret : temps écoulé pendant le traitement, puis durée totale une fois terminé. */
 export function Timer({ state }: { state: RunState }) {
   const [now, setNow] = useState(() => Date.now());
+  const m = useT().timer;
+  const { colon } = useEngineT();
   useEffect(() => {
     if (!state.running) return;
     // Avant le premier tic, `now` peut précéder le début : l'affichage est ramené à 0 s.
@@ -26,7 +29,9 @@ export function Timer({ state }: { state: RunState }) {
   if (ms === null) return null;
   return (
     <p className="text-right text-xs text-slate-500 tabular-nums" data-testid="timer">
-      ⏱ {state.running ? "Temps écoulé" : "Durée du traitement"} : {formatDuration(Math.max(0, ms))}
+      ⏱ {state.running ? m.elapsed : m.duration}
+      {colon}
+      {formatDuration(Math.max(0, ms))}
     </p>
   );
 }

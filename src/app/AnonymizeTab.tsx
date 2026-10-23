@@ -1,4 +1,3 @@
-import { pl } from "../engine/plural.ts";
 import { useId, useState } from "react";
 import type { AnonymizeResult } from "../worker/protocol.ts";
 import { WarningsBanner, Banner } from "./components/Banner.tsx";
@@ -18,6 +17,7 @@ import { Timer } from "./components/Timer.tsx";
 import { saveFile } from "./download.ts";
 import { countNames, DOC_EXTENSIONS, isPdf, isXlsx, useNerPreload, type SharedSettings } from "./settings.ts";
 import { useEngine } from "./useEngine.ts";
+import { useT } from "./messages/index.ts";
 
 export function AnonymizeTab({ settings }: { settings: SharedSettings }) {
   const [file, setFile] = useState<File | null>(null);
@@ -25,8 +25,14 @@ export function AnonymizeTab({ settings }: { settings: SharedSettings }) {
   const [columns, setColumns] = useState("");
   const [result, setResult] = useState<AnonymizeResult | null>(null);
   /** Réglages du traitement lancé, figés pour le récapitulatif. */
-  const [recap, setRecap] = useState<string[]>([]);
+  const [recap, setRecap] = useState<{ ner: boolean; names: number; columns: string[]; mapping: string | null }>({
+    ner: false,
+    names: 0,
+    columns: [],
+    mapping: null,
+  });
   const { state, run, cancel } = useEngine();
+  const m = useT().anonymize;
   const columnsId = useId();
   const xlsx = isXlsx(file);
   useNerPreload(settings, file);
@@ -42,12 +48,7 @@ export function AnonymizeTab({ settings }: { settings: SharedSettings }) {
     setResult(null);
     const ner = settings.ner && !xlsx;
     const names = countNames(settings.names);
-    setRecap([
-      ner ? "Détection IA" : "Sans détection IA",
-      ...(names > 0 ? [pl(names, "nom", "noms")] : []),
-      ...(xlsx && columnList.length > 0 ? [`Colonnes : ${columnList.join(", ")}`] : []),
-      ...(mapping ? [`Mapping réutilisé : ${mapping.name}`] : []),
-    ]);
+    setRecap({ ner, names, columns: xlsx ? columnList : [], mapping: mapping?.name ?? null });
     const r = await run("anonymize", {
       file: await file.arrayBuffer(),
       fileName: file.name,
@@ -68,7 +69,12 @@ export function AnonymizeTab({ settings }: { settings: SharedSettings }) {
       <>
         <Recap
           files={[file.name]}
-          details={recap}
+          details={[
+            m.recapNer(recap.ner),
+            ...(recap.names > 0 ? [m.recapNames(recap.names)] : []),
+            ...(recap.columns.length > 0 ? [m.recapColumns(recap.columns.join(", "))] : []),
+            ...(recap.mapping ? [m.recapMapping(recap.mapping)] : []),
+          ]}
           running={state.running}
           onEdit={() => {
             setResult(null);
@@ -90,14 +96,11 @@ export function AnonymizeTab({ settings }: { settings: SharedSettings }) {
 
   return (
     <>
-      <p className="rounded-lg bg-indigo-50 p-4 text-slate-800">
-        <strong>Anonymisez</strong> le document ici, <strong>envoyez</strong> le document anonymisé à l'outil externe
-        (IA, traduction…), puis <strong>restaurez</strong> sa réponse dans l'onglet « Restaurer » avec le mapping.
-      </p>
+      <p className="rounded-lg bg-indigo-50 p-4 text-slate-800">{m.intro}</p>
 
-      <Step n={1} title="Déposer le document">
+      <Step n={1} title={m.step1}>
         <FileDrop
-          label="Document à anonymiser"
+          label={m.fileLabel}
           accept={DOC_EXTENSIONS}
           file={file}
           onFile={(f) => {
@@ -111,12 +114,9 @@ export function AnonymizeTab({ settings }: { settings: SharedSettings }) {
         {isPdf(file) && <PdfNote />}
       </Step>
 
-      <Step n={2} title="Options">
+      <Step n={2} title={m.step2}>
         {xlsx ? (
-          <p className="text-sm text-slate-600">
-            Détection par IA indisponible pour les classeurs : les données sont repérées par motifs (e-mails,
-            téléphones, IBAN…), par la liste de noms et par les colonnes ci-dessous.
-          </p>
+          <p className="text-sm text-slate-600">{m.xlsxNoNer}</p>
         ) : (
           <NerToggle
             checked={settings.ner}
@@ -132,8 +132,7 @@ export function AnonymizeTab({ settings }: { settings: SharedSettings }) {
         {xlsx && (
           <div className="space-y-1">
             <label htmlFor={columnsId} className="block font-medium">
-              Colonnes à anonymiser{" "}
-              <span className="font-normal text-slate-600">(en-têtes séparés par des virgules)</span>
+              {m.columnsLabel} <span className="font-normal text-slate-600">{m.columnsHint}</span>
             </label>
             <input
               id={columnsId}
@@ -141,43 +140,38 @@ export function AnonymizeTab({ settings }: { settings: SharedSettings }) {
               onChange={(e) => {
                 setColumns(e.target.value);
               }}
-              placeholder="Nom, Prénom"
+              placeholder={m.columnsPlaceholder}
               className="w-full rounded-md border border-slate-300 p-2"
             />
-            <p className="text-sm text-slate-600">
-              Toutes les cellules texte de ces colonnes sont remplacées intégralement, sur chaque feuille (en-tête =
-              première ligne non vide).
-            </p>
+            <p className="text-sm text-slate-600">{m.columnsHelp}</p>
           </div>
         )}
         <NamesInput value={settings.names} onChange={settings.setNames} />
         <More
           summary={
             <>
-              Options avancées
-              {mapping && <span className="font-normal text-slate-600"> (mapping réutilisé : {mapping.name})</span>}
+              {m.advanced}
+              {mapping && <span className="font-normal text-slate-600">{m.advancedMapping(mapping.name)}</span>}
             </>
           }
         >
           <FileDrop
-            label="Mapping existant à réutiliser (facultatif)"
+            label={m.mappingLabel}
             accept={["json"]}
             file={mapping}
             onFile={setMapping}
-            hint="Réutilise le même salt et les mêmes tokens ; le mapping est complété, jamais tronqué."
+            hint={m.mappingHint}
             testId="anonymize-mapping"
           />
         </More>
       </Step>
 
-      <Step n={3} title="Anonymiser">
+      <Step n={3} title={m.step3}>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
           <PrimaryButton disabled={!file} onClick={() => void start()}>
-            Anonymiser
+            {m.button}
           </PrimaryButton>
-          <p className="text-sm text-slate-600">
-            {file ? "Une archive .zip sera téléchargée automatiquement." : "Déposez d'abord un document (étape 1)."}
-          </p>
+          <p className="text-sm text-slate-600">{file ? m.willDownload : m.needFile}</p>
         </div>
         {state.error && <Banner tone="error" title={state.error} />}
       </Step>
@@ -187,47 +181,45 @@ export function AnonymizeTab({ settings }: { settings: SharedSettings }) {
 
 function Outcome({ result }: { result: AnonymizeResult }) {
   const { archive, document, alternate, mapping, report } = result;
+  const t = useT();
+  const m = t.anonymize;
   return (
     <section aria-labelledby="resultat-anonymisation" className="space-y-4">
       <h2 id="resultat-anonymisation" className="sr-only">
-        Résultat
+        {t.result}
       </h2>
-      <WarningsBanner warnings={result.warnings} when="avant l'envoi" />
-      <Banner
-        tone="success"
-        title={`Document anonymisé : ${pl(result.summary.rows.length, "entité remplacée", "entités remplacées")}.`}
-      >
-        Archive téléchargée : <span className="font-mono break-all">{archive.name}</span>
+      <WarningsBanner warnings={result.warnings} beforeSending />
+      <Banner tone="success" title={m.success(result.summary.rows.length)}>
+        {m.archiveDownloaded}
+        <span className="font-mono break-all">{archive.name}</span>
       </Banner>
       <ul className="divide-y divide-slate-200 rounded-lg border border-slate-200 bg-white">
-        <FileRole name={document.name} role="Envoyer" tone="send">
-          {alternate ? "document à transmettre à l'outil externe" : "seul fichier à transmettre à l'outil externe"}
+        <FileRole name={document.name} role={m.roleSend} tone="send">
+          {alternate ? m.sendDocument : m.sendOnly}
         </FileRole>
         {alternate && (
-          <FileRole name={alternate.name} role="Ou envoyer" tone="send">
-            même contenu en texte, pour les outils qui lisent mal les PDF
+          <FileRole name={alternate.name} role={m.roleOrSend} tone="send">
+            {m.sendAlternate}
           </FileRole>
         )}
-        <FileRole name={mapping.name} role="Garder, ne jamais envoyer" tone="keep">
-          données en clair, nécessaire pour restaurer
+        <FileRole name={mapping.name} role={m.roleKeep} tone="keep">
+          {m.keepMapping}
         </FileRole>
       </ul>
-      <More summary="Télécharger à nouveau, rapport de détection">
+      <More summary={m.more}>
         <div className="space-y-2">
-          <p className="text-sm text-slate-600">Si le téléchargement n'a pas démarré, ou pour un seul fichier :</p>
+          <p className="text-sm text-slate-600">{m.moreIntro}</p>
           <Downloads
             items={[
-              { label: "Archive (.zip)", file: archive, primary: true },
-              { label: "Document anonymisé", file: document },
-              ...(alternate ? [{ label: "Version texte (Markdown)", file: alternate }] : []),
-              { label: "Mapping (JSON)", file: mapping, note: "Données en clair : ne jamais le transmettre." },
-              { label: "Rapport (Markdown)", file: report },
+              { label: m.dlArchive, file: archive, primary: true },
+              { label: m.dlDocument, file: document },
+              ...(alternate ? [{ label: m.dlAlternate, file: alternate }] : []),
+              { label: m.dlMapping, file: mapping, note: m.dlMappingNote },
+              { label: m.dlReport, file: report },
             ]}
           />
         </div>
-        <p className="text-sm text-slate-600">
-          Contrôle facultatif avant l'envoi : déposez le document anonymisé dans l'onglet « Vérifier ».
-        </p>
+        <p className="text-sm text-slate-600">{m.checkHint}</p>
         <AnonymizeReportView r={result.summary} />
       </More>
     </section>
@@ -266,20 +258,18 @@ function FileRole({
 
 /** Ce qui va se passer pour un PDF, avant le traitement. */
 function PdfNote() {
+  const m = useT().anonymize;
   return (
-    <Banner tone="info" title="PDF : réécrit si c'est sans risque, sinon converti en texte">
+    <Banner tone="info" title={m.pdfTitle}>
       <p>
-        Les données détectées sont retirées du PDF et remplacées par des tokens, la mise en page est conservée ; une
-        version texte (.md) est aussi produite. Si une donnée se trouve dans un texte que l'outil ne sait pas réécrire
-        avec certitude (police particulière, PDF chiffré, formulaire, PDF scanné…), seul le .md est produit : un PDF
-        n'est pas un texte modifiable, mais des glyphes positionnés un par un.{" "}
+        {m.pdfBody}{" "}
         <a
           href="https://github.com/sgoger/polyjuice/blob/main/docs/FORMATS.md#pdf"
           target="_blank"
           rel="noopener noreferrer"
           className="font-medium underline"
         >
-          En savoir plus
+          {m.learnMore}
         </a>
       </p>
     </Banner>
