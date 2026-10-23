@@ -11,7 +11,7 @@ test("PDF : note avant traitement, PDF réécrit dans le navigateur + version .m
   const panel = page.getByRole("tabpanel", { name: "Anonymiser" });
   await nerBox(page).uncheck();
   await upload(page, "anonymize-file", "sample.pdf", readFileSync(join(FIXTURES, "sample.pdf")));
-  const note = panel.getByRole("status").filter({ hasText: "PDF : réécrit si c'est sans risque" });
+  const note = panel.getByRole("status").filter({ hasText: "PDF : réécrit si possible" });
   await expect(note).toContainText("seul le .md est produit");
   await expect(note.getByRole("link", { name: "En savoir plus" })).toHaveAttribute("href", /docs\/FORMATS\.md#pdf$/);
 

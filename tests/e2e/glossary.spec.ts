@@ -78,7 +78,7 @@ test("stockage bloqué : case désactivée, glossaire utilisable", async ({ page
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto("./");
   await expect(remember(page)).toBeDisabled();
-  await expect(panel(page).getByText(/ce navigateur bloque le stockage local/)).toBeVisible();
+  await expect(panel(page).getByText(/stockage local bloqué/)).toBeVisible();
   await textbox(page).fill(GLOSSARY);
   await expect(panel(page).getByText("2 termes.")).toBeVisible();
   expect(errors).toEqual([]);
