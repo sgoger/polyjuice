@@ -57,6 +57,8 @@ jobs:
           cd samples-out
           for f in *.docx *.pptx *.xlsx *.docm *.pptm *.xlsm; do
             [ -e "$f" ] || continue
+            # sample.docx et sample.docm donnent le même nom de PDF : partir d'un PDF absent.
+            rm -f "${f%.*}.pdf"
             soffice --headless --convert-to pdf "$f" >/dev/null 2>&1 || { echo "échec : $f"; exit 1; }
             [ -s "${f%.*}.pdf" ] || { echo "PDF vide : $f"; exit 1; }
             echo "ok : $f"
