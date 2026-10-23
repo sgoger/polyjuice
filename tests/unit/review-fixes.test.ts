@@ -49,7 +49,7 @@ describe("revue finale", () => {
   it("DOCX : un texte alternatif sensible est signalé par « Vérifier »", async () => {
     const file = await patch("sample.docx", async (zip) => {
       const xml = (await zip.file("word/document.xml")?.async("string")) ?? "";
-      zip.file("word/document.xml", xml.replace('descr=""', 'descr="Photo de Jean Dupont"'));
+      zip.file("word/document.xml", xml.replace(/<wp:docPr\b/, '<wp:docPr descr="Photo de Jean Dupont"'));
     });
     const c = await check({ file, fileName: "a.docx", names: NAMES, ner: false }, ctx);
     expect(c.report.notices).toContainEqual({ text: "Photo de Jean Dupont", where: "Texte alternatif" });
