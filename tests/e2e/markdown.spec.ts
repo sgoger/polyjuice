@@ -34,7 +34,7 @@ test("parcours complet .md : anonymiser → vérifier → restaurer", async ({ p
   await expect(panel.getByRole("table")).toBeVisible();
   await expect(panel.getByText("Le mapping contient les données en clair. Ne pas transmettre.")).toBeVisible();
 
-  // Vérifier : rien ne doit ressortir (la liste de noms est partagée entre onglets).
+  // Vérifier : rien ne doit ressortir (le glossaire de noms est partagé entre onglets).
   await page.getByRole("tab", { name: "Vérifier" }).click();
   const check = page.getByRole("tabpanel", { name: "Vérifier" });
   await upload(page, "check-file", doc.name, doc.data);

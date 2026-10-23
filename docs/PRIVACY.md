@@ -6,16 +6,28 @@ polyjuice is a static site. Once the page is loaded, all processing happens in t
 
 - the uploaded documents and the produced documents;
 - the extracted text, the detections, the reports;
-- the name list;
+- the names glossary;
 - the mapping (which contains the data in clear text).
 
 Files are read with the browser's `File` API and downloads are produced locally (`Blob` + download link). The ZIP archive downloaded after anonymization (anonymized document and mapping) is built in the Web Worker with JSZip, already used for Office files: building it sends nothing over the network. No request is sent during processing without AI detection: this is checked by an automated test that blocks every outgoing request and processes each format (`tests/e2e/network.spec.ts`). AI detection is enabled by default, but the model is only requested once a document other than `.xlsx` is dropped: opening the page, or dropping a workbook, sends no request (`tests/e2e/ner-loading.spec.ts`).
 
 ## What is stored
 
-Nothing, with one exception. The application uses no cookies, no `localStorage`, no `sessionStorage` and no IndexedDB (checked by `tests/e2e/network.spec.ts`). The name list and the uploaded files are lost when the page is reloaded.
+By default, nothing. The application uses no cookies, no `sessionStorage` and no IndexedDB, and writes nothing to `localStorage` unless the user asks for it (checked by `tests/e2e/network.spec.ts`). The names glossary and the uploaded files are lost when the page is reloaded.
 
-The exception: when AI detection is enabled, **the model weights** are cached by transformers.js (browser Cache API), so they are not downloaded again on every visit. This cache only contains public model files, never user data. It can be cleared from the browser settings (site data).
+Two exceptions.
+
+**The names glossary, only if the user checks « Mémoriser ce glossaire dans ce navigateur »** (remember this glossary in this browser; unchecked by default):
+
+- _What_: the content of the « Glossaire de noms » (names glossary) field, as plain text, under a single key (`polyjuice.glossary`). These are names of people, that is **personal data**. Documents, mappings and reports are never stored.
+- _Where_: the site's `localStorage`, on this computer, in this browser profile. It is not encrypted and is readable by anyone with access to the browser profile (another user of a shared workstation, an extension with access to the site, backups of the profile). It is never sent over the network. The checkbox warns against using it on a shared workstation.
+- _When_: on every change of the field while the box is checked. On the next visit, the glossary is restored and the box shown checked.
+- _How to erase it_: uncheck the box (the stored copy is deleted immediately; the field keeps its content until the page is reloaded), click « Effacer » (clear: empties the field and the stored copy), or clear the site data from the browser settings.
+- If the browser blocks `localStorage` (some private browsing modes), the box is disabled and the glossary behaves as before: lost on reload. « Enregistrer en .txt » (save as .txt) downloads it as a local file instead.
+
+Checked by `tests/e2e/glossary.spec.ts`.
+
+**The AI model**: when AI detection is enabled, **the model weights** are cached by transformers.js (browser Cache API), so they are not downloaded again on every visit. This cache only contains public model files, never user data. It can be cleared from the browser settings (site data).
 
 The application also registers a **service worker** (`coi-sw.js`) when the server does not send the cross-origin isolation headers, which is the case on GitHub Pages. Its only role is to add these headers (`Cross-Origin-Opener-Policy`, `Cross-Origin-Embedder-Policy`) to the application's own responses, so that the AI model can compute on several processor cores. It stores nothing, caches nothing and does not touch requests to other sites. It can be removed from the browser settings (site data) like the model cache.
 

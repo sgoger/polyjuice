@@ -9,6 +9,7 @@ test-results/
 tests/real/
 tests/real/**/*.json
 names*.txt
+glossaire*.txt
 
 # Session worktrees
 .claude/worktrees/

@@ -1,16 +1,22 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Progress } from "../engine/types.ts";
 import { EngineError } from "../worker/protocol.ts";
 import { AnonymizeTab } from "./AnonymizeTab.tsx";
 import { CheckTab } from "./CheckTab.tsx";
 import { Tabs } from "./components/tabs.tsx";
 import { RestoreTab } from "./RestoreTab.tsx";
-import type { SharedSettings } from "./settings.ts";
+import { glossaryStore } from "./glossary.ts";
+import { GlossaryContext, type GlossaryPersistence, type SharedSettings } from "./settings.ts";
 import { engine } from "./useEngine.ts";
 
 export function App() {
   const [tab, setTab] = useState("anonymize");
-  const [names, setNames] = useState("");
+  // Glossaire de noms : restauré au chargement seulement si l'utilisateur a demandé à le mémoriser.
+  const [store] = useState(() => glossaryStore());
+  const [saved] = useState(() => store.load());
+  const [names, setNamesState] = useState(saved ?? "");
+  const [remember, setRememberState] = useState(saved !== null);
+  const [saveFailed, setSaveFailed] = useState(false);
   // Détection par IA cochée par défaut ; le modèle n'est téléchargé qu'au dépôt d'un document
   // qui en a besoin (ensureNer, appelé par les onglets), jamais au chargement de la page.
   const [ner, setNerChecked] = useState(true);
@@ -64,6 +70,45 @@ export function App() {
     [],
   );
 
+  // Case cochée : la copie enregistrée suit le champ à chaque modification (un glossaire vide n'est
+  // pas gardé). Case décochée : rien n'est écrit, la copie éventuelle est supprimée.
+  const persist = useCallback(
+    (value: string, on: boolean) => {
+      if (on && value.trim()) {
+        setSaveFailed(!store.save(value));
+      } else {
+        store.clear();
+        setSaveFailed(false);
+      }
+    },
+    [store],
+  );
+
+  const setNames = useCallback(
+    (value: string) => {
+      setNamesState(value);
+      persist(value, remember);
+    },
+    [persist, remember],
+  );
+
+  const glossary = useMemo<GlossaryPersistence>(
+    () => ({
+      available: store.available,
+      remember,
+      setRemember: (on) => {
+        setRememberState(on);
+        persist(names, on);
+      },
+      saveFailed,
+      clear: () => {
+        setNamesState("");
+        persist("", false);
+      },
+    }),
+    [store, remember, saveFailed, names, persist],
+  );
+
   const cancelNer = useCallback(() => {
     engine().cancel();
   }, []);
@@ -92,20 +137,22 @@ export function App() {
         </div>
       </header>
       <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-6">
-        <Tabs
-          active={tab}
-          onChange={setTab}
-          tabs={[
-            { id: "anonymize", label: "Anonymiser", content: <AnonymizeTab settings={settings} /> },
-            { id: "restore", label: "Restaurer", content: <RestoreTab /> },
-            {
-              id: "check",
-              label: "Vérifier (facultatif)",
-              content: <CheckTab settings={settings} />,
-              secondary: true,
-            },
-          ]}
-        />
+        <GlossaryContext value={glossary}>
+          <Tabs
+            active={tab}
+            onChange={setTab}
+            tabs={[
+              { id: "anonymize", label: "Anonymiser", content: <AnonymizeTab settings={settings} /> },
+              { id: "restore", label: "Restaurer", content: <RestoreTab /> },
+              {
+                id: "check",
+                label: "Vérifier (facultatif)",
+                content: <CheckTab settings={settings} />,
+                secondary: true,
+              },
+            ]}
+          />
+        </GlossaryContext>
       </main>
       <footer className="sm:sticky bottom-0 border-t border-slate-300 bg-slate-800 text-white">
         <p className="mx-auto max-w-5xl px-6 py-3 text-sm">

@@ -90,6 +90,6 @@ export async function anonymizeFile(page: Page, fileName: string) {
   const panel = page.getByRole("tabpanel", { name: "Anonymiser" });
   await nerBox(page).uncheck();
   await upload(page, "anonymize-file", fileName, readFileSync(join(FIXTURES, fileName)));
-  await panel.getByRole("textbox", { name: /Liste de noms/ }).fill(NAMES);
+  await panel.getByRole("textbox", { name: /Glossaire de noms/ }).fill(NAMES);
   return runAnonymize(page);
 }

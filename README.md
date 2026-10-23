@@ -16,8 +16,8 @@ The « Anonymiser » (anonymize) tab guides you through three numbered steps, th
 
 1. **« Déposer le document »** (drop the document): `.docx`, `.pptx`, `.xlsx`, `.pdf`, `.md`, `.txt`.
 2. **« Options »**:
-   - **« Activer la détection de noms par IA »** (enable AI name detection) is **checked by default**. It detects people and places (organizations are not anonymized). The model (~181 MB) is downloaded from the Hugging Face Hub as soon as a document is dropped (never when the page opens), once: the browser then caches it. Unchecking the box cancels the download. If the model cannot be loaded (offline…), the box is unchecked and processing still works with pattern detection and the list of names. Not offered for `.xlsx`.
-   - **List of names**, optional: one term per line, `#` for comments, or load a `.txt`. Each term is replaced everywhere it appears (exact match, case-insensitive, accent-sensitive, whole words). The list is never saved: it is lost when the page is reloaded.
+   - **« Activer la détection de noms par IA »** (enable AI name detection) is **checked by default**. It detects people and places (organizations are not anonymized). The model (~181 MB) is downloaded from the Hugging Face Hub as soon as a document is dropped (never when the page opens), once: the browser then caches it. Unchecking the box cancels the download. If the model cannot be loaded (offline…), the box is unchecked and processing still works with pattern detection and the names glossary. Not offered for `.xlsx`.
+   - **« Glossaire de noms »** (names glossary), optional: one name per line, written as it appears in the documents (e.g. `Thomas Rivière`), `#` for comments. Listed names are always replaced as persons, even when AI detection misses them (« Rivière » is also a common noun). Matching is exact, case-insensitive, accent-sensitive, on whole words. « Charger un .txt » (load a .txt) replaces the content with a file, « Enregistrer en .txt » (save as .txt) downloads it, « Effacer » (clear) empties it. By default the glossary is never saved and is lost when the page is reloaded; checking **« Mémoriser ce glossaire dans ce navigateur »** (remember this glossary in this browser) keeps it in the browser's `localStorage` until the box is unchecked (see [`docs/PRIVACY.md`](docs/PRIVACY.md); not on a shared workstation).
    - For an `.xlsx` only, **« Colonnes à anonymiser »** (columns to anonymize, e.g. `Nom, Prénom`) fully replaces every text cell in the columns whose header (first non-empty row of each sheet) matches.
    - **« Options avancées »** (advanced options, folded by default): drop an **existing mapping** again to reuse the same salt and the same tokens (the mapping is extended, never truncated).
 3. **« Anonymiser »**: click the button. If the AI model is still downloading, processing waits for it and shows its progress. Processing can be cancelled.
@@ -32,7 +32,7 @@ The « Restaurer » (restore) tab: drop the document returned by the external to
 
 ### Vérifier (optional)
 
-The « Vérifier (facultatif) » (verify, optional) tab: drop an already anonymized document (and the list of names if needed). Detection is run again and everything that still looks like personal data is listed, with its context. Nothing is produced. Existing tokens are ignored. Right after an anonymization it adds little (the same detections run again); it is useful when the anonymized document was edited before being sent, or to check with a longer list of names. Nothing is loaded until a document is dropped.
+The « Vérifier (facultatif) » (verify, optional) tab: drop an already anonymized document (the names glossary is shared with « Anonymiser »). Detection is run again and everything that still looks like personal data is listed, with its context. Nothing is produced. Existing tokens are ignored. Right after an anonymization it adds little (the same detections run again); it is useful when the anonymized document was edited before being sent, or to check with a longer names glossary. Nothing is loaded until a document is dropped.
 
 ## Formats
 
@@ -49,29 +49,29 @@ Office documents are modified directly in their XML: only text nodes change, eve
 
 ## Detected data and tokens
 
-| Type                                    | Token   | Detection                               |
-| --------------------------------------- | ------- | --------------------------------------- |
-| Person                                  | `⟦P-…⟧` | AI (NER), list of names, columns (xlsx) |
-| Place                                   | `⟦L-…⟧` | AI (NER)                                |
-| Email                                   | `⟦E-…⟧` | pattern                                 |
-| Phone number (French and international) | `⟦T-…⟧` | pattern                                 |
-| IBAN (check digits verified)            | `⟦I-…⟧` | pattern                                 |
-| Bank card (Luhn)                        | `⟦C-…⟧` | pattern                                 |
-| URL                                     | `⟦U-…⟧` | pattern                                 |
-| IP address (v4, v6)                     | `⟦A-…⟧` | pattern                                 |
-| NIR (check key verified)                | `⟦N-…⟧` | pattern                                 |
+| Type                                    | Token   | Detection                                |
+| --------------------------------------- | ------- | ---------------------------------------- |
+| Person                                  | `⟦P-…⟧` | AI (NER), names glossary, columns (xlsx) |
+| Place                                   | `⟦L-…⟧` | AI (NER)                                 |
+| Email                                   | `⟦E-…⟧` | pattern                                  |
+| Phone number (French and international) | `⟦T-…⟧` | pattern                                  |
+| IBAN (check digits verified)            | `⟦I-…⟧` | pattern                                  |
+| Bank card (Luhn)                        | `⟦C-…⟧` | pattern                                  |
+| URL                                     | `⟦U-…⟧` | pattern                                  |
+| IP address (v4, v6)                     | `⟦A-…⟧` | pattern                                  |
+| NIR (check key verified)                | `⟦N-…⟧` | pattern                                  |
 
 A token has the form `⟦X-ABCDE⟧`: `X` is the type letter, `ABCDE` is five characters derived by HMAC-SHA256 from a random salt specific to the mapping. The same value gets the same token throughout the document; reusing a mapping yields exactly the same document; two documents anonymized separately have different tokens. Dates are not anonymized.
 
 ## Out of scope
 
-Not handled in this version (a warning is shown when relevant): text inside images (no OCR), scanned PDFs, SmartArt, OLE objects, charts; grouping variants of the same name; mapping shared between documents; restoring tokens altered by the external tool; realistic pseudonyms; any persistent storage; any server; national identifiers other than the French NIR. Also not modified, but reported: hyperlink targets, Word field codes, comment and revision author names, spreadsheet sheet names.
+Not handled in this version (a warning is shown when relevant): text inside images (no OCR), scanned PDFs, SmartArt, OLE objects, charts; grouping variants of the same name; mapping shared between documents; restoring tokens altered by the external tool; realistic pseudonyms; any persistent storage other than the opt-in names glossary; any server; national identifiers other than the French NIR. Also not modified, but reported: hyperlink targets, Word field codes, comment and revision author names, spreadsheet sheet names.
 
 ## Compliance
 
 polyjuice **pseudonymizes**: it replaces identifying data with tokens, which are reversible thanks to the mapping. Under the GDPR and according to the CNIL, pseudonymization is not anonymization: the documents produced remain **personal data**, subject to the same rules as the originals, and the mapping allows re-identification. Automatic detection is not exhaustive: review the anonymized document (« Vérifier » tab) before sending it anywhere.
 
-Nothing leaves the browser: files are read and produced locally, and downloads are generated on the user's machine. When AI detection is enabled (the default) and a document other than `.xlsx` is dropped, the browser downloads the model weights from the Hugging Face Hub; this request sends no user data (no document, no text, no list of names). Details: [`docs/PRIVACY.md`](docs/PRIVACY.md).
+Nothing leaves the browser: files are read and produced locally, and downloads are generated on the user's machine. When AI detection is enabled (the default) and a document other than `.xlsx` is dropped, the browser downloads the model weights from the Hugging Face Hub; this request sends no user data (no document, no text, no names glossary). Details: [`docs/PRIVACY.md`](docs/PRIVACY.md).
 
 ## Development
 
@@ -89,7 +89,7 @@ npm run fixtures         # regenerates the test fixtures (fictitious data)
 
 Architecture: a detection and replacement engine (`src/engine/`) that knows nothing about formats, per-format adapters (`src/adapters/`) that extract and rewrite text segments, all running in a Web Worker (`src/worker/`); the React UI (`src/app/`) only orchestrates and displays. Implementation plan: [`docs/PLAN.md`](docs/PLAN.md); deviations and technical decisions: [`docs/DEVIATIONS.md`](docs/DEVIATIONS.md); out-of-scope ideas: [`docs/IDEAS.md`](docs/IDEAS.md).
 
-No list of names, no real document and no mapping may be added to the repository (`tests/real/` and `names*.txt` are ignored by git).
+No names glossary, no real document and no mapping may be added to the repository (`tests/real/`, `names*.txt` and `glossaire*.txt` are ignored by git).
 
 ## License
 

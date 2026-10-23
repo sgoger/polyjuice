@@ -1,7 +1,7 @@
-import { useEffect } from "react";
+import { createContext, useEffect } from "react";
 import type { Progress } from "../engine/types.ts";
 
-/** Réglages partagés par les onglets Anonymiser et Vérifier (jamais persistés). */
+/** Réglages partagés par les onglets Anonymiser et Vérifier (seul le glossaire peut être mémorisé). */
 export interface SharedSettings {
   names: string;
   setNames: (v: string) => void;
@@ -17,9 +17,23 @@ export interface SharedSettings {
   nerBackend: string | null;
 }
 
+/** Mémorisation du glossaire de noms, fournie par App au champ NamesInput des deux onglets. */
+export interface GlossaryPersistence {
+  /** Faux si le navigateur bloque le stockage local : la case est alors désactivée. */
+  available: boolean;
+  remember: boolean;
+  setRemember: (v: boolean) => void;
+  /** Vrai si le dernier enregistrement a échoué (quota dépassé…). */
+  saveFailed: boolean;
+  /** Vide le glossaire et sa copie enregistrée. */
+  clear: () => void;
+}
+
+export const GlossaryContext = createContext<GlossaryPersistence | null>(null);
+
 export const DOC_EXTENSIONS = ["docx", "pptx", "xlsx", "pdf", "md", "txt"] as const;
 export const RESTORE_EXTENSIONS = ["docx", "pptx", "xlsx", "md", "txt"] as const;
-/** Nombre de termes d'une liste de noms (lignes non vides, hors commentaires `#`). */
+/** Nombre de termes du glossaire de noms (lignes non vides, hors commentaires `#`). */
 export const countNames = (text: string): number =>
   text.split(/\r?\n/).filter((l) => l.replace(/#.*$/, "").trim()).length;
 
