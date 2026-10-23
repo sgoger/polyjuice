@@ -23,7 +23,9 @@ test("aucune requête sortante pendant les traitements sans NER", async ({ page,
   for (const name of FILES) {
     await restart(panel);
     await upload(page, "anonymize-file", name, readFileSync(join(FIXTURES, name)));
-    const { doc, mapping } = await runAnonymize(page);
+    const { doc, alternate, mapping } = await runAnonymize(page);
+    // Un PDF réécrit se restaure via sa version texte.
+    const restorable = alternate ?? doc;
 
     await page.getByRole("tab", { name: "Vérifier" }).click();
     await restart(page.getByRole("tabpanel", { name: "Vérifier" }));
@@ -43,7 +45,7 @@ test("aucune requête sortante pendant les traitements sans NER", async ({ page,
     await page.getByRole("tab", { name: "Restaurer" }).click();
     const restorePanel = page.getByRole("tabpanel", { name: "Restaurer" });
     await restart(restorePanel);
-    await upload(page, "restore-file", doc.name, doc.data);
+    await upload(page, "restore-file", restorable.name, restorable.data);
     await upload(page, "restore-mapping", mapping.name, mapping.data, "application/json");
     await runRestore(page);
     await expect(restorePanel.getByText("Document restauré.")).toBeVisible();

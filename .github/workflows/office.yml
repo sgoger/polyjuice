@@ -1,6 +1,7 @@
 name: Office
 
-# Les fichiers Office produits doivent s'ouvrir dans LibreOffice (conversion PDF sans erreur).
+# Les fichiers Office produits doivent s'ouvrir dans LibreOffice (conversion PDF sans erreur) ; les PDF
+# anonymisés sont relus par pdftotext (poppler) : aucune valeur d'origine, tous les tokens lisibles.
 # Ne tourne que si le code qui produit ces fichiers, ou ses fixtures, a changé.
 on:
   push:
@@ -9,6 +10,7 @@ on:
       - src/**
       - tests/fixtures/**
       - scripts/export-samples.ts
+      - scripts/check-pdf-samples.ts
       - package.json
       - package-lock.json
       - .github/workflows/office.yml
@@ -17,6 +19,7 @@ on:
       - src/**
       - tests/fixtures/**
       - scripts/export-samples.ts
+      - scripts/check-pdf-samples.ts
       - package.json
       - package-lock.json
       - .github/workflows/office.yml
@@ -41,12 +44,14 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx tsx scripts/export-samples.ts samples-out
-      - name: Installation de LibreOffice
+      - name: Installation de LibreOffice et poppler
         run: |
           # Évite la régénération de l'index man-db, qui ralentit fortement apt sur les runners Ubuntu 24.04.
           sudo rm -f /var/lib/man-db/auto-update
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends libreoffice-writer-nogui libreoffice-impress-nogui libreoffice-calc-nogui
+          sudo apt-get install -y --no-install-recommends libreoffice-writer-nogui libreoffice-impress-nogui libreoffice-calc-nogui poppler-utils
+      - name: Texte des PDF anonymisés (pdftotext)
+        run: npx tsx scripts/check-pdf-samples.ts samples-out
       - name: Conversion PDF
         run: |
           cd samples-out

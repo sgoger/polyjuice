@@ -23,7 +23,9 @@ import {
 } from "docx";
 import ExcelJS from "exceljs";
 import JSZip from "jszip";
-import { PDFDocument, StandardFonts } from "pdf-lib";
+import fontkit from "@pdf-lib/fontkit";
+import { readFile } from "node:fs/promises";
+import { PDFDocument, PDFName, PDFString, StandardFonts, type PDFFont, type PDFPage } from "pdf-lib";
 import PptxGenJS from "pptxgenjs";
 
 const OUT = process.env.FIXTURES_OUT
@@ -447,6 +449,204 @@ async function makePdfs(): Promise<Expected[]> {
   ];
 }
 
+// Cas de réécriture PDF : flux de contenu écrits à la main pour couvrir les opérateurs de texte.
+
+function newPdf(): Promise<PDFDocument> {
+  return PDFDocument.create().then((pdf) => {
+    pdf.setCreationDate(FIXED_DATE);
+    pdf.setModificationDate(FIXED_DATE);
+    pdf.setProducer("polyjuice fixtures");
+    pdf.setCreator("polyjuice fixtures");
+    return pdf;
+  });
+}
+
+/** Remplace le contenu d'une page par un flux brut (non compressé, lisible). */
+function setContent(pdf: PDFDocument, page: PDFPage, content: string): void {
+  page.node.set(PDFName.of("Contents"), pdf.context.register(pdf.context.stream(content)));
+}
+
+/** Chaîne hexadécimale encodée pour la police (WinAnsi pour les polices standard, glyphes sinon). */
+const enc = (font: PDFFont, s: string): string => font.encodeText(s).toString();
+
+/**
+ * Police simple (Helvetica) : nom réparti sur plusieurs blocs de texte, espace rendu par un crénage TJ,
+ * nom coupé en fin de ligne (opérateur '), espacement des mots (opérateur "), contenu marqué avec
+ * ActualText, pied de page dans un formulaire (XObject), lien mailto:, titre, auteur et structure.
+ */
+async function makePdfFragments(): Promise<Expected[]> {
+  const pdf = await newPdf();
+  pdf.setTitle(`Dossier ${D.jean}`);
+  pdf.setAuthor(D.klaus);
+  const font = await pdf.embedFont(StandardFonts.Helvetica);
+  const page = pdf.addPage([595, 842]);
+  page.node.setFontDictionary(PDFName.of("F1"), font.ref);
+  const w = (t: string) => font.widthOfTextAtSize(t, 11);
+  const x1 = 50 + w("Participants : ");
+  const x2 = x1 + w("Jean ");
+  const footer = pdf.context.register(
+    pdf.context.stream(`BT /F1 9 Tf 0 4 Td ${enc(font, `Contact : ${D.mailJean} ou ${D.telFr}`)} Tj ET`, {
+      Type: "XObject",
+      Subtype: "Form",
+      BBox: [0, 0, 495, 20],
+      Resources: { Font: { F1: font.ref } },
+    }),
+  );
+  page.node.setXObject(PDFName.of("X1"), footer);
+  setContent(
+    pdf,
+    page,
+    [
+      `BT /F1 14 Tf 50 790 Td ${enc(font, "Suivi des dossiers")} Tj ET`,
+      // Comme Word : un bloc de texte par fragment, l'espace entre les mots vient de la position.
+      `BT /F1 11 Tf 50 750 Td [${enc(font, "Participants : ")}] TJ ET`,
+      `BT /F1 11 Tf ${x1.toFixed(3)} 750 Td ${enc(font, "Jean")} Tj ET`,
+      `BT /F1 11 Tf ${x2.toFixed(3)} 750 Td ${enc(font, "Dupont")} Tj ${enc(font, " et l'équipe projet.")} Tj ET`,
+      // Espace rendu par un crénage (aucun glyphe d'espace entre le prénom et le nom).
+      `BT /F1 11 Tf 50 730 Td [${enc(font, "Contact : Kl")} 30 ${enc(font, "aus")} -278 ${enc(font, "Müller")} ${enc(font, `, ${D.mailKlaus}.`)}] TJ ET`,
+      // Nom coupé en fin de ligne.
+      `BT /F1 11 Tf 14 TL 50 700 Td ${enc(font, "Le dossier est suivi depuis janvier par Oliver")} Tj ${enc(font, "Hughes, qui en rend compte chaque mois au comité.")} ' ET`,
+      // Espacement des mots (Tw) : l'avance des espaces retirés en tient compte.
+      `BT /F1 11 Tf 14 TL 50 656 Td 3 0 ${enc(font, `Relecture : ${D.sabine} et le service juridique.`)} " ET`,
+      // Contenu marqué : le texte de remplacement (ActualText) contient le nom.
+      `/Span <</ActualText (${D.emily})>> BDC BT /F1 11 Tf 50 620 Td ${enc(font, `Validation : ${D.emily}.`)} Tj ET EMC`,
+      `BT /F1 11 Tf 50 600 Td ${enc(font, "Les autres informations ne contiennent aucune donnée personnelle.")} Tj ET`,
+      "q 1 0 0 1 50 40 cm /X1 Do Q",
+    ].join("\n"),
+  );
+  const link = pdf.context.register(
+    pdf.context.obj({
+      Type: "Annot",
+      Subtype: "Link",
+      Rect: [50, 727, 300, 741],
+      Border: [0, 0, 0],
+      A: { Type: "Action", S: "URI", URI: PDFString.of(`mailto:${D.mailKlaus}`) },
+    }),
+  );
+  page.node.set(PDFName.of("Annots"), pdf.context.obj([link]));
+  const figure = pdf.context.obj({ Type: "StructElem", S: "Figure", Alt: PDFString.of(`Photo de ${D.emily}`) });
+  pdf.catalog.set(
+    PDFName.of("StructTreeRoot"),
+    pdf.context.register(pdf.context.obj({ Type: "StructTreeRoot", K: figure })),
+  );
+  pdf.catalog.set(PDFName.of("MarkInfo"), pdf.context.obj({ Marked: true }));
+  await writeFile(new URL("pdf-fragments.pdf", OUT), await pdf.save({ useObjectStreams: false }));
+  return [
+    { text: D.jean, type: "PERSON", kind: "body" },
+    { text: D.klaus, type: "PERSON", kind: "body" },
+    { text: D.mailKlaus, type: "EMAIL_ADDRESS", kind: "body" },
+    { text: D.oliver, type: "PERSON", kind: "body" },
+    { text: D.sabine, type: "PERSON", kind: "body" },
+    { text: D.emily, type: "PERSON", kind: "body" },
+    { text: D.mailJean, type: "EMAIL_ADDRESS", kind: "footer" },
+    { text: D.telFr, type: "PHONE_NUMBER", kind: "footer" },
+  ];
+}
+
+/** Police composite (Type0, Identity-H, sous-ensemble TrueType) : caractères hors WinAnsi (ı). */
+async function makePdfComposite(): Promise<Expected[]> {
+  const pdf = await newPdf();
+  pdf.registerFontkit(fontkit);
+  // Liberation Sans (SIL OFL), fournie par pdfjs-dist ; seul le sous-ensemble utilisé est incorporé.
+  const ttf = await readFile(
+    new URL("../node_modules/pdfjs-dist/standard_fonts/LiberationSans-Regular.ttf", import.meta.url),
+  );
+  const font = await pdf.embedFont(ttf, { subset: true });
+  const page = pdf.addPage([595, 842]);
+  const lines = [
+    "Protokoll der Sitzung",
+    "",
+    `Teilnehmer: ${D.mehmet} und ${D.paulina} (${D.mailPaulina}).`,
+    `Telefon: ${D.telFrIntl}.`,
+    "Die nächste Sitzung findet im Frühjahr statt; die Tagesordnung wird von",
+    `${D.klaus} vorbereitet und rechtzeitig verschickt.`,
+  ];
+  lines.forEach((line, i) => {
+    page.drawText(line, { x: 50, y: 780 - i * 18, size: 11, font });
+  });
+  await writeFile(new URL("pdf-composite.pdf", OUT), await pdf.save({ useObjectStreams: false }));
+  return [
+    { text: D.mehmet, type: "PERSON", kind: "body" },
+    { text: D.paulina, type: "PERSON", kind: "body" },
+    { text: D.mailPaulina, type: "EMAIL_ADDRESS", kind: "body" },
+    { text: D.telFrIntl, type: "PHONE_NUMBER", kind: "body" },
+    { text: D.klaus, type: "PERSON", kind: "body" },
+  ];
+}
+
+/** Police Type3 (glyphes dessinés par le document) : non réécrite, la sortie PDF doit être refusée. */
+async function makePdfType3(): Promise<Expected[]> {
+  const pdf = await newPdf();
+  const helvetica = await pdf.embedFont(StandardFonts.Helvetica);
+  const text = `Note : ${D.jean}`;
+  const chars = [...new Set(text)].sort();
+  const glyphName = (c: string) => (c === " " ? "space" : c === ":" ? "colon" : c);
+  const procs: Record<string, ReturnType<typeof pdf.context.register>> = {};
+  for (const c of chars) {
+    const body = c === " " ? "600 0 d0" : "600 0 0 0 500 700 d1 50 0 450 700 re f";
+    procs[glyphName(c)] = pdf.context.register(pdf.context.stream(body));
+  }
+  const codes = chars.map((c) => c.charCodeAt(0));
+  const first = Math.min(...codes);
+  const last = Math.max(...codes);
+  const type3 = pdf.context.register(
+    pdf.context.obj({
+      Type: "Font",
+      Subtype: "Type3",
+      FontBBox: [0, 0, 600, 700],
+      FontMatrix: [0.001, 0, 0, 0.001, 0, 0],
+      CharProcs: procs,
+      Encoding: { Type: "Encoding", Differences: chars.flatMap((c) => [c.charCodeAt(0), glyphName(c)]) },
+      FirstChar: first,
+      LastChar: last,
+      Widths: Array.from({ length: last - first + 1 }, () => 600),
+    }),
+  );
+  const page = pdf.addPage([595, 842]);
+  page.node.setFontDictionary(PDFName.of("F1"), helvetica.ref);
+  page.node.setFontDictionary(PDFName.of("T3"), type3);
+  const literal = (s: string) => `(${s.replace(/[()\\]/g, "\\$&")})`;
+  setContent(
+    pdf,
+    page,
+    [
+      `BT /F1 11 Tf 50 780 Td ${enc(helvetica, `Courriel : ${D.mailJean}`)} Tj ET`,
+      `BT /T3 11 Tf 50 750 Td ${literal(text)} Tj ET`,
+    ].join("\n"),
+  );
+  await writeFile(new URL("pdf-type3.pdf", OUT), await pdf.save({ useObjectStreams: false }));
+  return [
+    { text: D.mailJean, type: "EMAIL_ADDRESS", kind: "body" },
+    { text: D.jean, type: "PERSON", kind: "body" },
+  ];
+}
+
+/** PDF océrisé : image de la page et texte invisible (Tr 3) par-dessus. La sortie PDF doit être refusée. */
+async function makePdfOcr(): Promise<Expected[]> {
+  const pdf = await newPdf();
+  const font = await pdf.embedFont(StandardFonts.Helvetica);
+  const img = await pdf.embedPng(PNG);
+  const page = pdf.addPage([595, 842]);
+  page.node.setFontDictionary(PDFName.of("F1"), font.ref);
+  page.node.setXObject(PDFName.of("Im1"), img.ref);
+  const lines = [
+    `Courrier de ${D.sabine}`,
+    "Objet : demande de rendez-vous pour le dossier en cours de traitement au service.",
+    "Merci de bien vouloir me recontacter afin de convenir d'une date qui conviendrait aux deux parties.",
+    "Veuillez agréer mes salutations distinguées.",
+  ];
+  setContent(
+    pdf,
+    page,
+    [
+      "q 595 0 0 842 0 0 cm /Im1 Do Q",
+      `BT 3 Tr /F1 11 Tf 14 TL 50 780 Td ${lines.map((l) => `${enc(font, l)} '`).join(" ")} ET`,
+    ].join("\n"),
+  );
+  await writeFile(new URL("pdf-ocr.pdf", OUT), await pdf.save({ useObjectStreams: false }));
+  return [{ text: D.sabine, type: "PERSON", kind: "body" }];
+}
+
 // ---------------------------------------------------------------------------
 // Markdown et texte
 
@@ -610,6 +810,10 @@ const expected = {
     "sample.xlsx": await makeXlsx(),
     "sample.pdf": await makePdfs(),
     "scanned.pdf": [],
+    "pdf-fragments.pdf": await makePdfFragments(),
+    "pdf-composite.pdf": await makePdfComposite(),
+    "pdf-type3.pdf": await makePdfType3(),
+    "pdf-ocr.pdf": await makePdfOcr(),
     "sample.md": text.md,
     "sample.txt": text.txt,
   },

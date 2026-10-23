@@ -63,12 +63,36 @@
 | Metadata                                                          | same as `.docx`                                                                |
 | AI detection                                                      | always disabled (patterns, name list and columns only)                         |
 
-## `.pdf` (read-only)
+## `.pdf`
 
-| Item                                                                 | Status                                                                             |
-| -------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
-| Page text                                                            | extracted as Markdown (paragraphs, `---` between pages), then processed as a `.md` |
-| Formatting, images, tables                                           | lost; flagged                                                                      |
-| Probably scanned PDF (fewer than 200 characters per page on average) | flagged (no OCR)                                                                   |
-| Pages containing images                                              | flagged                                                                            |
-| Restoring a `.pdf`                                                   | refused: drop in the `.md` or `.txt` returned by the external tool                 |
+### Why a PDF is not edited like a Word document
+
+A `.docx` stores its text in XML text nodes: replacing « Jean Dupont » with `⟦P-K7M2X⟧` is a string replacement, and Word lays the paragraph out again when it opens the file. A PDF has no paragraphs to lay out again. Its text is a sequence of drawing instructions (`Tj`, `TJ`) that place each glyph at a fixed position, often in fonts embedded as subsets that only contain the glyphs the document uses. Replacing a name therefore raises layout and font problems, not text problems: the token does not have the width of the name, its characters (`⟦`, `⟧`, often letters and digits too) are missing from the embedded font, and the original text must really leave the file. A black rectangle drawn over a name hides it on screen but leaves it in the file, where any text extraction or copy-paste finds it.
+
+### What polyjuice does
+
+The text is first extracted with pdf.js and processed as plain text, which gives the `.md` version. Then, when it can be done safely, the PDF itself is rewritten ("redaction"):
+
+- the glyphs of every detected value are **removed** from the page content, and the space they took is kept, so the rest of the line does not move;
+- the token is drawn in their place, on a light grey background, in Helvetica (a standard PDF font, referenced by name: nothing is embedded or downloaded). Helvetica has no `⟦ ⟧` glyphs, so the token is **displayed** as `[P-K7M2X]` but **copied and extracted** as `⟦P-K7M2X⟧` (the font's `ToUnicode` table maps `[` and `]` to `⟦` and `⟧`). It is narrowed, then made smaller, when the value is shorter than the token;
+- the pages are copied into a new file that keeps only what is drawn: annotations (links, comments), bookmarks, the accessibility structure of tagged PDFs, the alternate text of marked content (`ActualText`), attached files, scripts, the metadata (title, author…) and the earlier revisions of the file are dropped;
+- the result is **read back with pdf.js before it is offered**: if a detected value can still be found in its text, or in any object of the file (decompressed), or if a token cannot be read, the PDF is refused.
+
+When the PDF is refused, only the `.md` is produced and the warning says why. The `.md` is produced in every case: it is what LLMs and translation tools read best, and it is the file the « Restaurer » (restore) tab accepts.
+
+| Item                                                                                     | Status                                                                                               |
+| ---------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| Page text                                                                                | extracted as Markdown (paragraphs, `---` between pages), then processed as plain text: `.md` version |
+| Text drawn with simple fonts (Type1, TrueType) and composite fonts (Type0, `Identity-H`) | rewritten in the PDF (glyphs removed, token drawn in place, layout kept)                             |
+| Text in form XObjects (headers, footers, stamps)                                         | rewritten                                                                                            |
+| A value split across several text operators, kerned, or cut at the end of a line         | rewritten (the token is drawn where the value starts)                                                |
+| Type3 fonts, composite fonts with another encoding or without a `ToUnicode` table        | not rewritten: if a detected value uses them, the PDF is refused (`.md` only)                        |
+| Invisible text over an image (OCR layer of a scanned PDF)                                | PDF refused (`.md` only): removing the text layer would leave the value in the image                 |
+| Probably scanned PDF (fewer than 200 characters per page on average, with images)        | PDF refused (`.md` only); flagged (no OCR)                                                           |
+| Encrypted PDF, PDF form (AcroForm fields), PDF with layers (optional content)            | PDF refused (`.md` only)                                                                             |
+| Images (and the text they show)                                                          | kept as they are; pages containing images are flagged (no OCR)                                       |
+| Annotations, bookmarks, tagged structure, `ActualText`, attachments, scripts, metadata   | removed from the produced PDF; flagged                                                               |
+| Formatting, tables, images in the `.md` version                                          | lost                                                                                                 |
+| Restoring a `.pdf`                                                                       | refused: drop in the `.md` (or `.txt`) returned by the external tool                                 |
+
+Detected values are matched in the PDF by their text, case-sensitively and on word boundaries: every occurrence of a detected value is removed, including occurrences the text detection did not flag, all with the same token. Restoring a PDF returned by an external tool would mean rewriting it again, with the same layout and font problems, for a file whose layout the tool has probably changed: out of scope. The tool's text output (`.md`, `.txt`) is restored instead.

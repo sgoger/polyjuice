@@ -129,7 +129,8 @@ exports[`rapports de détection sur chaque fixture > sample.pdf 1`] = `
 
 ## Avertissements
 
-- PDF converti en Markdown : la mise en forme d'origine n'est pas conservée, le document produit est un .md.
+- PDF réécrit : les données détectées sont retirées du fichier et remplacées par des tokens (affichés entre [ ], copiés avec ⟦ ⟧), la mise en page est conservée. Une version texte (.md) est aussi produite.
+- Retirés du PDF produit : les métadonnées (titre, auteur…).
 
 > **Le mapping contient les données en clair. Ne pas transmettre.**
 "
@@ -264,7 +265,7 @@ Aucune entité détectée.
 
 ## Avertissements
 
-- PDF converti en Markdown : la mise en forme d'origine n'est pas conservée, le document produit est un .md.
+- PDF non réécrit (probablement scanné) : seul le texte est produit, en Markdown (.md) ; la mise en forme d'origine n'est pas conservée.
 - PDF probablement scanné (0 caractères par page en moyenne) : le texte contenu dans les images n'est pas extrait (pas d'OCR).
 - 1 page contient des images : le texte contenu dans les images n'est pas traité.
 

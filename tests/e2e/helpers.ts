@@ -67,11 +67,16 @@ export async function runAnonymize(page: Page) {
   );
   await expect(panel.getByText(/Document anonymisé :/)).toBeVisible();
   const entries = await unzip(archive.data);
-  expect(entries).toHaveLength(2);
-  const [doc, mapping] = entries as [Downloaded, Downloaded];
+  // Document, puis sa version texte pour un PDF réécrit, puis le mapping.
+  const doc = entries[0];
+  const mapping = entries[entries.length - 1];
+  const alternate = entries.length === 3 ? entries[1] : undefined;
+  expect([2, 3]).toContain(entries.length);
+  if (!doc || !mapping) throw new Error("archive incomplète");
   expect(doc.name).toMatch(/\.anonymise\.[a-z]+$/);
   expect(mapping.name).toMatch(/\.json$/);
-  return { panel, archive, doc, mapping };
+  if (alternate) expect(alternate.name).toMatch(/\.anonymise\.md$/);
+  return { panel, archive, doc, alternate, mapping };
 }
 
 /** Clique sur « Restaurer » et renvoie le document restauré, téléchargé automatiquement. */

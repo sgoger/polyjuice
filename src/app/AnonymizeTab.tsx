@@ -15,7 +15,7 @@ import { Running } from "./components/Running.tsx";
 import { Step } from "./components/Step.tsx";
 import { Timer } from "./components/Timer.tsx";
 import { saveFile } from "./download.ts";
-import { countNames, DOC_EXTENSIONS, isXlsx, useNerPreload, type SharedSettings } from "./settings.ts";
+import { countNames, DOC_EXTENSIONS, isPdf, isXlsx, useNerPreload, type SharedSettings } from "./settings.ts";
 import { useEngine } from "./useEngine.ts";
 
 export function AnonymizeTab({ settings }: { settings: SharedSettings }) {
@@ -103,10 +103,11 @@ export function AnonymizeTab({ settings }: { settings: SharedSettings }) {
             setFile(f);
             setResult(null);
           }}
-          hint="Formats : .docx, .pptx, .xlsx, .pdf (converti en .md), .md, .txt."
+          hint="Formats : .docx, .pptx, .xlsx, .pdf, .md, .txt."
           testId="anonymize-file"
         />
         <Preflight file={file} />
+        {isPdf(file) && <PdfNote />}
       </Step>
 
       <Step n={2} title="Options">
@@ -184,7 +185,7 @@ export function AnonymizeTab({ settings }: { settings: SharedSettings }) {
 }
 
 function Outcome({ result }: { result: AnonymizeResult }) {
-  const { archive, document, mapping, report } = result;
+  const { archive, document, alternate, mapping, report } = result;
   return (
     <section aria-labelledby="resultat-anonymisation" className="space-y-4">
       <h2 id="resultat-anonymisation" className="sr-only">
@@ -199,8 +200,13 @@ function Outcome({ result }: { result: AnonymizeResult }) {
       </Banner>
       <ul className="divide-y divide-slate-200 rounded-lg border border-slate-200 bg-white">
         <FileRole name={document.name} role="Envoyer" tone="send">
-          seul fichier à transmettre à l'outil externe
+          {alternate ? "document à transmettre à l'outil externe" : "seul fichier à transmettre à l'outil externe"}
         </FileRole>
+        {alternate && (
+          <FileRole name={alternate.name} role="Ou envoyer" tone="send">
+            même contenu en texte, pour les outils qui lisent mal les PDF
+          </FileRole>
+        )}
         <FileRole name={mapping.name} role="Garder, ne jamais envoyer" tone="keep">
           données en clair, nécessaire pour restaurer
         </FileRole>
@@ -212,6 +218,7 @@ function Outcome({ result }: { result: AnonymizeResult }) {
             items={[
               { label: "Archive (.zip)", file: archive, primary: true },
               { label: "Document anonymisé", file: document },
+              ...(alternate ? [{ label: "Version texte (Markdown)", file: alternate }] : []),
               { label: "Mapping (JSON)", file: mapping, note: "Données en clair : ne jamais le transmettre." },
               { label: "Rapport (Markdown)", file: report },
             ]}
@@ -253,5 +260,27 @@ function FileRole({
       <span className="font-mono text-sm break-all">{name}</span>
       <span className="text-sm text-slate-600">— {children}</span>
     </li>
+  );
+}
+
+/** Ce qui va se passer pour un PDF, avant le traitement. */
+function PdfNote() {
+  return (
+    <Banner tone="info" title="PDF : réécrit si c'est sans risque, sinon converti en texte">
+      <p>
+        Les données détectées sont retirées du PDF et remplacées par des tokens, la mise en page est conservée ; une
+        version texte (.md) est aussi produite. Si une donnée se trouve dans un texte que l'outil ne sait pas réécrire
+        avec certitude (police particulière, PDF chiffré, formulaire, PDF scanné…), seul le .md est produit : un PDF
+        n'est pas un texte modifiable, mais des glyphes positionnés un par un.{" "}
+        <a
+          href="https://github.com/sgoger/polyjuice/blob/main/docs/FORMATS.md#pdf"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="font-medium underline"
+        >
+          En savoir plus
+        </a>
+      </p>
+    </Banner>
   );
 }

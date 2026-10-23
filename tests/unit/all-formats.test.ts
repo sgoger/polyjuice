@@ -1,6 +1,7 @@
 // 7.3 : pour chaque format, anonymiser → vérifier (rien) → restaurer → égalité ; anonymiser ×2 → identité ;
 // aucune entité attendue en clair dans le document anonymisé ni dans le rapport.
 import { describe, expect, it } from "vitest";
+import { extractPdf } from "../../src/adapters/pdf.ts";
 import { check, restore } from "../../src/worker/pipeline.ts";
 import { anonymizeFixture, ctx, expected, fixture, NAMES, readDoc, text } from "./helpers.ts";
 import { allXmlText } from "./ooxml-helpers.ts";
@@ -15,6 +16,10 @@ async function plainText(name: string, data: ArrayBuffer): Promise<string> {
     // dans docProps/app.xml).
     return allXmlText(data, (n) => n.endsWith(".rels") || n === "xl/workbook.xml" || n === "docProps/app.xml");
   }
+  if (name.endsWith(".pdf")) {
+    const x = await extractPdf(data.slice(0));
+    return `${x.markdown}\n${x.itemsText}`;
+  }
   return text(data);
 }
 
@@ -24,8 +29,10 @@ describe.each(FORMATS)("%s", (name) => {
     const c = await check({ file: anon.document.data, fileName: anon.document.name, names: NAMES, ner: false }, ctx);
     expect(c.report.rows).toEqual([]);
 
+    // Un PDF réécrit se restaure via sa version texte (.md), comme le fichier renvoyé par l'outil externe.
+    const restorable = anon.alternate ?? anon.document;
     const restored = await restore(
-      { file: anon.document.data, fileName: anon.document.name, mapping: text(anon.mapping.data) },
+      { file: restorable.data, fileName: restorable.name, mapping: text(anon.mapping.data) },
       ctx,
     );
     expect(restored.unknownTokens).toEqual([]);
@@ -45,8 +52,10 @@ describe.each(FORMATS)("%s", (name) => {
   it("aucune entité attendue en clair dans le document anonymisé ni dans le rapport", async () => {
     const anon = await anonymizeFixture(name, extra(name));
     const doc = await plainText(anon.document.name, anon.document.data);
+    const alternate = anon.alternate ? text(anon.alternate.data) : "";
     for (const e of expected.fixtures[name] ?? []) {
       expect(doc, `document : ${e.text}`).not.toContain(e.text);
+      expect(alternate, `version texte : ${e.text}`).not.toContain(e.text);
       expect(anon.reportMarkdown, `rapport : ${e.text}`).not.toContain(e.text);
       expect(text(anon.report.data), `rapport téléchargé : ${e.text}`).not.toContain(e.text);
     }

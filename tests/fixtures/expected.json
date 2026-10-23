@@ -359,6 +359,94 @@
       }
     ],
     "scanned.pdf": [],
+    "pdf-fragments.pdf": [
+      {
+        "text": "Jean Dupont",
+        "type": "PERSON",
+        "kind": "body"
+      },
+      {
+        "text": "Klaus Müller",
+        "type": "PERSON",
+        "kind": "body"
+      },
+      {
+        "text": "klaus.mueller@example.de",
+        "type": "EMAIL_ADDRESS",
+        "kind": "body"
+      },
+      {
+        "text": "Oliver Hughes",
+        "type": "PERSON",
+        "kind": "body"
+      },
+      {
+        "text": "Sabine Weber",
+        "type": "PERSON",
+        "kind": "body"
+      },
+      {
+        "text": "Emily Clarke",
+        "type": "PERSON",
+        "kind": "body"
+      },
+      {
+        "text": "jean.dupont@example.fr",
+        "type": "EMAIL_ADDRESS",
+        "kind": "footer"
+      },
+      {
+        "text": "06 12 34 56 78",
+        "type": "PHONE_NUMBER",
+        "kind": "footer"
+      }
+    ],
+    "pdf-composite.pdf": [
+      {
+        "text": "Mehmet Yılmaz",
+        "type": "PERSON",
+        "kind": "body"
+      },
+      {
+        "text": "Paulina Kowalski",
+        "type": "PERSON",
+        "kind": "body"
+      },
+      {
+        "text": "p.kowalski@example.org",
+        "type": "EMAIL_ADDRESS",
+        "kind": "body"
+      },
+      {
+        "text": "+33 1 23 45 67 89",
+        "type": "PHONE_NUMBER",
+        "kind": "body"
+      },
+      {
+        "text": "Klaus Müller",
+        "type": "PERSON",
+        "kind": "body"
+      }
+    ],
+    "pdf-type3.pdf": [
+      {
+        "text": "jean.dupont@example.fr",
+        "type": "EMAIL_ADDRESS",
+        "kind": "body"
+      },
+      {
+        "text": "Jean Dupont",
+        "type": "PERSON",
+        "kind": "body"
+      }
+    ],
+    "pdf-ocr.pdf": [
+      {
+        "text": "Sabine Weber",
+        "type": "PERSON",
+        "kind": "body"
+      }
+    ],
     "sample.md": [
       {
         "text": "Paulina Kowalski",
