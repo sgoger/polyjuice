@@ -4,6 +4,7 @@ import { WarningsBanner, Banner } from "./components/Banner.tsx";
 import { Downloads } from "./components/Downloads.tsx";
 import { FileDrop } from "./components/FileDrop.tsx";
 import { FormatsHint } from "./components/FormatsHint.tsx";
+import { Intro } from "./components/Intro.tsx";
 import { More } from "./components/More.tsx";
 import { NamesInput } from "./components/NamesInput.tsx";
 import { NerToggle } from "./components/NerToggle.tsx";
@@ -96,7 +97,7 @@ export function AnonymizeTab({ settings }: { settings: SharedSettings }) {
 
   return (
     <>
-      <div className="space-y-2 rounded-lg bg-indigo-50 p-4 text-slate-800">{m.intro}</div>
+      <Intro>{m.intro}</Intro>
 
       <Step n={1} title={m.step1}>
         <FileDrop

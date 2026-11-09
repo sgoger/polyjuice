@@ -35,7 +35,7 @@ export const fr = {
           Tout se passe dans votre navigateur : aucun document ni aucune donnée n'est envoyé sur un serveur. Le modèle
           d'IA qui repère les noms est téléchargé une fois, puis fonctionne sur votre ordinateur.
         </p>
-        <ol className="list-inside list-decimal">
+        <ol>
           <li>
             <strong>Anonymisez</strong> le document ici.
           </li>
@@ -62,7 +62,7 @@ export const fr = {
     advancedMapping: (name: string) => ` (mapping réutilisé : ${name})`,
     mappingLabel: "Réutiliser un mapping (facultatif)",
     mappingHint:
-      "Le mapping est le fichier .json de l'archive : il fait le lien entre chaque code et la donnée d'origine. Déposez celui d'une anonymisation précédente pour qu'une même personne garde le même code d'un document à l'autre (utile pour plusieurs documents d'un même dossier). Le mapping est complété avec les nouvelles données ; rien n'en est retiré.",
+      "Déposez le mapping d'une anonymisation précédente pour qu'une même personne garde le même code d'un document à l'autre (utile pour plusieurs documents d'un même dossier). Il est complété avec les nouvelles données ; rien n'en est retiré.",
     step3: "Anonymiser",
     button: "Anonymiser",
     willDownload: "Une archive .zip sera téléchargée.",

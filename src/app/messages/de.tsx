@@ -38,7 +38,7 @@ export const de: UiMessages = {
           Alles geschieht in Ihrem Browser: Kein Dokument und keine Daten werden an einen Server gesendet. Das
           KI-Modell, das Namen erkennt, wird einmal heruntergeladen und läuft dann auf Ihrem Rechner.
         </p>
-        <ol className="list-inside list-decimal">
+        <ol>
           <li>
             Das Dokument hier <strong>anonymisieren</strong>.
           </li>
@@ -65,7 +65,7 @@ export const de: UiMessages = {
     advancedMapping: (name) => ` (wiederverwendetes Mapping: ${name})`,
     mappingLabel: "Mapping wiederverwenden (optional)",
     mappingHint:
-      "Das Mapping ist die .json-Datei aus dem Archiv: Sie ordnet jedem Code die Originaldaten zu. Wählen Sie das Mapping einer früheren Anonymisierung aus, damit dieselbe Person in allen Dokumenten denselben Code erhält (nützlich für mehrere Dokumente zu einem Vorgang). Das Mapping wird um die neuen Daten ergänzt; nichts wird daraus entfernt.",
+      "Wählen Sie das Mapping einer früheren Anonymisierung aus, damit dieselbe Person in allen Dokumenten denselben Code erhält (nützlich für mehrere Dokumente zu einem Vorgang). Es wird um die neuen Daten ergänzt; nichts wird daraus entfernt.",
     step3: "Anonymisieren",
     button: "Anonymisieren",
     willDownload: "Ein .zip-Archiv wird heruntergeladen.",

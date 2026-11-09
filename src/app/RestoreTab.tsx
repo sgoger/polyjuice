@@ -3,6 +3,7 @@ import type { RestoreResult } from "../worker/protocol.ts";
 import { Banner, WarningsBanner } from "./components/Banner.tsx";
 import { Downloads } from "./components/Downloads.tsx";
 import { FileDrop } from "./components/FileDrop.tsx";
+import { Intro } from "./components/Intro.tsx";
 import { More } from "./components/More.tsx";
 import { PrimaryButton } from "./components/PrimaryButton.tsx";
 import { Recap } from "./components/Recap.tsx";
@@ -58,7 +59,7 @@ export function RestoreTab() {
 
   return (
     <>
-      <p className="rounded-lg bg-indigo-50 p-4 text-slate-800">{m.intro}</p>
+      <Intro>{m.intro}</Intro>
       <Step n={1} title={m.step1}>
         <FileDrop
           label={m.fileLabel}
