@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { CheckResult } from "../worker/protocol.ts";
 import { Banner, WarningsBanner } from "./components/Banner.tsx";
 import { FileDrop } from "./components/FileDrop.tsx";
+import { Intro } from "./components/Intro.tsx";
 import { NamesInput } from "./components/NamesInput.tsx";
 import { NerToggle } from "./components/NerToggle.tsx";
 import { Preflight } from "./components/Preflight.tsx";
@@ -81,7 +82,7 @@ export function CheckTab({ settings }: { settings: SharedSettings }) {
 
   return (
     <>
-      <p className="rounded-lg bg-indigo-50 p-4 text-slate-800">{m.intro}</p>
+      <Intro>{m.intro}</Intro>
       <Step n={1} title={m.step1}>
         <FileDrop
           label={m.fileLabel}

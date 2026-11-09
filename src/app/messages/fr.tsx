@@ -27,8 +27,26 @@ export const fr = {
     recapMapping: (name: string) => `Mapping réutilisé : ${name}`,
     intro: (
       <>
-        <strong>Anonymisez</strong> le document, <strong>envoyez</strong>-le à l'outil externe (IA, traduction…), puis{" "}
-        <strong>restaurez</strong> sa réponse dans « Restaurer ».
+        <p>
+          polyjuice remplace les données personnelles d'un document (noms, e-mails, téléphones, IBAN…) par des codes,
+          pour pouvoir le confier à un outil externe (IA, traduction…), puis remet les vraies données dans sa réponse.
+        </p>
+        <p>
+          Tout se passe dans votre navigateur : aucun document ni aucune donnée n'est envoyé sur un serveur. Le modèle
+          d'IA qui repère les noms est téléchargé une fois, puis fonctionne sur votre ordinateur.
+        </p>
+        <ol>
+          <li>
+            <strong>Anonymisez</strong> le document ici.
+          </li>
+          <li>
+            <strong>Envoyez</strong> le document anonymisé à l'outil externe.
+          </li>
+          <li>
+            <strong>Restaurez</strong> sa réponse dans l'onglet « Restaurer », avec le mapping : le fichier .json de
+            l'archive, qui fait le lien entre chaque code et la donnée d'origine.
+          </li>
+        </ol>
       </>
     ) as ReactNode,
     step1: "Déposer le document",
@@ -43,11 +61,12 @@ export const fr = {
     advanced: "Options avancées",
     advancedMapping: (name: string) => ` (mapping réutilisé : ${name})`,
     mappingLabel: "Réutiliser un mapping (facultatif)",
-    mappingHint: "Mêmes tokens ; le mapping est complété, jamais tronqué.",
+    mappingHint:
+      "Déposez le mapping d'une anonymisation précédente pour qu'une même personne garde le même code d'un document à l'autre (utile pour plusieurs documents d'un même dossier). Il est complété avec les nouvelles données ; rien n'en est retiré.",
     step3: "Anonymiser",
     button: "Anonymiser",
     willDownload: "Une archive .zip sera téléchargée.",
-    needFile: "Déposez d'abord un document.",
+    needFile: "Le bouton s'active dès que le document est déposé (étape 1).",
     success: (n: number) => `Document anonymisé : ${pl(n, "entité remplacée", "entités remplacées")}.`,
     archiveDownloaded: "Archive téléchargée : ",
     roleSend: "Envoyer",
@@ -92,7 +111,7 @@ export const fr = {
     step2: "Restaurer",
     button: "Restaurer",
     willDownload: "Le document restauré sera téléchargé.",
-    needFiles: "Déposez d'abord le document et le mapping.",
+    needFiles: "Le bouton s'active dès que le document et le mapping sont déposés (étape 1).",
     unknown: (n: number) =>
       `${pl(n, "token absent", "tokens absents")} du mapping, ${agree(n, "laissé tel quel", "laissés tels quels")}.`,
     unknownBody: "Le mapping correspond-il à ce document ? Téléchargé quand même : ",
@@ -122,10 +141,10 @@ export const fr = {
 
   formatsHint: {
     formats: "Formats : .docx, .pptx, .xlsx (et .docm, .pptm, .xlsm), .pdf, .md, .txt.",
-    legacyQuestion: "Et les .doc, .xls, .ppt ?",
+    legacyQuestion: "Mon fichier est en .doc, .xls ou .ppt : que faire ?",
     legacyAnswer:
-      "Anciens formats binaires d'Office 97-2003 : polyjuice ne modifie que les formats XML actuels. Ouvrez le fichier dans Word, Excel ou PowerPoint, Fichier → Enregistrer sous → .docx, .xlsx ou .pptx, puis déposez ce fichier.",
-    otherFormats: "Idem pour .rtf, .odt, .ods, .odp et .csv.",
+      "polyjuice n'accepte pas les anciens formats d'Office (97-2003). Ouvrez le fichier dans Word, Excel ou PowerPoint, faites Fichier → Enregistrer sous et choisissez .docx, .xlsx ou .pptx, puis déposez ce nouveau fichier ici.",
+    otherFormats: "Même chose pour les fichiers .rtf, .odt, .ods, .odp et .csv.",
   },
 
   names: {
@@ -135,8 +154,8 @@ export const fr = {
     save: "Enregistrer en .txt",
     fileName: "glossaire.txt",
     clear: "Effacer",
-    help: "Toujours remplacés, même si l'IA les manque. Un nom par ligne, écrit comme dans le document ; # pour un commentaire. Commun à « Anonymiser » et « Vérifier ».",
-    placeholder: "Thomas Rivière\nJean Dupont",
+    help: "L'IA peut ne pas reconnaître un nom quand il se confond avec un mot courant : dans « Paul Blanc », « Blanc » peut se lire comme une couleur. Ajoutez ici ces noms : ils seront toujours remplacés (type Personne). Un nom par ligne, écrit tel qu'il apparaît dans les documents ; # pour un commentaire. Le même glossaire sert aux onglets Anonymiser et Vérifier ; cochez la case ci-dessous pour le retrouver à chaque visite.",
+    placeholder: "Paul Blanc\nThomas Rivière",
     count: (n: number) => `${pl(n, "terme", "termes")}.`,
     remembered: "Mémorisé dans ce navigateur.",
     notRemembered: "Non mémorisé : perdu au rechargement.",
