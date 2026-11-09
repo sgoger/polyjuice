@@ -96,7 +96,7 @@ export function AnonymizeTab({ settings }: { settings: SharedSettings }) {
 
   return (
     <>
-      <p className="rounded-lg bg-indigo-50 p-4 text-slate-800">{m.intro}</p>
+      <div className="space-y-2 rounded-lg bg-indigo-50 p-4 text-slate-800">{m.intro}</div>
 
       <Step n={1} title={m.step1}>
         <FileDrop

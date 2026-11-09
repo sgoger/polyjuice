@@ -29,8 +29,27 @@ export const de: UiMessages = {
     recapMapping: (name) => `Wiederverwendetes Mapping: ${name}`,
     intro: (
       <>
-        Das Dokument <strong>anonymisieren</strong>, an das externe Tool (KI, Übersetzung…) <strong>senden</strong> und
-        dessen Antwort unter „Wiederherstellen“ <strong>wiederherstellen</strong>.
+        <p>
+          polyjuice ersetzt personenbezogene Daten in einem Dokument (Namen, E-Mails, Telefonnummern, IBAN…) durch
+          Codes, damit es an ein externes Tool (KI, Übersetzung…) gegeben werden kann, und setzt die echten Daten danach
+          in dessen Antwort wieder ein.
+        </p>
+        <p>
+          Alles geschieht in Ihrem Browser: Kein Dokument und keine Daten werden an einen Server gesendet. Das
+          KI-Modell, das Namen erkennt, wird einmal heruntergeladen und läuft dann auf Ihrem Rechner.
+        </p>
+        <ol className="list-inside list-decimal">
+          <li>
+            Das Dokument hier <strong>anonymisieren</strong>.
+          </li>
+          <li>
+            Das anonymisierte Dokument an das externe Tool <strong>senden</strong>.
+          </li>
+          <li>
+            Dessen Antwort unter „Wiederherstellen“ <strong>wiederherstellen</strong>, mit dem Mapping: der .json-Datei
+            aus dem Archiv, die jedem Code die Originaldaten zuordnet.
+          </li>
+        </ol>
       </>
     ),
     step1: "Dokument auswählen",
@@ -45,11 +64,12 @@ export const de: UiMessages = {
     advanced: "Erweiterte Optionen",
     advancedMapping: (name) => ` (wiederverwendetes Mapping: ${name})`,
     mappingLabel: "Mapping wiederverwenden (optional)",
-    mappingHint: "Gleiche Tokens; das Mapping wird ergänzt, nie gekürzt.",
+    mappingHint:
+      "Das Mapping ist die .json-Datei aus dem Archiv: Sie ordnet jedem Code die Originaldaten zu. Wählen Sie das Mapping einer früheren Anonymisierung aus, damit dieselbe Person in allen Dokumenten denselben Code erhält (nützlich für mehrere Dokumente zu einem Vorgang). Das Mapping wird um die neuen Daten ergänzt; nichts wird daraus entfernt.",
     step3: "Anonymisieren",
     button: "Anonymisieren",
     willDownload: "Ein .zip-Archiv wird heruntergeladen.",
-    needFile: "Wählen Sie zuerst ein Dokument aus.",
+    needFile: "Die Schaltfläche wird aktiv, sobald das Dokument ausgewählt ist (Schritt 1).",
     success: (n) => `Dokument anonymisiert: ${pl(n, "Entität ersetzt", "Entitäten ersetzt")}.`,
     archiveDownloaded: "Heruntergeladenes Archiv: ",
     roleSend: "Senden",
@@ -95,7 +115,7 @@ export const de: UiMessages = {
     step2: "Wiederherstellen",
     button: "Wiederherstellen",
     willDownload: "Das wiederhergestellte Dokument wird heruntergeladen.",
-    needFiles: "Wählen Sie zuerst Dokument und Mapping aus.",
+    needFiles: "Die Schaltfläche wird aktiv, sobald Dokument und Mapping ausgewählt sind (Schritt 1).",
     unknown: (n) =>
       n === 1
         ? "1 Token fehlt im Mapping und wurde unverändert gelassen."
@@ -126,9 +146,9 @@ export const de: UiMessages = {
 
   formatsHint: {
     formats: "Formate: .docx, .pptx, .xlsx (sowie .docm, .pptm, .xlsm), .pdf, .md, .txt.",
-    legacyQuestion: "Und .doc, .xls, .ppt?",
+    legacyQuestion: "Meine Datei ist eine .doc, .xls oder .ppt: Was tun?",
     legacyAnswer:
-      "Alte Binärformate von Office 97-2003: polyjuice bearbeitet nur die aktuellen XML-Formate. Öffnen Sie die Datei in Word, Excel oder PowerPoint, Datei → Speichern unter → .docx, .xlsx oder .pptx, und wählen Sie dann diese Datei aus.",
+      "polyjuice nimmt die alten Office-Formate (97-2003) nicht an. Öffnen Sie die Datei in Word, Excel oder PowerPoint, wählen Sie Datei → Speichern unter und dann .docx, .xlsx oder .pptx, und wählen Sie hier die neue Datei aus.",
     otherFormats: "Dasselbe gilt für .rtf, .odt, .ods, .odp und .csv.",
   },
 
@@ -139,8 +159,8 @@ export const de: UiMessages = {
     save: "Als .txt speichern",
     fileName: "glossar.txt",
     clear: "Leeren",
-    help: "Werden immer ersetzt, auch wenn die KI sie übersieht. Ein Name pro Zeile, wie im Dokument geschrieben; # für einen Kommentar. Gilt für „Anonymisieren“ und „Prüfen“.",
-    placeholder: "Thomas Müller\nAnna Schmidt",
+    help: "Die KI erkennt einen Namen manchmal nicht, wenn er mit einem gewöhnlichen Wort verwechselt werden kann: In „Paul Weiß“ kann „Weiß“ als Farbe gelesen werden. Tragen Sie solche Namen hier ein: Sie werden immer ersetzt (Typ Person). Ein Name pro Zeile, wie im Dokument geschrieben; # für einen Kommentar. Gilt für „Anonymisieren“ und „Prüfen“; setzen Sie unten das Häkchen, um das Glossar bei jedem Besuch wiederzufinden.",
+    placeholder: "Paul Weiß\nAnna Schmidt",
     count: (n) => `${pl(n, "Eintrag", "Einträge")}.`,
     remembered: "In diesem Browser gespeichert.",
     notRemembered: "Nicht gespeichert: geht beim Neuladen verloren.",
